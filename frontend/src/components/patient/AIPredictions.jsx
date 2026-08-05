@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { Brain, ShieldAlert, Sparkles, TrendingUp, HelpCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { ForecastTrajectoryCard } from './prediction/ForecastTrajectoryCard';
+import { Brain, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
 
 export const AIPredictions = () => {
   const { aiPrediction, currentGlucose } = useApp();
@@ -61,60 +61,8 @@ export const AIPredictions = () => {
 
       </div>
 
-      {/* Forecast Chart */}
-      <div className="glass-panel" style={{ padding: '1.5rem' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.3rem' }}>Next 2-Hour Predicted Trajectory</h3>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-          Forecasted glucose curve from current reading ({currentGlucose} mg/dL) to predicted 120-minute horizon.
-        </p>
-
-        <div style={{ height: '280px', width: '100%' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={aiPrediction.hourlyForecast} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorGlucose" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={12} />
-              <YAxis domain={[60, 200]} stroke="var(--text-muted)" fontSize={12} />
-              <Tooltip 
-                contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--accent-purple)', borderRadius: '8px', color: '#fff' }}
-              />
-              <Area type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorGlucose)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Explainable AI & Recommended Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.2rem' }}>
-        
-        {/* Why glucose changed */}
-        <div className="glass-panel" style={{ padding: '1.5rem', borderLeft: '4px solid var(--accent-cyan)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem' }}>
-            <HelpCircle size={20} color="var(--accent-cyan)" />
-            <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>Why did your blood sugar change?</h4>
-          </div>
-          <p style={{ fontSize: '0.9rem', lineHeight: '1.6', color: 'var(--text-main)' }}>
-            "{aiPrediction.explanation}"
-          </p>
-        </div>
-
-        {/* AI Actionable Recommendations */}
-        <div className="glass-panel" style={{ padding: '1.5rem', borderLeft: '4px solid var(--accent-emerald)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem' }}>
-            <CheckCircle2 size={20} color="var(--accent-emerald)" />
-            <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>Recommended AI Actions</h4>
-          </div>
-          <p style={{ fontSize: '0.9rem', lineHeight: '1.6', color: 'var(--text-main)' }}>
-            "{aiPrediction.recommendation}"
-          </p>
-        </div>
-
-      </div>
+      {/* Forecast & Explainable AI Component */}
+      <ForecastTrajectoryCard aiPrediction={aiPrediction} currentGlucose={currentGlucose} />
 
     </div>
   );
