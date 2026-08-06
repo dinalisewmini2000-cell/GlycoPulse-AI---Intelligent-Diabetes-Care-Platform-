@@ -1,21 +1,37 @@
 {
-  "users": [
-    { "id": "pat-101", "name": "Sarah Jenkins", "email": "patient@glucocare.ai", "role": "patient", "diabetesType": "Type 1" },
-    { "id": "doc-201", "name": "Dr. Robert Vance, MD", "email": "doctor@glucocare.ai", "role": "doctor", "specialty": "Endocrinology" },
-    { "id": "cg-301", "name": "David Jenkins", "email": "caregiver@glucocare.ai", "role": "caregiver" },
-    { "id": "adm-401", "name": "System Administrator", "email": "admin@glucocare.ai", "role": "admin" }
-  ],
-  "glucoseLogs": [
-    { "id": "g1", "timestamp": "07:30 AM", "value": 112, "type": "Fasting", "notes": "Morning wake up" },
-    { "id": "g2", "timestamp": "08:30 AM", "value": 145, "type": "After Meal", "notes": "Oatmeal & berries" },
-    { "id": "g3", "timestamp": "12:15 PM", "value": 108, "type": "Before Meal", "notes": "Pre-lunch check" },
-    { "id": "g4", "timestamp": "01:45 PM", "value": 162, "type": "After Meal", "notes": "Chicken salad & quinoa" },
-    { "id": "g5", "timestamp": "05:00 PM", "value": 125, "type": "Before Meal", "notes": "Post 30m walk" },
-    { "id": "g6", "timestamp": "09:00 PM", "value": 118, "type": "Bedtime", "notes": "Night target reached" }
-  ],
-  "appointments": [
-    { "id": "apt-1", "patientName": "Marcus Vance", "date": "2026-08-08 10:00 AM", "reason": "HbA1c & Medication Review" },
-    { "id": "apt-2", "patientName": "Elena Rostova", "date": "2026-08-15 02:30 PM", "reason": "Gestational Diabetes Follow-up" },
-    { "id": "apt-3", "patientName": "Sarah Jenkins", "date": "2026-08-20 11:15 AM", "reason": "Quarterly CGM Telemetry Review" }
-  ]
+    "users": [
+        {
+            "id": "pat-101",
+            "name": "Sarah Jenkins",
+            "email": "patient@glucocare.ai",
+            "role": "patient",
+            "diabetesType": "Type 1"
+        },
+        {
+            "id": "doc-201",
+            "name": "Dr. Robert Vance, MD",
+            "email": "doctor@glucocare.ai",
+            "role": "doctor",
+            "specialty": "Endocrinology"
+        },
+        {
+            "id": "cg-301",
+            "name": "David Jenkins",
+            "email": "caregiver@glucocare.ai",
+            "role": "caregiver"
+        },
+        {
+            "id": "adm-401",
+            "name": "System Administrator",
+            "email": "admin@glucocare.ai",
+            "role": "admin"
+        },
+        {
+            "id": "pat-147",
+            "email": "dinalisewmini2000@glucocare.ai",
+            "name": "Dinalisewmini2000",
+            "role": "patient",
+            "diabetesType": "Type 2"
+        }
+    ]
 }
