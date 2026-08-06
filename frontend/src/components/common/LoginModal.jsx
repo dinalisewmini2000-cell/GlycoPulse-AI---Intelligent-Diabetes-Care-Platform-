@@ -91,7 +91,7 @@ export const LoginModal = () => {
         }
 
         await signupUser({
-          name,
+          name: name.trim(),
           email,
           password,
           role: selectedRole,
@@ -100,6 +100,7 @@ export const LoginModal = () => {
         });
       } else {
         await loginUser({
+          name: name.trim() || undefined,
           email,
           password,
           role: selectedRole

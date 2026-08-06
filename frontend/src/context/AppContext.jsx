@@ -4,9 +4,11 @@ import { apiService } from '../services/apiService';
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const [role, setRole] = useState('patient'); // patient, doctor, caregiver, admin
+  // Theme & Language State
   const [theme, setTheme] = useState(() => localStorage.getItem('glycopulse_theme') || 'dark');
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState(() => localStorage.getItem('glycopulse_lang') || 'en');
+
+  // Active Main Tab
   const [activeTab, setActiveTab] = useState('glucose'); 
   const [sosActive, setSosActive] = useState(false);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
@@ -40,10 +42,19 @@ export const AppProvider = ({ children }) => {
   const loginUser = async (credentials) => {
     const res = await apiService.login(credentials);
     const userRole = credentials.role || 'patient';
-    let userObj = defaultProfiles[userRole];
+    let userObj = defaultProfiles[userRole] ? { ...defaultProfiles[userRole] } : { id: 'usr-' + Date.now(), role: userRole };
 
     if (res && res.status === 'success' && res.user) {
       userObj = res.user;
+    }
+
+    // Override with custom credentials if specified
+    if (credentials.name && credentials.name.trim()) {
+      userObj.name = credentials.name.trim();
+    } else if (credentials.email && credentials.email !== defaultProfiles[userRole]?.email) {
+      const emailPrefix = credentials.email.split('@')[0];
+      userObj.email = credentials.email;
+      userObj.name = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
     }
     
     setCurrentUser(userObj);
@@ -75,6 +86,10 @@ export const AppProvider = ({ children }) => {
       userObj = res.user;
     }
 
+    if (userData.name && userData.name.trim()) {
+      userObj.name = userData.name.trim();
+    }
+
     setCurrentUser(userObj);
     setRole(userRole);
     setIsAuthenticated(true);
@@ -94,7 +109,7 @@ export const AppProvider = ({ children }) => {
     setCurrentUser(null);
     localStorage.removeItem('glycopulse_auth');
     localStorage.removeItem('glycopulse_user');
-    setAuthModalOpen(true);
+    setAuthModalOpen(false);
   };
 
   // Health Data & Live Ticker State
@@ -142,12 +157,14 @@ export const AppProvider = ({ children }) => {
     ]
   });
 
-  const [waterIntake, setWaterIntake] = useState(2.2);
-  const [waterGoal] = useState(2.8);
-  const [healthScore, setHealthScore] = useState(94);
-  const [streakDays, setStreakDays] = useState(14);
+  // Role Management
+  const [role, setRole] = useState(() => currentUser?.role || 'patient');
 
-  // Save state to localStorage whenever logs change
+  // Gamification & Streaks
+  const [streakDays, setStreakDays] = useState(14);
+  const [healthScore, setHealthScore] = useState(88);
+
+  // Sync state to local storage on changes
   useEffect(() => {
     localStorage.setItem('glycopulse_logs', JSON.stringify(glucoseLogs));
   }, [glucoseLogs]);
@@ -157,37 +174,43 @@ export const AppProvider = ({ children }) => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // LIVE 5-SECOND CONTINUOUS GLUCOSE MONITOR (CGM) TICKER SIMULATOR
   useEffect(() => {
-    const tickerInterval = setInterval(() => {
-      // Small realistic fluctuations (-2 to +3 mg/dL)
-      const delta = Math.floor(Math.random() * 6) - 2;
-      setCurrentGlucose(prev => {
-        const nextVal = Math.max(55, Math.min(280, prev + delta));
+    localStorage.setItem('glycopulse_lang', language);
+  }, [language]);
+
+  // LIVE 5-SECOND CONTINUOUS GLUCOSE TELEMETRY STREAM TICKER
+  useEffect(() => {
+    const ticker = setInterval(() => {
+      // Simulate micro-fluctuations (-3 to +3 mg/dL)
+      const delta = Math.floor(Math.random() * 7) - 3;
+      
+      setCurrentGlucose((prev) => {
+        const nextVal = Math.max(55, Math.min(260, prev + delta));
         
-        // Update trend arrow based on delta
+        // Compute trend arrow & rate of change
         if (delta >= 3) {
           setCgmTrendArrow('↑');
-          setRateOfChange('+2.8 mg/dL/min');
+          setRateOfChange(`+${(delta * 0.8).toFixed(1)} mg/dL/min`);
         } else if (delta === 1 || delta === 2) {
           setCgmTrendArrow('↗');
-          setRateOfChange('+1.2 mg/dL/min');
+          setRateOfChange(`+${(delta * 0.6).toFixed(1)} mg/dL/min`);
         } else if (delta === 0) {
           setCgmTrendArrow('➔');
           setRateOfChange('0.0 mg/dL/min');
-        } else if (delta === -1) {
+        } else if (delta === -1 || delta === -2) {
           setCgmTrendArrow('↘');
-          setRateOfChange('-0.8 mg/dL/min');
+          setRateOfChange(`${(delta * 0.6).toFixed(1)} mg/dL/min`);
         } else {
           setCgmTrendArrow('↓');
-          setRateOfChange('-2.4 mg/dL/min');
+          setRateOfChange(`${(delta * 0.8).toFixed(1)} mg/dL/min`);
         }
 
-        // Trigger Hypoglycemia Alert Toast if sugar drops < 70
+        // Trigger Global Toast Alert for Hypoglycemia (<70 mg/dL)
         if (nextVal < 70) {
           setToastAlert({
             type: 'danger',
-            msg: `⚠️ LOW GLUCOSE WARNING: Sensor reading ${nextVal} mg/dL. Consume 15g fast-acting carbs!`
+            title: 'CRITICAL HYPOGLYCEMIA ALERT',
+            message: `Current Glucose is ${nextVal} mg/dL. Consume 15g fast-acting carbs immediately.`
           });
         }
 
@@ -195,90 +218,88 @@ export const AppProvider = ({ children }) => {
       });
 
       // Slowly decay IOB & COB over time
-      setIobUnits(prev => Math.max(0, parseFloat((prev - 0.05).toFixed(2))));
-      setCobGrams(prev => Math.max(0, Math.round(prev - 0.5)));
-      setLastCgmSync(`Synced ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`);
+      setIobUnits((prev) => Math.max(0, parseFloat((prev - 0.05).toFixed(2))));
+      setCobGrams((prev) => Math.max(0, Math.round(prev - 0.5)));
+      setLastCgmSync('Just now (Dexcom G7 Live Sync)');
+
     }, 5000);
 
-    return () => clearInterval(tickerInterval);
+    return () => clearInterval(ticker);
   }, []);
 
-  const addGlucoseLog = (newReading) => {
-    const val = parseInt(newReading.value);
-    const logItem = {
-      id: 'g' + Date.now(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      value: val,
-      type: newReading.type || 'Manual Entry',
-      notes: newReading.notes || ''
-    };
-    
-    setGlucoseLogs(prev => [logItem, ...prev]);
-    setCurrentGlucose(val);
-
-    // If logging insulin or carbs, update active IOB/COB
-    if (newReading.insulinUnits) {
-      setIobUnits(prev => parseFloat((prev + parseFloat(newReading.insulinUnits)).toFixed(2)));
-    }
-    if (newReading.carbsGrams) {
-      setCobGrams(prev => prev + parseInt(newReading.carbsGrams));
-    }
-
-    setToastAlert({
-      type: 'success',
-      msg: `Log Recorded: ${val} mg/dL (${logItem.type})`
-    });
-
-    setTimeout(() => setToastAlert(null), 3000);
-
-    // Dynamic AI prediction recalculation
-    apiService.getAIPrediction({ currentGlucose: val }).then(res => {
-      if (res && res.status === 'success') {
-        setAiPrediction(res);
-      }
-    });
-
-    apiService.logGlucose(newReading);
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  const addGlucoseLog = (newLog) => {
+    const updated = [newLog, ...glucoseLogs];
+    setGlucoseLogs(updated);
+    
+    // Re-evaluate AI prediction based on new log
+    setAiPrediction((prev) => ({
+      ...prev,
+      predictedGlucose2h: Math.round(newLog.value + (cobGrams * 0.8) - (iobUnits * 12)),
+      explanation: `Latest log entry (${newLog.value} mg/dL) incorporated into neural pharmacokinetic model.`
+    }));
+
+    // Trigger success toast
+    setToastAlert({
+      type: 'success',
+      title: 'GLUCOSE ENTRY LOGGED',
+      message: `Recorded ${newLog.value} mg/dL (${newLog.type}) successfully.`
+    });
+    setTimeout(() => setToastAlert(null), 4000);
+  };
 
   return (
-    <AppContext.Provider value={{
-      role, setRole,
-      theme, toggleTheme,
-      language, setLanguage,
-      activeTab, setActiveTab,
-      sosActive, setSosActive,
-      pdfModalOpen, setPdfModalOpen,
-      isAuthenticated, setIsAuthenticated,
-      authModalOpen, setAuthModalOpen,
-      currentUser, loginUser, signupUser, logoutUser,
-      glucoseLogs, addGlucoseLog,
-      currentGlucose, setCurrentGlucose,
-      cgmTrendArrow, rateOfChange, lastCgmSync,
-      iobUnits, setIobUnits, cobGrams, setCobGrams,
-      hba1cHistory,
-      aiPrediction, setAiPrediction,
-      waterIntake, setWaterIntake, waterGoal,
-      healthScore, streakDays, setStreakDays,
-      toastAlert, setToastAlert
-    }}>
+    <AppContext.Provider
+      value={{
+        theme,
+        toggleTheme,
+        language,
+        setLanguage,
+        role,
+        setRole,
+        activeTab,
+        setActiveTab,
+        sosActive,
+        setSosActive,
+        pdfModalOpen,
+        setPdfModalOpen,
+        isAuthenticated,
+        authModalOpen,
+        setAuthModalOpen,
+        currentUser,
+        loginUser,
+        signupUser,
+        logoutUser,
+        currentGlucose,
+        cgmTrendArrow,
+        rateOfChange,
+        lastCgmSync,
+        iobUnits,
+        setIobUnits,
+        cobGrams,
+        setCobGrams,
+        glucoseLogs,
+        addGlucoseLog,
+        hba1cHistory,
+        aiPrediction,
+        streakDays,
+        healthScore,
+        toastAlert,
+        setToastAlert
+      }}
+    >
       {children}
-      {toastAlert && (
-        <div style={{
-          position: 'fixed', top: '1.2rem', right: '1.2rem', zIndex: 9999,
-          background: toastAlert.type === 'danger' ? 'rgba(239, 68, 68, 0.92)' : 'rgba(16, 185, 129, 0.92)',
-          color: '#fff', padding: '0.85rem 1.4rem', borderRadius: '12px',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)',
-          fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.6rem'
-        }}>
-          <span>{toastAlert.msg}</span>
-          <button onClick={() => setToastAlert(null)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', marginLeft: '0.5rem' }}>✕</button>
-        </div>
-      )}
     </AppContext.Provider>
   );
 };
 
-export const useApp = () => useContext(AppContext);
+export const useApp = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useApp must be used within an AppProvider');
+  }
+  return context;
+};

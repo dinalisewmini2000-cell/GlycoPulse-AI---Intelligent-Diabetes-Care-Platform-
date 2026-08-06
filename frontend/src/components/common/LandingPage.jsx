@@ -86,7 +86,7 @@ export const LandingPage = () => {
         }
 
         await signupUser({
-          name,
+          name: name.trim(),
           email,
           password,
           role: selectedRole,
@@ -95,6 +95,7 @@ export const LandingPage = () => {
         });
       } else {
         await loginUser({
+          name: name.trim() || undefined,
           email,
           password,
           role: selectedRole
@@ -310,30 +311,28 @@ export const LandingPage = () => {
           {/* Interactive Form */}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             
-            {/* Full Name for Sign Up */}
-            {isSignUp && (
-              <div>
-                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>
-                  FULL NAME
-                </label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <User size={17} style={{ position: 'absolute', left: '0.9rem', color: 'var(--text-muted)' }} />
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Sarah Jenkins"
-                    style={{
-                      width: '100%', padding: '0.7rem 0.9rem 0.7rem 2.6rem',
-                      borderRadius: '12px', background: 'rgba(0,0,0,0.3)',
-                      border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)',
-                      outline: 'none', fontSize: '0.88rem'
-                    }}
-                  />
-                </div>
+            {/* Full Name (Available for Sign Up AND Sign In if desired) */}
+            <div>
+              <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>
+                YOUR FULL NAME {isSignUp ? '(REQUIRED)' : '(OPTIONAL)'}
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <User size={17} style={{ position: 'absolute', left: '0.9rem', color: 'var(--text-muted)' }} />
+                <input
+                  type="text"
+                  required={isSignUp}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Sarah Jenkins or Alex Vance"
+                  style={{
+                    width: '100%', padding: '0.7rem 0.9rem 0.7rem 2.6rem',
+                    borderRadius: '12px', background: 'rgba(0,0,0,0.3)',
+                    border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)',
+                    outline: 'none', fontSize: '0.88rem'
+                  }}
+                />
               </div>
-            )}
+            </div>
 
             {/* Email */}
             <div>

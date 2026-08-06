@@ -1,56 +1,46 @@
 <?php
 require_once __DIR__ . '/cors.php';
 
-$users = [
+$dbPath = __DIR__ . '/data/db.json';
+$defaultUsers = [
     [
         'id' => 'pat-101',
         'email' => 'patient@glucocare.ai',
-        'password' => 'patient123',
         'name' => 'Sarah Jenkins',
         'role' => 'patient',
-        'diabetesType' => 'Type 1',
-        'diagnosisDate' => '2019-04-12',
-        'heightCm' => 168,
-        'weightKg' => 64,
-        'bmi' => 22.7,
-        'bloodGroup' => 'O+',
-        'allergies' => ['Penicillin', 'Peanuts'],
-        'medications' => ['Novolog (Rapid)', 'Lantus (Basal)', 'Metformin 500mg'],
-        'emergencyContact' => [
-            'name' => 'David Jenkins',
-            'relation' => 'Spouse',
-            'phone' => '+1 (555) 349-2011'
-        ],
-        'doctor' => 'Dr. Robert Vance, MD'
+        'diabetesType' => 'Type 1'
     ],
     [
         'id' => 'doc-201',
         'email' => 'doctor@glucocare.ai',
-        'password' => 'doctor123',
         'name' => 'Dr. Robert Vance, MD',
         'role' => 'doctor',
-        'specialty' => 'Endocrinology & Diabetology',
-        'patientsCount' => 48,
-        'hospital' => 'Metro Health Medical Center'
+        'specialty' => 'Endocrinology & Diabetology'
     ],
     [
         'id' => 'cg-301',
         'email' => 'caregiver@glucocare.ai',
-        'password' => 'caregiver123',
         'name' => 'David Jenkins',
-        'role' => 'caregiver',
-        'linkedPatient' => 'Sarah Jenkins',
-        'relationship' => 'Spouse'
+        'role' => 'caregiver'
     ],
     [
         'id' => 'adm-401',
         'email' => 'admin@glucocare.ai',
-        'password' => 'admin123',
         'name' => 'System Administrator',
         'role' => 'admin'
     ]
 ];
 
+$dbData = ['users' => $defaultUsers];
+if (file_exists($dbPath)) {
+    $raw = file_get_contents($dbPath);
+    $decoded = json_decode($raw, true);
+    if (is_array($decoded) && isset($decoded['users']) && is_array($decoded['users'])) {
+        $dbData['users'] = $decoded['users'];
+    }
+}
+
+$users = $dbData['users'];
 $method = $_SERVER['REQUEST_METHOD'];
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -58,7 +48,11 @@ if ($method === 'POST') {
     $action = isset($_GET['action']) ? $_GET['action'] : ($input['action'] ?? 'login');
     
     if ($action === 'signup' || $action === 'register') {
-        $name = trim($input['name'] ?? 'New User');
+        $name = trim($input['name'] ?? '');
+        if (empty($name)) {
+            $parts = explode('@', $input['email'] ?? 'user');
+            $name = ucfirst($parts[0]);
+        }
         $email = trim($input['email'] ?? 'user@glycopulse.ai');
         $role = trim($input['role'] ?? 'patient');
         $diabetesType = trim($input['diabetesType'] ?? 'Type 2');
@@ -73,6 +67,10 @@ if ($method === 'POST') {
             'specialty' => $specialty,
             'createdAt' => date('Y-m-d H:i:s')
         ];
+
+        // Add to persistent db.json
+        array_unshift($dbData['users'], $newUser);
+        file_put_contents($dbPath, json_encode($dbData, JSON_PRETTY_PRINT));
         
         echo json_encode([
             'status' => 'success',
@@ -85,47 +83,55 @@ if ($method === 'POST') {
 
     if ($action === 'login') {
         $email = trim($input['email'] ?? '');
+        $nameInput = trim($input['name'] ?? '');
         $password = trim($input['password'] ?? '');
         $role = trim($input['role'] ?? 'patient');
         
         $foundUser = null;
-        foreach ($users as $u) {
-            if ($u['role'] === $role && (strtolower($u['email']) === strtolower($email) || empty($email))) {
-                $foundUser = $u;
-                break;
-            }
-        }
-        
-        if (!$foundUser) {
+        if (!empty($email)) {
             foreach ($users as $u) {
-                if ($u['role'] === $role) {
+                if (strtolower($u['email']) === strtolower($email)) {
                     $foundUser = $u;
                     break;
                 }
             }
         }
-
+        
         if (!$foundUser) {
-            $foundUser = $users[0];
+            // If custom email or name entered, construct dynamic user object
+            $displayName = $nameInput;
+            if (empty($displayName) && !empty($email)) {
+                $emailPrefix = explode('@', $email)[0];
+                $displayName = ucfirst(str_replace(['.', '_', '-'], ' ', $emailPrefix));
+            }
+            if (empty($displayName)) {
+                $displayName = $role === 'doctor' ? 'Dr. Medical Provider' : ($role === 'admin' ? 'System Admin' : 'Registered Patient');
+            }
+
+            $foundUser = [
+                'id' => substr($role, 0, 3) . '-' . rand(100, 999),
+                'email' => !empty($email) ? $email : strtolower($role) . '@glucocare.ai',
+                'name' => $displayName,
+                'role' => $role,
+                'diabetesType' => 'Type 2'
+            ];
+
+            // Persist new user login
+            $dbData['users'][] = $foundUser;
+            file_put_contents($dbPath, json_encode($dbData, JSON_PRETTY_PRINT));
         }
 
-        // Strip password before returning user object
-        $userResponse = $foundUser;
-        unset($userResponse['password']);
-        
         echo json_encode([
             'status' => 'success',
             'message' => ucfirst($foundUser['role']) . ' authenticated successfully',
             'token' => 'jwt_token_' . md5($foundUser['email'] . time()),
-            'user' => $userResponse
+            'user' => $foundUser
         ]);
         exit();
     }
 }
 
-
 echo json_encode([
     'status' => 'success',
-    'users' => array_map(function($u) { unset($u['password']); return $u; }, $users)
+    'users' => $users
 ]);
-
