@@ -7,7 +7,8 @@ import {
 } from 'lucide-react';
 
 export const Sidebar = () => {
-  const { role, activeTab, setActiveTab } = useApp();
+  const { role, activeTab, setActiveTab, currentUser } = useApp();
+
 
   const patientTabs = [
     { id: 'glucose', label: 'Blood Glucose & CGM', icon: BarChart3 },
@@ -79,14 +80,20 @@ export const Sidebar = () => {
       })}
 
       {/* Profile quick stats card */}
-      <div style={{ marginTop: 'auto', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '12px', border: 'var(--border-color)' }}>
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Connected Profile</div>
-        <div style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0.2rem 0' }}>Sarah Jenkins</div>
-        <div style={{ fontSize: '0.75rem', color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+      <div style={{ marginTop: 'auto', background: 'var(--bg-secondary)', padding: '1.0rem', borderRadius: '12px', border: 'var(--border-color)' }}>
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Connected Profile</div>
+        <div style={{ fontSize: '0.92rem', fontWeight: 700, margin: '0.2rem 0', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {currentUser?.name || 'Sarah Jenkins'}
+        </div>
+        <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '0.4rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {currentUser?.email || 'patient@glucocare.ai'}
+        </div>
+        <div style={{ fontSize: '0.73rem', color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 600 }}>
           <span className="pulse-indicator"></span>
-          <span>CGM Sync Active</span>
+          <span>Session Active</span>
         </div>
       </div>
+
     </aside>
   );
 };

@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { apiService } from '../../services/apiService';
 import { 
   Utensils, Camera, Sparkles, CheckCircle2, AlertTriangle, 
-  ShoppingCart, Droplets, Flame, PieChart, RefreshCw, ChevronRight 
+  ShoppingCart, Droplets, Flame, PieChart, RefreshCw, ChevronRight, UploadCloud, Download 
 } from 'lucide-react';
 
 export const FoodNutrition = () => {
   const { waterIntake, setWaterIntake, waterGoal } = useApp();
   const [selectedFood, setSelectedFood] = useState('salad');
   const [isScanning, setIsScanning] = useState(false);
+  const [customImage, setCustomImage] = useState(null);
+  const fileInputRef = useRef(null);
+
   const [foodAnalysis, setFoodAnalysis] = useState({
     foodName: 'Mediterranean Chicken Salad & Quinoa',
     calories: 380,
@@ -25,7 +28,7 @@ export const FoodNutrition = () => {
     healthyAlternative: 'Add extra chia seeds or avocado slice for healthy omega-3 fats.'
   });
 
-  const [shoppingList, setShoppingList] = useState({
+  const [shoppingList] = useState({
     Produce: ['Spinach', 'Blueberries', 'Avocados', 'Asparagus'],
     Proteins: ['Wild Salmon', 'Chicken Breast', 'Greek Yogurt'],
     Grains: ['Sprouted Grain Bread', 'Quinoa', 'Walnuts', 'Chia Seeds']
@@ -34,13 +37,13 @@ export const FoodNutrition = () => {
   const handleScanMeal = (typeKey) => {
     setSelectedFood(typeKey);
     setIsScanning(true);
+    setCustomImage(null);
     
     apiService.analyzeFood(typeKey).then(res => {
       setTimeout(() => {
         if (res && res.status === 'success' && res.analysis) {
           setFoodAnalysis(res.analysis);
         } else {
-          // Client side fallback
           const presets = {
             salad: {
               foodName: 'Mediterranean Chicken Salad & Quinoa',
@@ -68,6 +71,63 @@ export const FoodNutrition = () => {
     });
   };
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const fileUrl = URL.createObjectURL(file);
+    setCustomImage(fileUrl);
+    setSelectedFood('custom');
+    setIsScanning(true);
+
+    setTimeout(() => {
+      setFoodAnalysis({
+        foodName: `Scanned: ${file.name.replace(/\.[^/.]+$/, "")}`,
+        calories: 420,
+        carbs: 38,
+        sugar: 7,
+        protein: 26,
+        fat: 14,
+        fiber: 6,
+        glycemicIndex: 52,
+        glycemicLoad: 19.7,
+        portionEstimate: 'Uploaded Photo Portion (approx. 320g)',
+        score: 84,
+        healthyAlternative: 'AI Vision recommends pairing this dish with 1 glass of water to stabilize post-meal glucose absorption.'
+      });
+      setIsScanning(false);
+    }, 1200);
+  };
+
+  const handleExportShoppingList = () => {
+    const lines = [
+      "==============================================",
+      " GLYCOPULSE AI - PERSONALIZED SHOPPING LIST",
+      " Date: " + new Date().toLocaleDateString(),
+      "==============================================",
+      "",
+      "PRODUCE:",
+      ...shoppingList.Produce.map(item => " [ ] " + item),
+      "",
+      "PROTEINS:",
+      ...shoppingList.Proteins.map(item => " [ ] " + item),
+      "",
+      "GRAINS & NUTS:",
+      ...shoppingList.Grains.map(item => " [ ] " + item),
+      "",
+      "==============================================",
+      " Recommended for low glycemic impact & peak TIR."
+    ].join("\n");
+
+    const blob = new Blob([lines], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'GlycoPulse_Diabetes_Shopping_List.txt';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       
@@ -82,26 +142,45 @@ export const FoodNutrition = () => {
         </p>
       </div>
 
-      {/* AI Photo Scanner Demo Selector */}
+      {/* AI Photo Scanner Selector & File Upload */}
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>AI Food Photo Recognition Scanner</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Select a sample food photo or trigger camera scan simulation:</p>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Upload your meal photo or pick a quick sample:</p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.6rem' }}>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              accept="image/*" 
+              onChange={handleFileUpload} 
+              style={{ display: 'none' }} 
+            />
+            <button onClick={() => fileInputRef.current?.click()} className="btn-glow" style={{ fontSize: '0.82rem' }}>
+              <UploadCloud size={16} />
+              <span>Upload Custom Food Photo</span>
+            </button>
+
             <button onClick={() => handleScanMeal('salad')} className={`btn-outline ${selectedFood === 'salad' ? 'active' : ''}`} style={{ borderColor: selectedFood === 'salad' ? 'var(--accent-teal)' : '' }}>
-              🥗 Grilled Chicken Salad
+              🥗 Chicken Salad
             </button>
             <button onClick={() => handleScanMeal('pizza')} className={`btn-outline ${selectedFood === 'pizza' ? 'active' : ''}`} style={{ borderColor: selectedFood === 'pizza' ? 'var(--accent-teal)' : '' }}>
-              🍕 Pepperoni Pizza
+              🍕 Pizza
             </button>
             <button onClick={() => handleScanMeal('oatmeal')} className={`btn-outline ${selectedFood === 'oatmeal' ? 'active' : ''}`} style={{ borderColor: selectedFood === 'oatmeal' ? 'var(--accent-teal)' : '' }}>
-              🥣 Steel-Cut Oatmeal
+              🥣 Oatmeal
             </button>
           </div>
         </div>
+
+        {/* Custom Image Preview if uploaded */}
+        {customImage && !isScanning && (
+          <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+            <img src={customImage} alt="Uploaded meal" style={{ maxWidth: '200px', maxHeight: '150px', borderRadius: '12px', border: '2px solid var(--accent-teal)', objectFit: 'cover' }} />
+          </div>
+        )}
 
         {/* Scanner Result Card */}
         {isScanning ? (
@@ -200,14 +279,14 @@ export const FoodNutrition = () => {
 
       {/* Weekly Meal Planner & Grocery Generator */}
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Personalized Weekly Diabetes Meal Plan</h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Tailored to your target glucose range, local cuisine, and insulin sensitivity</p>
           </div>
 
-          <button className="btn-outline" style={{ fontSize: '0.82rem' }}>
-            <ShoppingCart size={16} />
+          <button onClick={handleExportShoppingList} className="btn-outline" style={{ fontSize: '0.82rem' }}>
+            <Download size={16} />
             <span>Export Shopping List</span>
           </button>
         </div>

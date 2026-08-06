@@ -17,6 +17,8 @@ async function fetchAPI(endpoint, options = {}) {
 export const apiService = {
   getAuth: () => fetchAPI('auth.php'),
   login: (credentials) => fetchAPI('auth.php?action=login', { method: 'POST', body: JSON.stringify(credentials) }),
+  signup: (userData) => fetchAPI('auth.php?action=signup', { method: 'POST', body: JSON.stringify(userData) }),
+
   
   getGlucoseData: () => fetchAPI('glucose.php'),
   logGlucose: (data) => fetchAPI('glucose.php', { method: 'POST', body: JSON.stringify(data) }),

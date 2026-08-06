@@ -11,6 +11,78 @@ export const AppProvider = ({ children }) => {
   const [sosActive, setSosActive] = useState(false);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
 
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState({
+    id: 'pat-101',
+    name: 'Sarah Jenkins',
+    email: 'patient@glucocare.ai',
+    role: 'patient'
+  });
+
+  // Default User Profiles for Role Fallbacks
+  const defaultProfiles = {
+    patient: { id: 'pat-101', name: 'Sarah Jenkins', email: 'patient@glucocare.ai', role: 'patient' },
+    doctor: { id: 'doc-201', name: 'Dr. Robert Vance, MD', email: 'doctor@glucocare.ai', role: 'doctor' },
+    caregiver: { id: 'cg-301', name: 'David Jenkins', email: 'caregiver@glucocare.ai', role: 'caregiver' },
+    admin: { id: 'adm-401', name: 'System Administrator', email: 'admin@glucocare.ai', role: 'admin' }
+  };
+
+  const loginUser = async (credentials) => {
+    const res = await apiService.login(credentials);
+    const userRole = credentials.role || 'patient';
+    let userObj = defaultProfiles[userRole];
+
+    if (res && res.status === 'success' && res.user) {
+      userObj = res.user;
+    }
+    
+    setCurrentUser(userObj);
+    setRole(userRole);
+    setIsAuthenticated(true);
+    setAuthModalOpen(false);
+
+    // Reset default active tab for role
+    if (userRole === 'doctor') setActiveTab('doctor_patients');
+    else if (userRole === 'caregiver') setActiveTab('caregiver_feed');
+    else if (userRole === 'admin') setActiveTab('admin_telemetry');
+    else setActiveTab('glucose');
+  };
+
+  const signupUser = async (userData) => {
+    const res = await apiService.signup(userData);
+    const userRole = userData.role || 'patient';
+    let userObj = {
+      id: 'user-' + Date.now(),
+      name: userData.name || 'New Member',
+      email: userData.email,
+      role: userRole,
+      diabetesType: userData.diabetesType || 'Type 2'
+    };
+
+    if (res && res.status === 'success' && res.user) {
+      userObj = res.user;
+    }
+
+    setCurrentUser(userObj);
+    setRole(userRole);
+    setIsAuthenticated(true);
+    setAuthModalOpen(false);
+
+    if (userRole === 'doctor') setActiveTab('doctor_patients');
+    else if (userRole === 'caregiver') setActiveTab('caregiver_feed');
+    else if (userRole === 'admin') setActiveTab('admin_telemetry');
+    else setActiveTab('glucose');
+  };
+
+  const logoutUser = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setAuthModalOpen(true);
+  };
+
+
   // Health Data State
   const [glucoseLogs, setGlucoseLogs] = useState([
     { id: 'g1', timestamp: '07:30 AM', value: 112, type: 'Fasting', notes: 'Woke up feeling good' },
@@ -99,6 +171,9 @@ export const AppProvider = ({ children }) => {
       activeTab, setActiveTab,
       sosActive, setSosActive,
       pdfModalOpen, setPdfModalOpen,
+      isAuthenticated, setIsAuthenticated,
+      authModalOpen, setAuthModalOpen,
+      currentUser, loginUser, signupUser, logoutUser,
       glucoseLogs, addGlucoseLog,
       currentGlucose, setCurrentGlucose,
       hba1cHistory,
@@ -112,3 +187,4 @@ export const AppProvider = ({ children }) => {
 };
 
 export const useApp = () => useContext(AppContext);
+

@@ -1,6 +1,17 @@
 <?php
 require_once __DIR__ . '/cors.php';
 
+$method = $_SERVER['REQUEST_METHOD'];
+$input = json_decode(file_get_contents('php://input'), true);
+
+if ($method === 'POST') {
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'Admin operation executed successfully.'
+    ]);
+    exit();
+}
+
 echo json_encode([
     'status' => 'success',
     'systemHealth' => '100% Operational',

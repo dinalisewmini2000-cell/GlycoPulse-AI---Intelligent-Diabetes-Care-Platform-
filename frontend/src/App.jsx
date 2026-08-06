@@ -22,14 +22,28 @@ import { AdminPortal } from './components/admin/AdminPortal';
 // Common Components
 import { AIChatWidget } from './components/common/AIChatWidget';
 import { PDFExportModal } from './components/common/PDFExportModal';
+import { LoginModal } from './components/common/LoginModal';
 
 const MainContentArea = () => {
-  const { role, activeTab } = useApp();
+  const { role, activeTab, isAuthenticated } = useApp();
+
+  if (!isAuthenticated) {
+    return (
+      <main className="main-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+        <div className="glass-panel" style={{ padding: '3rem', borderRadius: '24px', textAlign: 'center', maxWidth: '480px' }}>
+          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.75rem' }}>Session Locked</h3>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+            Please sign in to access your GlycoPulse AI portal and healthcare telemetry data.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   const renderTabContent = () => {
-    if (role === 'doctor') return <DoctorPortal />;
-    if (role === 'caregiver') return <CaregiverPortal />;
-    if (role === 'admin') return <AdminPortal />;
+    if (role === 'doctor') return <DoctorPortal activeTab={activeTab} />;
+    if (role === 'caregiver') return <CaregiverPortal activeTab={activeTab} />;
+    if (role === 'admin') return <AdminPortal activeTab={activeTab} />;
 
     // Patient Tabs
     switch (activeTab) {
@@ -64,7 +78,9 @@ export default function App() {
         <AIChatWidget />
         <EmergencySOSModal />
         <PDFExportModal />
+        <LoginModal />
       </div>
     </AppProvider>
   );
 }
+

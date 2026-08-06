@@ -12,7 +12,10 @@ $doctorPatients = [
         'tirPercent' => 84,
         'alertStatus' => 'Stable',
         'lastVisit' => '2026-06-15',
-        'nextAppointment' => '2026-08-20'
+        'nextAppointment' => '2026-08-20',
+        'weightKg' => 64,
+        'phone' => '+1 555 349-2011',
+        'doctorNotes' => 'Patient adhering well to 1:10 carb ratio.'
     ],
     [
         'id' => 'pat-102',
@@ -24,7 +27,10 @@ $doctorPatients = [
         'tirPercent' => 58,
         'alertStatus' => 'Attention Needed (Hyperglycemia trend)',
         'lastVisit' => '2026-05-10',
-        'nextAppointment' => '2026-08-08'
+        'nextAppointment' => '2026-08-08',
+        'weightKg' => 88,
+        'phone' => '+1 555 882-1920',
+        'doctorNotes' => 'Recommend increasing Metformin to 1000mg BID.'
     ],
     [
         'id' => 'pat-103',
@@ -36,7 +42,10 @@ $doctorPatients = [
         'tirPercent' => 91,
         'alertStatus' => 'Optimal',
         'lastVisit' => '2026-07-18',
-        'nextAppointment' => '2026-08-15'
+        'nextAppointment' => '2026-08-15',
+        'weightKg' => 68,
+        'phone' => '+1 555 233-9011',
+        'doctorNotes' => 'Post-prandial spikes under control with low-GI diet.'
     ]
 ];
 
@@ -51,6 +60,14 @@ if ($method === 'POST') {
         ]);
         exit();
     }
+
+    if (isset($input['action']) && $input['action'] === 'addAppointment') {
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Appointment scheduled and HD Tele-Health video link generated.'
+        ]);
+        exit();
+    }
 }
 
 echo json_encode([
@@ -58,6 +75,7 @@ echo json_encode([
     'patients' => $doctorPatients,
     'upcomingAppointments' => [
         ['patientName' => 'Marcus Vance', 'date' => '2026-08-08 10:00 AM', 'reason' => 'HbA1c & Medication Review'],
-        ['patientName' => 'Elena Rostova', 'date' => '2026-08-15 02:30 PM', 'reason' => 'Gestational Diabetes Follow-up']
+        ['patientName' => 'Elena Rostova', 'date' => '2026-08-15 02:30 PM', 'reason' => 'Gestational Diabetes Follow-up'],
+        ['patientName' => 'Sarah Jenkins', 'date' => '2026-08-20 11:15 AM', 'reason' => 'Quarterly CGM Telemetry Review']
     ]
 ]);

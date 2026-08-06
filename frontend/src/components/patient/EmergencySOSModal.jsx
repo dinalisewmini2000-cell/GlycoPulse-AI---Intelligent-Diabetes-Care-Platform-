@@ -4,7 +4,7 @@ import { apiService } from '../../services/apiService';
 import { AlertTriangle, MapPin, Phone, ShieldCheck, CheckCircle2, X } from 'lucide-react';
 
 export const EmergencySOSModal = () => {
-  const { sosActive, setSosActive } = useApp();
+  const { sosActive, setSosActive, currentUser } = useApp();
   const [sosSent, setSosSent] = useState(false);
 
   if (!sosActive) return null;
@@ -39,7 +39,7 @@ export const EmergencySOSModal = () => {
             <CheckCircle2 size={54} style={{ margin: '0 auto 1rem auto' }} />
             <h3 style={{ fontSize: '1.3rem', fontWeight: 800 }}>LIVE EMERGENCY SOS BROADCASTED!</h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-main)', marginTop: '0.5rem' }}>
-              SMS & GPS location sent to David Jenkins (Spouse) & Dr. Vance. EMS dispatch notified.
+              SMS & GPS location sent to emergency contacts & Dr. Vance. EMS dispatch notified.
             </p>
             <div style={{ marginTop: '1.2rem', padding: '0.8rem', background: 'var(--bg-secondary)', borderRadius: '8px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
               GPS Location: 37.7749 N, -122.4194 W (San Francisco, CA)
@@ -50,10 +50,11 @@ export const EmergencySOSModal = () => {
             {/* Medical ID Preview */}
             <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '10px', border: 'var(--border-color)' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>DIGITAL MEDICAL ID</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0.2rem 0' }}>Sarah Jenkins</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--accent-rose)', fontWeight: 700 }}>Condition: Type 1 Diabetes Mellitus (Insulin Dependent)</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0.2rem 0' }}>{currentUser?.name || 'Sarah Jenkins'} ({currentUser?.email})</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--accent-rose)', fontWeight: 700 }}>Condition: {currentUser?.diabetesType || 'Type 1'} Diabetes Mellitus (Insulin Dependent)</div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>Blood Group: O+ | Allergies: Penicillin, Peanuts</div>
             </div>
+
 
             {/* Hypo Emergency Protocol */}
             <div style={{ background: 'rgba(245, 158, 11, 0.15)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
