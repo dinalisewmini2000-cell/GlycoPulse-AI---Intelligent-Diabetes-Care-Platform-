@@ -2,6 +2,7 @@ import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
+import { LandingPage } from './components/common/LandingPage';
 
 // Patient Components
 import { GlucoseDashboard } from './components/patient/GlucoseDashboard';
@@ -25,20 +26,7 @@ import { PDFExportModal } from './components/common/PDFExportModal';
 import { LoginModal } from './components/common/LoginModal';
 
 const MainContentArea = () => {
-  const { role, activeTab, isAuthenticated } = useApp();
-
-  if (!isAuthenticated) {
-    return (
-      <main className="main-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
-        <div className="glass-panel" style={{ padding: '3rem', borderRadius: '24px', textAlign: 'center', maxWidth: '480px' }}>
-          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.75rem' }}>Session Locked</h3>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            Please sign in to access your GlycoPulse AI portal and healthcare telemetry data.
-          </p>
-        </div>
-      </main>
-    );
-  }
+  const { role, activeTab } = useApp();
 
   const renderTabContent = () => {
     if (role === 'doctor') return <DoctorPortal activeTab={activeTab} />;
@@ -66,21 +54,34 @@ const MainContentArea = () => {
   );
 };
 
-export default function App() {
+const AppShell = () => {
+  const { isAuthenticated } = useApp();
+
   return (
-    <AppProvider>
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-primary)' }}>
-        <Navbar />
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+      <Navbar />
+      
+      {!isAuthenticated ? (
+        <LandingPage />
+      ) : (
         <div style={{ display: 'flex', flex: 1 }}>
           <Sidebar />
           <MainContentArea />
         </div>
-        <AIChatWidget />
-        <EmergencySOSModal />
-        <PDFExportModal />
-        <LoginModal />
-      </div>
+      )}
+
+      <AIChatWidget />
+      <EmergencySOSModal />
+      <PDFExportModal />
+      <LoginModal />
+    </div>
+  );
+};
+
+export default function App() {
+  return (
+    <AppProvider>
+      <AppShell />
     </AppProvider>
   );
 }
-
