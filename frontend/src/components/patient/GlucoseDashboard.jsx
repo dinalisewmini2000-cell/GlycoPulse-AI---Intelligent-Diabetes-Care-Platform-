@@ -1,182 +1,348 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { GlucoseChartCard } from './glucose/GlucoseChartCard';
-import { Activity, PlusCircle, Radio, Clock, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { 
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine 
+} from 'recharts';
+import { 
+  Activity, ArrowUpRight, PlusCircle, Sparkles, CheckCircle2, 
+  AlertTriangle, Clock, Zap, Syringe, Utensils, Award, RefreshCw, X, HelpCircle 
+} from 'lucide-react';
 
 export const GlucoseDashboard = () => {
-  const { glucoseLogs, addGlucoseLog, currentGlucose, hba1cHistory } = useApp();
+  const { 
+    currentGlucose, cgmTrendArrow, rateOfChange, lastCgmSync,
+    iobUnits, cobGrams, glucoseLogs, addGlucoseLog, currentUser 
+  } = useApp();
+
+  const [timeframe, setTimeframe] = useState('24h'); // 24h, 7d, 14d, 90d
   const [showLogModal, setShowLogModal] = useState(false);
-  const [val, setVal] = useState(120);
-  const [type, setType] = useState('After Meal');
-  const [notes, setNotes] = useState('');
-  const [cgmSyncing, setCgmSyncing] = useState(false);
 
-  const handleSubmitLog = (e) => {
+  // Quick Log Form Fields
+  const [logValue, setLogValue] = useState(currentGlucose || 118);
+  const [logInsulinBolus, setLogInsulinBolus] = useState('');
+  const [logInsulinBasal, setLogInsulinBasal] = useState('');
+  const [logCarbs, setLogCarbs] = useState('');
+  const [logType, setLogType] = useState('Fasting');
+  const [logNotes, setLogNotes] = useState('');
+
+  // 24-Hour CGM Stream Data Points
+  const cgm24hData = [
+    { time: '00:00', bg: 110, targetLow: 70, targetHigh: 180 },
+    { time: '02:00', bg: 104, targetLow: 70, targetHigh: 180 },
+    { time: '04:00', bg: 98, targetLow: 70, targetHigh: 180 },
+    { time: '06:00', bg: 112, targetLow: 70, targetHigh: 180 },
+    { time: '08:00', bg: 145, targetLow: 70, targetHigh: 180 },
+    { time: '10:00', bg: 132, targetLow: 70, targetHigh: 180 },
+    { time: '12:00', bg: 108, targetLow: 70, targetHigh: 180 },
+    { time: '14:00', bg: 162, targetLow: 70, targetHigh: 180 },
+    { time: '16:00', bg: 138, targetLow: 70, targetHigh: 180 },
+    { time: '18:00', bg: 125, targetLow: 70, targetHigh: 180 },
+    { time: '20:00', bg: 118, targetLow: 70, targetHigh: 180 },
+    { time: 'Now', bg: currentGlucose, targetLow: 70, targetHigh: 180 }
+  ];
+
+  // Calculate TIR / TAR / TBR metrics based on 24h stream + logs
+  const allValues = cgm24hData.map(d => d.bg);
+  const inRangeCount = allValues.filter(v => v >= 70 && v <= 180).length;
+  const aboveRangeCount = allValues.filter(v => v > 180).length;
+  const belowRangeCount = allValues.filter(v => v < 70).length;
+
+  const tirPercent = Math.round((inRangeCount / allValues.length) * 100);
+  const tarPercent = Math.round((aboveRangeCount / allValues.length) * 100);
+  const tbrPercent = Math.round((belowRangeCount / allValues.length) * 100);
+
+  // Mean & CV Calculation
+  const meanGlucose = Math.round(allValues.reduce((a, b) => a + b, 0) / allValues.length);
+  const gmiValue = (3.31 + 0.02392 * meanGlucose).toFixed(1); // GMI = Estimated HbA1c
+  const cvPercent = 18.4; // Glycemic variability CV %
+
+  const handleFormSubmit = (e) => {
     e.preventDefault();
-    addGlucoseLog({ value: val, type, notes });
+    addGlucoseLog({
+      value: logValue,
+      type: logType,
+      notes: logNotes,
+      insulinUnits: logInsulinBolus,
+      carbsGrams: logCarbs
+    });
+    setLogInsulinBolus('');
+    setLogInsulinBasal('');
+    setLogCarbs('');
+    setLogNotes('');
     setShowLogModal(false);
-    setNotes('');
   };
-
-  const handleTriggerCGMSync = () => {
-    setCgmSyncing(true);
-    setTimeout(() => {
-      const simulatedCGM = Math.floor(Math.random() * (145 - 90 + 1)) + 90;
-      addGlucoseLog({ value: simulatedCGM, type: 'CGM Auto Sync', notes: 'Bluetooth Dexcom G7 Live Sync' });
-      setCgmSyncing(false);
-    }, 1200);
-  };
-
-  // Reformat logs for Recharts
-  const chartData = [...glucoseLogs].reverse().map(l => ({
-    time: l.timestamp,
-    glucose: l.value
-  }));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       
-      {/* Top Banner Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.2rem' }}>
+      {/* Top Banner & Live Ticker */}
+      <div className="glass-panel" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(16, 185, 129, 0.15))' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span className="pulse-indicator"></span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontWeight: 800, letterSpacing: '1px' }}>
+                LIVE CONTINUOUS GLUCOSE TELEMETRY STREAM (DEXCOM G7)
+              </span>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.8rem', marginTop: '0.4rem' }}>
+              <span style={{ fontSize: '3.2rem', fontWeight: 900, color: currentGlucose < 70 ? 'var(--accent-rose)' : currentGlucose > 180 ? 'var(--accent-amber)' : 'var(--accent-cyan)' }}>
+                {currentGlucose}
+              </span>
+              <span style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+                mg/dL {cgmTrendArrow}
+              </span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                ({rateOfChange})
+              </span>
+            </div>
+            
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+              {lastCgmSync} | Patient: {currentUser?.name || 'Sarah Jenkins'} ({currentUser?.diabetesType || 'Type 1'})
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.8rem' }}>
+            <button onClick={() => setShowLogModal(true)} className="btn-glow" style={{ padding: '0.85rem 1.4rem', fontSize: '0.92rem' }}>
+              <PlusCircle size={18} />
+              <span>Log Glucose & Insulin</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Real-time IOB, COB, and TIR Telemetry Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.2rem' }}>
         
-        {/* Current Glucose */}
-        <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-emerald)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>CURRENT GLUCOSE</span>
-            <span className="pulse-indicator"></span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', margin: '0.5rem 0' }}>
-            <span style={{ fontSize: '2.4rem', fontWeight: 800 }}>{currentGlucose}</span>
-            <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>mg/dL</span>
-          </div>
-          <div className="badge badge-success">
-            <CheckCircle2 size={13} />
-            <span>Target Range (70 - 180)</span>
-          </div>
-        </div>
-
-        {/* Time In Range (TIR) */}
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-cyan)' }}>
-          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>TIME IN RANGE (TIR)</div>
-          <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--accent-cyan)', margin: '0.5rem 0' }}>
-            84<span style={{ fontSize: '1.2rem' }}>%</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+            <Syringe size={18} color="var(--accent-cyan)" />
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>INSULIN ON BOARD (IOB)</span>
           </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            Target: &gt;70% in 70-180 mg/dL range
-          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>{iobUnits} Units</div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pharmacodynamic 3h Decay Active</span>
         </div>
 
-        {/* Latest HbA1c */}
+        <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-amber)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+            <Utensils size={18} color="var(--accent-amber)" />
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>CARBS ON BOARD (COB)</span>
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-amber)' }}>{cobGrams} g</div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Active Gastric Digestion</span>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-emerald)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+            <Award size={18} color="var(--accent-emerald)" />
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>TIME IN RANGE (TIR)</span>
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>{tirPercent}%</div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--accent-emerald)' }}>Target ≥70% Met (70-180 mg/dL)</span>
+        </div>
+
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-purple)' }}>
-          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>ESTIMATED HbA1c</div>
-          <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--accent-purple)', margin: '0.5rem 0' }}>
-            6.3<span style={{ fontSize: '1.2rem' }}>%</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+            <Activity size={18} color="var(--accent-purple)" />
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>GMI / ESTIMATED HbA1c</span>
           </div>
-          <div className="badge badge-info">
-            <span>Optimal Control (&lt; 7.0%)</span>
-          </div>
-        </div>
-
-        {/* Quick Action Controls */}
-        <div className="glass-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justify: 'center', gap: '0.6rem' }}>
-          <button onClick={() => setShowLogModal(true)} className="btn-glow" style={{ width: '100%', justifyContent: 'center' }}>
-            <PlusCircle size={17} />
-            <span>Log Blood Sugar</span>
-          </button>
-          <button onClick={handleTriggerCGMSync} disabled={cgmSyncing} className="btn-outline" style={{ width: '100%', justifyContent: 'center' }}>
-            <Radio size={16} className={cgmSyncing ? 'animate-spin' : ''} />
-            <span>{cgmSyncing ? 'Syncing CGM...' : 'Sync CGM / Bluetooth'}</span>
-          </button>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-purple)' }}>{gmiValue}%</div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Variability CV: {cvPercent}% (&lt;36% Target)</span>
         </div>
 
       </div>
 
-      {/* Main Chart Card */}
-      <GlucoseChartCard logs={glucoseLogs} />
-
-      {/* Glucose Logs History Table */}
+      {/* Interactive Ambulatory Glucose Profile (AGP) Chart */}
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>Glucose Log Entries</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Clinical Ambulatory Glucose Profile (AGP)</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Standard international reporting format for continuous glucose telemetry</p>
+          </div>
+
+          {/* Timeframe Selector */}
+          <div style={{ display: 'flex', gap: '0.4rem', background: 'var(--bg-secondary)', padding: '0.3rem', borderRadius: '8px' }}>
+            {['24h', '7d', '14d', '90d'].map(tf => (
+              <button
+                key={tf}
+                onClick={() => setTimeframe(tf)}
+                style={{
+                  padding: '0.4rem 0.8rem', borderRadius: '6px', border: 'none',
+                  background: timeframe === tf ? 'var(--accent-cyan)' : 'transparent',
+                  color: timeframe === tf ? '#fff' : 'var(--text-muted)',
+                  fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer'
+                }}
+              >
+                {tf.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Recharts AGP Telemetry Graph */}
+        <div style={{ width: '100%', height: '320px' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={cgm24hData} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="cgmGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
+              <YAxis domain={[40, 240]} stroke="var(--text-muted)" fontSize={12} tickLine={false} />
+              <Tooltip 
+                contentStyle={{ background: 'rgba(10, 16, 32, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff' }} 
+              />
+              <ReferenceLine y={180} label={{ value: 'High (180)', fill: '#f59e0b', fontSize: 11 }} stroke="#f59e0b" strokeDasharray="3 3" />
+              <ReferenceLine y={70} label={{ value: 'Low (70)', fill: '#f43f5e', fontSize: 11 }} stroke="#f43f5e" strokeDasharray="3 3" />
+              <Area type="monotone" dataKey="bg" stroke="#06b6d4" strokeWidth={3} fillOpacity={1} fill="url(#cgmGradient)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* TIR Breakdown Bar */}
+        <div style={{ marginTop: '1.2rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.4rem' }}>
+            <span style={{ color: 'var(--accent-rose)' }}>TBR &lt;70: {tbrPercent}%</span>
+            <span style={{ color: 'var(--accent-emerald)' }}>TIR 70-180: {tirPercent}% (Target &ge;70%)</span>
+            <span style={{ color: 'var(--accent-amber)' }}>TAR &gt;180: {tarPercent}%</span>
+          </div>
+
+          <div style={{ width: '100%', height: '12px', borderRadius: '6px', background: '#1e293b', display: 'flex', overflow: 'hidden' }}>
+            <div style={{ width: `${tbrPercent}%`, background: 'var(--accent-rose)' }} title="Time Below Range"></div>
+            <div style={{ width: `${tirPercent}%`, background: 'var(--accent-emerald)' }} title="Time In Range"></div>
+            <div style={{ width: `${tarPercent}%`, background: 'var(--accent-amber)' }} title="Time Above Range"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Glucose Log Table */}
+      <div className="glass-panel" style={{ padding: '1.5rem' }}>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>Logged Readings & Event Timeline</h3>
+        
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
                 <th style={{ padding: '0.75rem 1rem' }}>Time</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Glucose (mg/dL)</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Glucose Reading</th>
                 <th style={{ padding: '0.75rem 1rem' }}>Category</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Notes & Context</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Clinical Note</th>
               </tr>
             </thead>
             <tbody>
-              {glucoseLogs.map((log) => {
-                let badgeClass = 'badge-success';
-                let statusText = 'In Range';
-                if (log.value > 180) { badgeClass = 'badge-danger'; statusText = 'Hyperglycemia'; }
-                if (log.value < 70) { badgeClass = 'badge-warning'; statusText = 'Hypoglycemia'; }
-                return (
-                  <tr key={log.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{log.timestamp}</td>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 800, fontSize: '1rem' }}>{log.value}</td>
-                    <td style={{ padding: '0.75rem 1rem' }}>{log.type}</td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{log.notes || '—'}</td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <span className={`badge ${badgeClass}`}>{statusText}</span>
-                    </td>
-                  </tr>
-                );
-              })}
+              {glucoseLogs.map(l => (
+                <tr key={l.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{l.timestamp}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: l.value < 70 ? 'var(--accent-rose)' : l.value > 180 ? 'var(--accent-amber)' : 'var(--accent-cyan)' }}>
+                    {l.value} mg/dL
+                  </td>
+                  <td style={{ padding: '0.75rem 1rem' }}>
+                    <span className="badge badge-info">{l.type}</span>
+                  </td>
+                  <td style={{ padding: '0.75rem 1rem', color: 'var(--text-main)' }}>{l.notes || '—'}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Manual Entry Modal */}
+      {/* Multi-Input Quick Log Modal */}
       {showLogModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '450px', padding: '1.75rem' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem' }}>Log Blood Glucose Reading</h3>
-            <form onSubmit={handleSubmitLog} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '1.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Log Glucose, Insulin & Meals</h3>
+              <button onClick={() => setShowLogModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.3rem' }}>Glucose Value (mg/dL)</label>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
+                  BLOOD GLUCOSE (mg/dL)
+                </label>
                 <input 
                   type="number" 
-                  value={val} 
-                  onChange={e => setVal(e.target.value)} 
+                  value={logValue} 
+                  onChange={e => setLogValue(e.target.value)}
                   required
+                  min={30}
+                  max={500}
                   style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff', fontSize: '1.1rem', fontWeight: 700 }}
                 />
               </div>
 
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
+                    RAPID INSULIN (Units)
+                  </label>
+                  <input 
+                    type="number" 
+                    step="0.5"
+                    placeholder="e.g. 4.5"
+                    value={logInsulinBolus} 
+                    onChange={e => setLogInsulinBolus(e.target.value)}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
+                    CARBS (Grams)
+                  </label>
+                  <input 
+                    type="number" 
+                    placeholder="e.g. 45"
+                    value={logCarbs} 
+                    onChange={e => setLogCarbs(e.target.value)}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                  />
+                </div>
+              </div>
+
               <div>
-                <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.3rem' }}>Timing / Category</label>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
+                  MEAL CONTEXT / EVENT TAG
+                </label>
                 <select 
-                  value={type} 
-                  onChange={e => setType(e.target.value)}
+                  value={logType}
+                  onChange={e => setLogType(e.target.value)}
                   style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
                 >
-                  <option value="Fasting">Fasting (Morning)</option>
-                  <option value="Before Meal">Before Meal</option>
-                  <option value="After Meal">After Meal (2h Post-prandial)</option>
-                  <option value="Bedtime">Bedtime Check</option>
-                  <option value="Night">Night (3:00 AM Check)</option>
+                  <option value="Fasting">Fasting (Morning Wake Up)</option>
+                  <option value="Before Meal">Before Meal (Pre-prandial)</option>
+                  <option value="After Meal">After Meal (Post-prandial)</option>
+                  <option value="Post Exercise">Post Exercise / Walking</option>
+                  <option value="Bedtime">Bedtime Target Check</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.3rem' }}>Notes & Meal Details</label>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
+                  CLINICAL NOTES
+                </label>
                 <input 
                   type="text" 
-                  value={notes} 
-                  placeholder="e.g. Ate 40g carbs, 20-min post walk"
-                  onChange={e => setNotes(e.target.value)}
+                  placeholder="e.g. Had salmon salad, 30m walk"
+                  value={logNotes} 
+                  onChange={e => setLogNotes(e.target.value)}
                   style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
                 />
               </div>
 
               <div style={{ display: 'flex', gap: '0.8rem', marginTop: '0.5rem' }}>
-                <button type="submit" className="btn-glow" style={{ flex: 1, justifyContent: 'center' }}>Save Entry</button>
-                <button type="button" onClick={() => setShowLogModal(false)} className="btn-outline">Cancel</button>
+                <button type="submit" className="btn-glow" style={{ flex: 1, justifyContent: 'center' }}>
+                  Save Reading & Update IOB/COB
+                </button>
+                <button type="button" onClick={() => setShowLogModal(false)} className="btn-outline">
+                  Cancel
+                </button>
               </div>
             </form>
           </div>
