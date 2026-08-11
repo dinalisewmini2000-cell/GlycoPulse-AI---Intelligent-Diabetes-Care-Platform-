@@ -1,5 +1,39 @@
 <?php
 require_once __DIR__ . '/cors.php';
+require_once __DIR__ . '/config/database.php';
+
+use Config\Database;
+
+$pdo = Database::getConnection();
+$dbDriver = Database::getDriver();
+
+$method = $_SERVER['REQUEST_METHOD'];
+$input = json_decode(file_get_contents('php://input'), true);
+
+if ($method === 'POST') {
+    if (isset($input['action']) && $input['action'] === 'addPrescription') {
+        $patientId = $input['patientId'] ?? 'pat-101';
+        $patientName = $input['patientName'] ?? 'Sarah Jenkins';
+        $doctorName = $input['doctorName'] ?? 'Dr. Robert Vance, MD';
+        $medName = $input['medicationName'] ?? 'Metformin';
+        $dosage = $input['dosage'] ?? '500mg';
+        $frequency = $input['frequency'] ?? 'Twice daily with meals';
+
+        $stmt = $pdo->prepare("INSERT INTO prescriptions (patient_id, patient_name, doctor_name, medication_name, dosage, frequency) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$patientId, $patientName, $doctorName, $medName, $dosage, $frequency]);
+
+        echo json_encode([
+            'status' => 'success',
+            'database' => $dbDriver,
+            'message' => 'Prescription saved to ' . strtoupper($dbDriver) . ' SQL DB and synced to patient digital wallet.'
+        ]);
+        exit();
+    }
+}
+
+// Fetch patients from SQL users table
+$stmt = $pdo->query("SELECT user_uid as id, full_name as name, diabetes_type as type, role FROM users WHERE role = 'patient'");
+$patientUsers = $stmt->fetchAll();
 
 $doctorPatients = [
     [
@@ -49,30 +83,15 @@ $doctorPatients = [
     ]
 ];
 
-$method = $_SERVER['REQUEST_METHOD'];
-$input = json_decode(file_get_contents('php://input'), true);
-
-if ($method === 'POST') {
-    if (isset($input['action']) && $input['action'] === 'addPrescription') {
-        echo json_encode([
-            'status' => 'success',
-            'message' => 'Prescription updated and sent to patient digital health wallet.'
-        ]);
-        exit();
-    }
-
-    if (isset($input['action']) && $input['action'] === 'addAppointment') {
-        echo json_encode([
-            'status' => 'success',
-            'message' => 'Appointment scheduled and HD Tele-Health video link generated.'
-        ]);
-        exit();
-    }
-}
+// Query recent prescriptions from SQL
+$prescStmt = $pdo->query("SELECT * FROM prescriptions ORDER BY id DESC LIMIT 10");
+$prescriptions = $prescStmt->fetchAll();
 
 echo json_encode([
     'status' => 'success',
+    'database' => $dbDriver,
     'patients' => $doctorPatients,
+    'prescriptions' => $prescriptions,
     'upcomingAppointments' => [
         ['patientName' => 'Marcus Vance', 'date' => '2026-08-08 10:00 AM', 'reason' => 'HbA1c & Medication Review'],
         ['patientName' => 'Elena Rostova', 'date' => '2026-08-15 02:30 PM', 'reason' => 'Gestational Diabetes Follow-up'],

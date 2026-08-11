@@ -23,7 +23,7 @@ export const PDFExportModal = () => {
 
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Patient: ${currentUser?.name || 'Sarah Jenkins'} (${currentUser?.email || 'patient@glucocare.ai'}) | Type: ${currentUser?.diabetesType || 'Type 1'}`, 14, 30);
+    doc.text(`Patient: ${currentUser?.name || 'Dinali Bhagya'} (${currentUser?.email || 'dinali@glucocare.ai'}) | Type: ${currentUser?.diabetesType || 'Type 1'}`, 14, 30);
     doc.text(`Telemetry Range: Past ${dateRange} Days | Report Generated: ${new Date().toLocaleDateString()}`, 14, 36);
     doc.text(`Attending Physician: Dr. Robert Vance, MD (Endocrinology & Diabetology)`, 14, 42);
 

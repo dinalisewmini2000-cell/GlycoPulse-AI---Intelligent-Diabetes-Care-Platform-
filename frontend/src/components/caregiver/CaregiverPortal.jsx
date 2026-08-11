@@ -10,8 +10,8 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
   const { currentUser } = useApp();
 
   const [patientData, setPatientData] = useState({
-    patientName: 'Sarah Jenkins',
-    relationship: 'Spouse',
+    patientName: 'Dinali Bhagya',
+    relationship: 'Family Caregiver',
     currentGlucose: 118,
     statusText: 'Normal & Active',
     lastLogged: '12 mins ago (Bedtime Check)',
@@ -28,7 +28,7 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
 
   // Modal States
   const [showSmsModal, setShowSmsModal] = useState(false);
-  const [smsText, setSmsText] = useState('Hi Sarah, checking in on your evening blood sugar reading!');
+  const [smsText, setSmsText] = useState('Hi Dinali, checking in on your evening blood sugar reading!');
   const [smsSent, setSmsSent] = useState(false);
 
   const [showNoteModal, setShowNoteModal] = useState(false);

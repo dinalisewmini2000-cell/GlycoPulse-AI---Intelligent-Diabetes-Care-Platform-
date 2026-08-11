@@ -12,5 +12,10 @@ frontend/build/
 .env
 .env.local
 
+# Database
+backend/data/
+*.sqlite
+*.db
+
 # Logs
 *.log

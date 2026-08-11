@@ -56,10 +56,18 @@ export const GlucoseDashboard = () => {
   const gmiValue = (3.31 + 0.02392 * meanGlucose).toFixed(1); // GMI = Estimated HbA1c
   const cvPercent = 18.4; // Glycemic variability CV %
 
+  const handleOpenModal = () => {
+    setLogValue(currentGlucose || 118);
+    setShowLogModal(true);
+  };
+
   const handleFormSubmit = (e) => {
     e.preventDefault();
+    const val = parseInt(logValue, 10);
+    if (isNaN(val) || val < 30 || val > 500) return;
+
     addGlucoseLog({
-      value: logValue,
+      value: val,
       type: logType,
       notes: logNotes,
       insulinUnits: logInsulinBolus,
@@ -104,7 +112,7 @@ export const GlucoseDashboard = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '0.8rem' }}>
-            <button onClick={() => setShowLogModal(true)} className="btn-glow" style={{ padding: '0.85rem 1.4rem', fontSize: '0.92rem' }}>
+            <button onClick={handleOpenModal} className="btn-glow" style={{ padding: '0.85rem 1.4rem', fontSize: '0.92rem' }}>
               <PlusCircle size={18} />
               <span>Log Glucose & Insulin</span>
             </button>

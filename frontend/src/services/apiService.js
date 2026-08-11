@@ -9,17 +9,17 @@ async function fetchAPI(endpoint, options = {}) {
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.warn(`[API Fallback] Endpoint ${endpoint} unreachable via PHP server, utilizing client state:`, err.message);
-    return null;
+    console.warn(`[PHP Backend Offline] ${endpoint} failed:`, err.message);
+    return { isError: true, offline: true, error: err.message };
   }
 }
 
 export const apiService = {
+  checkBackendHealth: () => fetchAPI('auth.php'),
   getAuth: () => fetchAPI('auth.php'),
   login: (credentials) => fetchAPI('auth.php?action=login', { method: 'POST', body: JSON.stringify(credentials) }),
   signup: (userData) => fetchAPI('auth.php?action=signup', { method: 'POST', body: JSON.stringify(userData) }),
 
-  
   getGlucoseData: () => fetchAPI('glucose.php'),
   logGlucose: (data) => fetchAPI('glucose.php', { method: 'POST', body: JSON.stringify(data) }),
   

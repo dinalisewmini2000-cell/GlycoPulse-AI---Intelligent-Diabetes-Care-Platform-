@@ -4,9 +4,12 @@ import { apiService } from '../services/apiService';
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  // Theme & Language State
+  // Theme State
   const [theme, setTheme] = useState(() => localStorage.getItem('glycopulse_theme') || 'dark');
-  const [language, setLanguage] = useState(() => localStorage.getItem('glycopulse_lang') || 'en');
+
+  // Backend & SQL DB Status State
+  const [isBackendConnected, setIsBackendConnected] = useState(false);
+  const [dbEngineName, setDbEngineName] = useState('Checking...');
 
   // Active Main Tab
   const [activeTab, setActiveTab] = useState('glucose'); 
@@ -20,87 +23,160 @@ export const AppProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('glycopulse_auth') === 'true';
   });
+  const [role, setRole] = useState(() => localStorage.getItem('glycopulse_role') || 'patient');
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('glycopulse_user');
-    return saved ? JSON.parse(saved) : {
-      id: 'pat-101',
-      name: 'Sarah Jenkins',
-      email: 'patient@glucocare.ai',
-      role: 'patient',
-      diabetesType: 'Type 1'
-    };
-  });
+
+  const formatNameByRole = (name, targetRole) => {
+    const raw = (name || '').trim();
+    const clean = raw.replace(/^Dr\.\s*/i, '').trim();
+    if (!clean) {
+      if (targetRole === 'doctor') return 'Dr. Kasun Jayalath';
+      if (targetRole === 'patient') return 'Kasun Jayalath';
+      if (targetRole === 'admin') return 'System Administrator';
+      return 'Kasun Jayalath';
+    }
+    return targetRole === 'doctor' ? `Dr. ${clean}` : clean;
+  };
 
   const defaultProfiles = {
-    patient: { id: 'pat-101', name: 'Sarah Jenkins', email: 'patient@glucocare.ai', role: 'patient', diabetesType: 'Type 1' },
-    doctor: { id: 'doc-201', name: 'Dr. Robert Vance, MD', email: 'doctor@glucocare.ai', role: 'doctor', specialty: 'Endocrinology' },
+    patient: { id: 'pat-976', name: 'Kasun Jayalath', email: 'kasun@glucocare.ai', role: 'patient', diabetesType: 'Pre-diabetes' },
+    doctor: { id: 'doc-598', name: 'Dr. Kasun Jayalath', email: 'kasun.doc@glucocare.ai', role: 'doctor', specialty: 'Endocrinology & Diabetology' },
     caregiver: { id: 'cg-301', name: 'David Jenkins', email: 'caregiver@glucocare.ai', role: 'caregiver' },
     admin: { id: 'adm-401', name: 'System Administrator', email: 'admin@glucocare.ai', role: 'admin' }
   };
 
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('glycopulse_user');
+    const userRole = localStorage.getItem('glycopulse_role') || 'patient';
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.email !== 'patient@glucocare.ai' && parsed.email !== 'doctor@glucocare.ai' && parsed.email !== 'caregiver@glucocare.ai') {
+        const activeRole = parsed.role || userRole;
+        parsed.name = formatNameByRole(parsed.name, activeRole);
+        return parsed;
+      }
+    }
+    return defaultProfiles.patient;
+  });
+
+  // Check Backend Connection & Fetch DB Logs on Mount
+  const checkBackend = async (silent = false) => {
+    const health = await apiService.checkBackendHealth();
+    if (health && !health.offline && health.status === 'success') {
+      setIsBackendConnected(true);
+      setDbEngineName(health.database || 'SQL Database');
+
+      // Sync Glucose logs from real SQL DB
+      const gRes = await apiService.getGlucoseData();
+      if (gRes && gRes.logs && gRes.logs.length > 0) {
+        setGlucoseLogs(gRes.logs);
+      }
+    } else {
+      setIsBackendConnected(false);
+      setDbEngineName('Offline');
+      if (!silent) {
+        setToastAlert({
+          type: 'warning',
+          title: 'PHP BACKEND SERVER OFFLINE',
+          message: 'Start the PHP backend (php -S localhost:8000 -t backend) to connect to SQL database.'
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    checkBackend(true);
+    const interval = setInterval(() => {
+      checkBackend(true);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
   const loginUser = async (credentials) => {
     const res = await apiService.login(credentials);
-    const userRole = credentials.role || 'patient';
-    let userObj = defaultProfiles[userRole] ? { ...defaultProfiles[userRole] } : { id: 'usr-' + Date.now(), role: userRole };
+    const requestedRole = credentials.role || 'patient';
+    let userObj = defaultProfiles[requestedRole] ? { ...defaultProfiles[requestedRole] } : { id: 'usr-' + Date.now(), role: requestedRole };
 
     if (res && res.status === 'success' && res.user) {
       userObj = res.user;
+      setIsBackendConnected(true);
+      if (res.database) setDbEngineName(res.database);
+    } else if (res && res.offline) {
+      setIsBackendConnected(false);
+      setToastAlert({
+        type: 'warning',
+        title: 'PHP BACKEND UNREACHABLE',
+        message: 'Cannot authenticate with SQL DB because PHP server is offline.'
+      });
     }
 
-    // Override with custom credentials if specified
     if (credentials.name && credentials.name.trim()) {
       userObj.name = credentials.name.trim();
-    } else if (credentials.email && credentials.email !== defaultProfiles[userRole]?.email) {
-      const emailPrefix = credentials.email.split('@')[0];
-      userObj.email = credentials.email;
-      userObj.name = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
     }
     
+    const activeRole = userObj.role || requestedRole;
+    userObj.role = activeRole;
+    userObj.name = formatNameByRole(userObj.name, activeRole);
+
     setCurrentUser(userObj);
-    setRole(userRole);
+    setRole(activeRole);
     setIsAuthenticated(true);
     setAuthModalOpen(false);
 
     localStorage.setItem('glycopulse_auth', 'true');
     localStorage.setItem('glycopulse_user', JSON.stringify(userObj));
+    localStorage.setItem('glycopulse_role', activeRole);
 
-    if (userRole === 'doctor') setActiveTab('doctor_patients');
-    else if (userRole === 'caregiver') setActiveTab('caregiver_feed');
-    else if (userRole === 'admin') setActiveTab('admin_telemetry');
+    if (activeRole === 'doctor') setActiveTab('doctor_patients');
+    else if (activeRole === 'caregiver') setActiveTab('caregiver_feed');
+    else if (activeRole === 'admin') setActiveTab('admin_telemetry');
     else setActiveTab('glucose');
   };
 
   const signupUser = async (userData) => {
     const res = await apiService.signup(userData);
-    const userRole = userData.role || 'patient';
+    const requestedRole = userData.role || 'patient';
     let userObj = {
       id: 'user-' + Date.now(),
       name: userData.name || 'New Member',
       email: userData.email,
-      role: userRole,
+      role: requestedRole,
       diabetesType: userData.diabetesType || 'Type 2'
     };
 
     if (res && res.status === 'success' && res.user) {
       userObj = res.user;
+      setIsBackendConnected(true);
+      if (res.database) setDbEngineName(res.database);
+    } else if (res && res.offline) {
+      setIsBackendConnected(false);
+      setToastAlert({
+        type: 'warning',
+        title: 'PHP BACKEND UNREACHABLE',
+        message: 'Account not saved to SQL DB. Start PHP backend on port 8000.'
+      });
     }
 
     if (userData.name && userData.name.trim()) {
       userObj.name = userData.name.trim();
     }
 
+    const activeRole = userObj.role || requestedRole;
+    userObj.role = activeRole;
+    userObj.name = formatNameByRole(userObj.name, activeRole);
+
     setCurrentUser(userObj);
-    setRole(userRole);
+    setRole(activeRole);
     setIsAuthenticated(true);
     setAuthModalOpen(false);
 
     localStorage.setItem('glycopulse_auth', 'true');
     localStorage.setItem('glycopulse_user', JSON.stringify(userObj));
+    localStorage.setItem('glycopulse_role', activeRole);
 
-    if (userRole === 'doctor') setActiveTab('doctor_patients');
-    else if (userRole === 'caregiver') setActiveTab('caregiver_feed');
-    else if (userRole === 'admin') setActiveTab('admin_telemetry');
+    if (activeRole === 'doctor') setActiveTab('doctor_patients');
+    else if (activeRole === 'caregiver') setActiveTab('caregiver_feed');
+    else if (activeRole === 'admin') setActiveTab('admin_telemetry');
     else setActiveTab('glucose');
   };
 
@@ -114,25 +190,21 @@ export const AppProvider = ({ children }) => {
 
   // Health Data & Live Ticker State
   const [currentGlucose, setCurrentGlucose] = useState(118);
-  const [cgmTrendArrow, setCgmTrendArrow] = useState('↗'); // ↑, ↗, ➔, ↘, ↓
+  const [cgmTrendArrow, setCgmTrendArrow] = useState('↗'); 
   const [rateOfChange, setRateOfChange] = useState('+1.2 mg/dL/min');
   const [lastCgmSync, setLastCgmSync] = useState('Just now (Dexcom G7)');
 
-  // IOB (Insulin on Board) & COB (Carbs on Board)
-  const [iobUnits, setIobUnits] = useState(1.4); // Rapid acting insulin active in blood
-  const [cobGrams, setCobGrams] = useState(18);  // Carbs digesting in stomach
+  const [iobUnits, setIobUnits] = useState(1.4); 
+  const [cobGrams, setCobGrams] = useState(18);  
 
-  const [glucoseLogs, setGlucoseLogs] = useState(() => {
-    const saved = localStorage.getItem('glycopulse_logs');
-    return saved ? JSON.parse(saved) : [
-      { id: 'g1', timestamp: '07:30 AM', value: 112, type: 'Fasting', notes: 'Morning wake up' },
-      { id: 'g2', timestamp: '08:30 AM', value: 145, type: 'After Meal', notes: 'Oatmeal & berries' },
-      { id: 'g3', timestamp: '12:15 PM', value: 108, type: 'Before Meal', notes: 'Pre-lunch check' },
-      { id: 'g4', timestamp: '01:45 PM', value: 162, type: 'After Meal', notes: 'Chicken salad & quinoa' },
-      { id: 'g5', timestamp: '05:00 PM', value: 125, type: 'Before Meal', notes: 'Post 30m walk' },
-      { id: 'g6', timestamp: '09:00 PM', value: 118, type: 'Bedtime', notes: 'Night target reached' }
-    ];
-  });
+  const [glucoseLogs, setGlucoseLogs] = useState([
+    { id: 'g1', timestamp: '07:30 AM', value: 112, type: 'Fasting', notes: 'Morning wake up' },
+    { id: 'g2', timestamp: '08:30 AM', value: 145, type: 'After Meal', notes: 'Oatmeal & berries' },
+    { id: 'g3', timestamp: '12:15 PM', value: 108, type: 'Before Meal', notes: 'Pre-lunch check' },
+    { id: 'g4', timestamp: '01:45 PM', value: 162, type: 'After Meal', notes: 'Chicken salad & quinoa' },
+    { id: 'g5', timestamp: '05:00 PM', value: 125, type: 'Before Meal', notes: 'Post 30m walk' },
+    { id: 'g6', timestamp: '09:00 PM', value: 118, type: 'Bedtime', notes: 'Night target reached' }
+  ]);
 
   const [hba1cHistory] = useState([
     { date: 'Jan 2026', value: 6.8 },
@@ -156,38 +228,22 @@ export const AppProvider = ({ children }) => {
       { time: '+120m', value: 122 }
     ]
   });
-
-  // Role Management
-  const [role, setRole] = useState(() => currentUser?.role || 'patient');
-
-  // Gamification & Streaks
-  const [streakDays, setStreakDays] = useState(14);
-  const [healthScore, setHealthScore] = useState(88);
-
-  // Sync state to local storage on changes
-  useEffect(() => {
-    localStorage.setItem('glycopulse_logs', JSON.stringify(glucoseLogs));
-  }, [glucoseLogs]);
+  const [streakDays] = useState(14);
+  const [healthScore] = useState(88);
 
   useEffect(() => {
     localStorage.setItem('glycopulse_theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  useEffect(() => {
-    localStorage.setItem('glycopulse_lang', language);
-  }, [language]);
-
   // LIVE 5-SECOND CONTINUOUS GLUCOSE TELEMETRY STREAM TICKER
   useEffect(() => {
     const ticker = setInterval(() => {
-      // Simulate micro-fluctuations (-3 to +3 mg/dL)
       const delta = Math.floor(Math.random() * 7) - 3;
       
       setCurrentGlucose((prev) => {
         const nextVal = Math.max(55, Math.min(260, prev + delta));
         
-        // Compute trend arrow & rate of change
         if (delta >= 3) {
           setCgmTrendArrow('↑');
           setRateOfChange(`+${(delta * 0.8).toFixed(1)} mg/dL/min`);
@@ -205,7 +261,6 @@ export const AppProvider = ({ children }) => {
           setRateOfChange(`${(delta * 0.8).toFixed(1)} mg/dL/min`);
         }
 
-        // Trigger Global Toast Alert for Hypoglycemia (<70 mg/dL)
         if (nextVal < 70) {
           setToastAlert({
             type: 'danger',
@@ -217,7 +272,6 @@ export const AppProvider = ({ children }) => {
         return nextVal;
       });
 
-      // Slowly decay IOB & COB over time
       setIobUnits((prev) => Math.max(0, parseFloat((prev - 0.05).toFixed(2))));
       setCobGrams((prev) => Math.max(0, Math.round(prev - 0.5)));
       setLastCgmSync('Just now (Dexcom G7 Live Sync)');
@@ -231,24 +285,42 @@ export const AppProvider = ({ children }) => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  const addGlucoseLog = (newLog) => {
-    const updated = [newLog, ...glucoseLogs];
-    setGlucoseLogs(updated);
-    
-    // Re-evaluate AI prediction based on new log
+  const addGlucoseLog = async (newLog) => {
+    // Send to PHP Backend SQL Database
+    const res = await apiService.logGlucose({
+      userId: currentUser?.id || 'pat-101',
+      value: newLog.value,
+      type: newLog.type,
+      notes: newLog.notes
+    });
+
+    if (res && res.status === 'success' && res.log) {
+      setGlucoseLogs((prev) => [res.log, ...prev]);
+      setIsBackendConnected(true);
+      if (res.database) setDbEngineName(res.database);
+      
+      setToastAlert({
+        type: 'success',
+        title: 'SAVED TO SQL DATABASE',
+        message: `Glucose ${newLog.value} mg/dL written to SQL DB (${res.database || 'PDO'}).`
+      });
+    } else {
+      setIsBackendConnected(false);
+      setGlucoseLogs((prev) => [newLog, ...prev]);
+      setToastAlert({
+        type: 'warning',
+        title: 'PHP BACKEND OFFLINE',
+        message: `Saved to memory only. Start PHP backend server (php -S localhost:8000 -t backend) to persist in SQL DB.`
+      });
+    }
+
     setAiPrediction((prev) => ({
       ...prev,
       predictedGlucose2h: Math.round(newLog.value + (cobGrams * 0.8) - (iobUnits * 12)),
       explanation: `Latest log entry (${newLog.value} mg/dL) incorporated into neural pharmacokinetic model.`
     }));
 
-    // Trigger success toast
-    setToastAlert({
-      type: 'success',
-      title: 'GLUCOSE ENTRY LOGGED',
-      message: `Recorded ${newLog.value} mg/dL (${newLog.type}) successfully.`
-    });
-    setTimeout(() => setToastAlert(null), 4000);
+    setTimeout(() => setToastAlert(null), 5000);
   };
 
   return (
@@ -256,8 +328,9 @@ export const AppProvider = ({ children }) => {
       value={{
         theme,
         toggleTheme,
-        language,
-        setLanguage,
+        isBackendConnected,
+        dbEngineName,
+        checkBackend,
         role,
         setRole,
         activeTab,

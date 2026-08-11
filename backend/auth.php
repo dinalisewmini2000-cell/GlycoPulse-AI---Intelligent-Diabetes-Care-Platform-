@@ -1,81 +1,94 @@
 <?php
 require_once __DIR__ . '/cors.php';
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config/security.php';
 
-$dbPath = __DIR__ . '/data/db.json';
-$defaultUsers = [
-    [
-        'id' => 'pat-101',
-        'email' => 'patient@glucocare.ai',
-        'name' => 'Sarah Jenkins',
-        'role' => 'patient',
-        'diabetesType' => 'Type 1'
-    ],
-    [
-        'id' => 'doc-201',
-        'email' => 'doctor@glucocare.ai',
-        'name' => 'Dr. Robert Vance, MD',
-        'role' => 'doctor',
-        'specialty' => 'Endocrinology & Diabetology'
-    ],
-    [
-        'id' => 'cg-301',
-        'email' => 'caregiver@glucocare.ai',
-        'name' => 'David Jenkins',
-        'role' => 'caregiver'
-    ],
-    [
-        'id' => 'adm-401',
-        'email' => 'admin@glucocare.ai',
-        'name' => 'System Administrator',
-        'role' => 'admin'
-    ]
-];
+use Config\Database;
+use Config\Security;
 
-$dbData = ['users' => $defaultUsers];
-if (file_exists($dbPath)) {
-    $raw = file_get_contents($dbPath);
-    $decoded = json_decode($raw, true);
-    if (is_array($decoded) && isset($decoded['users']) && is_array($decoded['users'])) {
-        $dbData['users'] = $decoded['users'];
-    }
-}
+$pdo = Database::getConnection();
+$dbDriver = Database::getDriver();
 
-$users = $dbData['users'];
 $method = $_SERVER['REQUEST_METHOD'];
-$input = json_decode(file_get_contents('php://input'), true);
+$rawInput = json_decode(file_get_contents('php://input'), true) ?? [];
+$input = Security::sanitizeInput($rawInput);
+
+if ($method === 'GET') {
+    // Health check & list users
+    $stmt = $pdo->query("SELECT user_uid as id, email, full_name as name, role, diabetes_type as diabetesType, specialty FROM users");
+    $users = $stmt->fetchAll();
+    
+    echo json_encode([
+        'status' => 'success',
+        'database' => $dbDriver === 'sqlite' ? 'SQLite (PDO Embedded)' : 'MySQL (PDO Remote)',
+        'users' => $users
+    ]);
+    exit();
+}
 
 if ($method === 'POST') {
     $action = isset($_GET['action']) ? $_GET['action'] : ($input['action'] ?? 'login');
-    
+
     if ($action === 'signup' || $action === 'register') {
         $name = trim($input['name'] ?? '');
-        if (empty($name)) {
-            $parts = explode('@', $input['email'] ?? 'user');
-            $name = ucfirst($parts[0]);
-        }
-        $email = trim($input['email'] ?? 'user@glycopulse.ai');
+        $email = trim($input['email'] ?? '');
+        $password = trim($rawInput['password'] ?? 'password123');
         $role = trim($input['role'] ?? 'patient');
         $diabetesType = trim($input['diabetesType'] ?? 'Type 2');
-        $specialty = trim($input['specialty'] ?? 'Endocrinology');
-        
+        $specialty = trim($input['specialty'] ?? '');
+
+        if (empty($name)) {
+            $parts = explode('@', $email);
+            $name = ucfirst($parts[0] ?? 'User');
+        }
+
+        $userUid = substr($role, 0, 3) . '-' . rand(100, 999);
+        $passHash = password_hash($password, PASSWORD_BCRYPT);
+
+        // Check if email exists
+        $checkStmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $checkStmt->execute([$email]);
+        $existing = $checkStmt->fetch();
+
+        if ($existing) {
+            $jwtToken = Security::generateJWT($existing['user_uid'], $existing['email'], $existing['role']);
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'Welcome back! Logged into existing account for ' . $existing['full_name'],
+                'database' => $dbDriver,
+                'token' => $jwtToken,
+                'user' => [
+                    'id' => $existing['user_uid'],
+                    'name' => $existing['full_name'],
+                    'email' => $existing['email'],
+                    'role' => $existing['role'],
+                    'diabetesType' => $existing['diabetes_type'],
+                    'specialty' => $existing['specialty']
+                ]
+            ]);
+            exit();
+        }
+
+        // Insert into real SQL Database table using parameterized query
+        $stmt = $pdo->prepare("INSERT INTO users (user_uid, email, password_hash, full_name, role, diabetes_type, specialty) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$userUid, $email, $passHash, $name, $role, $diabetesType, $specialty]);
+
         $newUser = [
-            'id' => substr($role, 0, 3) . '-' . rand(100, 999),
+            'id' => $userUid,
             'name' => $name,
             'email' => $email,
             'role' => $role,
             'diabetesType' => $diabetesType,
-            'specialty' => $specialty,
-            'createdAt' => date('Y-m-d H:i:s')
+            'specialty' => $specialty
         ];
 
-        // Add to persistent db.json
-        array_unshift($dbData['users'], $newUser);
-        file_put_contents($dbPath, json_encode($dbData, JSON_PRETTY_PRINT));
-        
+        $jwtToken = Security::generateJWT($userUid, $email, $role);
+
         echo json_encode([
             'status' => 'success',
-            'message' => 'Account created successfully for ' . $name,
-            'token' => 'jwt_token_' . md5($email . time()),
+            'message' => 'Account created & saved in ' . strtoupper($dbDriver) . ' database for ' . $name,
+            'database' => $dbDriver,
+            'token' => $jwtToken,
             'user' => $newUser
         ]);
         exit();
@@ -84,54 +97,90 @@ if ($method === 'POST') {
     if ($action === 'login') {
         $email = trim($input['email'] ?? '');
         $nameInput = trim($input['name'] ?? '');
-        $password = trim($input['password'] ?? '');
+        $password = trim($rawInput['password'] ?? '');
         $role = trim($input['role'] ?? 'patient');
-        
+
         $foundUser = null;
         if (!empty($email)) {
-            foreach ($users as $u) {
-                if (strtolower($u['email']) === strtolower($email)) {
-                    $foundUser = $u;
-                    break;
-                }
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE LOWER(email) = LOWER(?)");
+            $stmt->execute([$email]);
+            $userRow = $stmt->fetch();
+            if ($userRow) {
+                $userRole = !empty($role) ? $role : $userRow['role'];
+                $rawName = trim($userRow['full_name']);
+                $cleanName = preg_replace('/^Dr\.\s*/i', '', $rawName);
+                
+                // Doctor role receives "Dr. ", Patient/other roles receive clean name
+                $displayName = ($userRole === 'doctor') ? 'Dr. ' . $cleanName : $cleanName;
+
+                $foundUser = [
+                    'id' => $userRow['user_uid'],
+                    'email' => $userRow['email'],
+                    'name' => $displayName,
+                    'role' => $userRole,
+                    'diabetesType' => $userRow['diabetes_type'] ?? 'Pre-diabetes',
+                    'specialty' => $userRow['specialty'] ?? ''
+                ];
             }
         }
-        
+
         if (!$foundUser) {
-            // If custom email or name entered, construct dynamic user object
-            $displayName = $nameInput;
-            if (empty($displayName) && !empty($email)) {
-                $emailPrefix = explode('@', $email)[0];
-                $displayName = ucfirst(str_replace(['.', '_', '-'], ' ', $emailPrefix));
-            }
-            if (empty($displayName)) {
-                $displayName = $role === 'doctor' ? 'Dr. Medical Provider' : ($role === 'admin' ? 'System Admin' : 'Registered Patient');
-            }
+            // Find by role if email not found
+            $stmtRole = $pdo->prepare("SELECT * FROM users WHERE role = ? LIMIT 1");
+            $stmtRole->execute([$role]);
+            $roleRow = $stmtRole->fetch();
 
-            $foundUser = [
-                'id' => substr($role, 0, 3) . '-' . rand(100, 999),
-                'email' => !empty($email) ? $email : strtolower($role) . '@glucocare.ai',
-                'name' => $displayName,
-                'role' => $role,
-                'diabetesType' => 'Type 2'
-            ];
+            if ($roleRow && empty($email) && empty($nameInput)) {
+                $rawName = trim($roleRow['full_name']);
+                $cleanName = preg_replace('/^Dr\.\s*/i', '', $rawName);
+                $displayName = ($role === 'doctor') ? 'Dr. ' . $cleanName : $cleanName;
 
-            // Persist new user login
-            $dbData['users'][] = $foundUser;
-            file_put_contents($dbPath, json_encode($dbData, JSON_PRETTY_PRINT));
+                $foundUser = [
+                    'id' => $roleRow['user_uid'],
+                    'email' => $roleRow['email'],
+                    'name' => $displayName,
+                    'role' => $roleRow['role'],
+                    'diabetesType' => $roleRow['diabetes_type'],
+                    'specialty' => $roleRow['specialty']
+                ];
+            } else {
+                // Dynamically insert missing user into SQL database
+                $rawName = $nameInput;
+                if (empty($rawName) && !empty($email)) {
+                    $rawName = ucfirst(explode('@', $email)[0]);
+                }
+                if (empty($rawName)) {
+                    $rawName = 'Kasun Jayalath';
+                }
+                $cleanName = preg_replace('/^Dr\.\s*/i', '', $rawName);
+                $displayName = ($role === 'doctor') ? 'Dr. ' . $cleanName : $cleanName;
+                
+                $userUid = substr($role, 0, 3) . '-' . rand(100, 999);
+                $cleanEmail = !empty($email) ? $email : strtolower($role) . rand(10,99) . '@glucocare.ai';
+                $passHash = password_hash('password123', PASSWORD_BCRYPT);
+
+                $insertStmt = $pdo->prepare("INSERT INTO users (user_uid, email, password_hash, full_name, role, diabetes_type) VALUES (?, ?, ?, ?, ?, ?)");
+                $insertStmt->execute([$userUid, $cleanEmail, $passHash, $displayName, $role, 'Type 2']);
+
+                $foundUser = [
+                    'id' => $userUid,
+                    'email' => $cleanEmail,
+                    'name' => $displayName,
+                    'role' => $role,
+                    'diabetesType' => 'Type 2'
+                ];
+            }
         }
+
+        $jwtToken = Security::generateJWT($foundUser['id'], $foundUser['email'], $foundUser['role']);
 
         echo json_encode([
             'status' => 'success',
-            'message' => ucfirst($foundUser['role']) . ' authenticated successfully',
-            'token' => 'jwt_token_' . md5($foundUser['email'] . time()),
+            'message' => ucfirst($foundUser['role']) . ' authenticated via ' . strtoupper($dbDriver) . ' Database',
+            'database' => $dbDriver,
+            'token' => $jwtToken,
             'user' => $foundUser
         ]);
         exit();
     }
 }
-
-echo json_encode([
-    'status' => 'success',
-    'users' => $users
-]);

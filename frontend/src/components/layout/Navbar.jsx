@@ -1,15 +1,14 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
-  Activity, Sun, Moon, AlertTriangle, FileText, Globe, 
-  UserCheck, Stethoscope, HeartHandshake, ShieldAlert, LogOut, LogIn, User
+  Activity, Sun, Moon, AlertTriangle, FileText, 
+  UserCheck, Stethoscope, HeartHandshake, ShieldAlert, LogOut, LogIn
 } from 'lucide-react';
 
 export const Navbar = () => {
   const { 
-    role, setRole, 
+    role, 
     theme, toggleTheme, 
-    language, setLanguage, 
     setSosActive, setPdfModalOpen,
     isAuthenticated, setAuthModalOpen,
     currentUser, logoutUser
@@ -67,7 +66,6 @@ export const Navbar = () => {
           </div>
         )}
 
-
         {/* Action Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
           
@@ -88,7 +86,7 @@ export const Navbar = () => {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
                 <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                  {currentUser.name || 'Sarah Jenkins'}
+                  {currentUser.name || 'Dinali Bhagya'}
                 </span>
                 <span style={{ fontSize: '0.7rem', color: roleConfigs[role]?.color || '#06b6d4', fontWeight: 600 }}>
                   {role.toUpperCase()}
@@ -128,21 +126,6 @@ export const Navbar = () => {
             <span>Export Report</span>
           </button>
 
-          {/* Language Selector */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'var(--bg-secondary)', padding: '0.45rem 0.75rem', borderRadius: '8px', border: 'var(--border-color)', fontSize: '0.82rem', color: 'var(--text-muted)', gap: '0.3rem' }}>
-            <Globe size={15} />
-            <select 
-              value={language} 
-              onChange={(e) => setLanguage(e.target.value)}
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}
-            >
-              <option value="en">EN (English)</option>
-              <option value="es">ES (Español)</option>
-              <option value="hi">HI (Hindi)</option>
-              <option value="fr">FR (Français)</option>
-            </select>
-          </div>
-
           {/* Theme Toggle */}
           <button onClick={toggleTheme} className="btn-outline" style={{ padding: '0.5rem', borderRadius: '50%' }}>
             {theme === 'dark' ? <Sun size={18} color="#f59e0b" /> : <Moon size={18} color="#8b5cf6" />}
@@ -159,4 +142,3 @@ export const Navbar = () => {
     </nav>
   );
 };
-

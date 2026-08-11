@@ -10,13 +10,13 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
   const { currentUser } = useApp();
 
   const [patients, setPatients] = useState([
-    { id: 'pat-101', name: 'Sarah Jenkins', age: 34, type: 'Type 1', lastGlucose: 118, hba1c: 6.3, tirPercent: 84, alertStatus: 'Stable', lastVisit: '2026-06-15', nextAppointment: '2026-08-20', weightKg: 64, phone: '+1 555 349-2011', doctorNotes: 'Patient adhering well to 1:10 carb ratio.' },
+    { id: 'pat-976', name: 'Dinali Bhagya', age: 24, type: 'Type 1', lastGlucose: 118, hba1c: 6.3, tirPercent: 84, alertStatus: 'Stable', lastVisit: '2026-06-15', nextAppointment: '2026-08-20', weightKg: 64, phone: '+1 555 349-2011', doctorNotes: 'Patient adhering well to 1:10 carb ratio.' },
     { id: 'pat-102', name: 'Marcus Vance', age: 58, type: 'Type 2', lastGlucose: 195, hba1c: 7.8, tirPercent: 58, alertStatus: 'Attention Needed (Hyperglycemia)', lastVisit: '2026-05-10', nextAppointment: '2026-08-08', weightKg: 88, phone: '+1 555 882-1920', doctorNotes: 'Recommend increasing Metformin to 1000mg BID.' },
     { id: 'pat-103', name: 'Elena Rostova', age: 29, type: 'Gestational', lastGlucose: 98, hba1c: 5.9, tirPercent: 91, alertStatus: 'Optimal Control', lastVisit: '2026-07-18', nextAppointment: '2026-08-15', weightKg: 68, phone: '+1 555 233-9011', doctorNotes: 'Post-prandial spikes under control with low-GI diet.' }
   ]);
 
   const [prescriptions, setPrescriptions] = useState([
-    { id: 'rx-1', patientName: 'Sarah Jenkins', medName: 'Novolog (Insulin Aspart)', dose: '1 Unit per 10g Carbs', date: '2026-07-15', status: 'Active In Wallet' },
+    { id: 'rx-1', patientName: 'Dinali Bhagya', medName: 'Novolog (Insulin Aspart)', dose: '1 Unit per 10g Carbs', date: '2026-07-15', status: 'Active In Wallet' },
     { id: 'rx-2', patientName: 'Marcus Vance', medName: 'Metformin Hydrochloride 500mg', dose: '1 Tablet twice daily with meals', date: '2026-06-01', status: 'Refill Due' },
     { id: 'rx-3', patientName: 'Elena Rostova', medName: 'Lantus Solostar (Insulin Glargine)', dose: '8 Units at Bedtime', date: '2026-07-20', status: 'Active In Wallet' }
   ]);
@@ -24,7 +24,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
   const [appointments, setAppointments] = useState([
     { id: 'apt-1', patientName: 'Marcus Vance', date: '2026-08-08 10:00 AM', reason: 'HbA1c & Medication Review', type: 'Tele-Health Video', link: 'https://glycopulse.ai/telehealth/vance-882' },
     { id: 'apt-2', patientName: 'Elena Rostova', date: '2026-08-15 02:30 PM', reason: 'Gestational Diabetes Follow-up', type: 'In-Clinic Room 304', link: '' },
-    { id: 'apt-3', patientName: 'Sarah Jenkins', date: '2026-08-20 11:15 AM', reason: 'Quarterly CGM Telemetry Review', type: 'Tele-Health Video', link: 'https://glycopulse.ai/telehealth/jenkins-101' }
+    { id: 'apt-3', patientName: 'Dinali Bhagya', date: '2026-08-20 11:15 AM', reason: 'Quarterly CGM Telemetry Review', type: 'Tele-Health Video', link: 'https://glycopulse.ai/telehealth/dinali-bhagya' }
   ]);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,7 +32,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
 
   // Prescription Modal State
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
-  const [rxPatient, setRxPatient] = useState('Sarah Jenkins');
+  const [rxPatient, setRxPatient] = useState('Dinali Bhagya');
   const [medName, setMedName] = useState('Novolog (Insulin Aspart)');
   const [dosage, setDosage] = useState('1 Unit per 10g Carbs');
   const [rxSuccess, setRxSuccess] = useState(false);
