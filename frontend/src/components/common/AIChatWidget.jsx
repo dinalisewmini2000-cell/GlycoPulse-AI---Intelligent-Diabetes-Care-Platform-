@@ -5,7 +5,8 @@ import { MessageSquare, X, Send, Bot, User, Sparkles } from 'lucide-react';
 export const AIChatWidget = () => {
   const { role, currentUser, currentGlucose, glucoseLogs, iobUnits: iob = 1.4, cobGrams: cob = 18 } = useApp();
   
-  if (role === 'admin') return null;
+  // Show 24/7 AI Chatbot exclusively for Patient accounts
+  if (role !== 'patient') return null;
 
   const [isOpen, setIsOpen] = useState(false);
   const messagesEndRef = useRef(null);
