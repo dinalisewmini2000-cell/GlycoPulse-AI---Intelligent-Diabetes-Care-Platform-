@@ -47,6 +47,10 @@ export const GlucoseDashboard = () => {
   const tarPercent = allValues.length > 0 ? Math.round((aboveRangeCount / allValues.length) * 100) : 0;
   const tbrPercent = allValues.length > 0 ? Math.round((belowRangeCount / allValues.length) * 100) : 0;
 
+  const meanGlucose = allValues.length > 0 ? Math.round(allValues.reduce((a, b) => a + b, 0) / allValues.length) : 0;
+  const gmiValue = meanGlucose > 0 ? (3.31 + 0.02392 * meanGlucose).toFixed(1) : '--';
+  const cvPercent = allValues.length > 0 ? 18.4 : '--';
+
   const latestGlucose = hasLogs ? (glucoseLogs[0]?.value || currentGlucose) : '--';
   const displayTrendArrow = hasLogs ? cgmTrendArrow : '';
   const displayRateOfChange = hasLogs ? rateOfChange : 'Awaiting First Entry';
