@@ -88,6 +88,30 @@ export const AppProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, []);
 
+  const saveUserToGlobalList = (userObj) => {
+    try {
+      if (!userObj || !userObj.email) return;
+      const savedList = localStorage.getItem('glycopulse_all_users');
+      let list = savedList ? JSON.parse(savedList) : [];
+      if (!Array.isArray(list)) list = [];
+      const existsIndex = list.findIndex(u => u.email?.toLowerCase() === userObj.email?.toLowerCase());
+      const entry = {
+        id: userObj.id || ('usr-' + Date.now()),
+        name: userObj.name || 'GlycoPulse Patient',
+        email: userObj.email,
+        role: userObj.role || 'patient',
+        status: 'Active',
+        joined: new Date().toISOString().split('T')[0]
+      };
+      if (existsIndex >= 0) {
+        list[existsIndex] = { ...list[existsIndex], ...entry };
+      } else {
+        list.push(entry);
+      }
+      localStorage.setItem('glycopulse_all_users', JSON.stringify(list));
+    } catch (e) {}
+  };
+
   const loginUser = async (credentials) => {
     const res = await apiService.login(credentials);
     const requestedRole = credentials.role || 'patient';
@@ -114,6 +138,8 @@ export const AppProvider = ({ children }) => {
     const activeRole = userObj.role || requestedRole;
     userObj.role = activeRole;
     userObj.name = formatNameByRole(userObj.name, activeRole);
+
+    saveUserToGlobalList(userObj);
 
     setCurrentUser(userObj);
     setRole(activeRole);
@@ -152,6 +178,8 @@ export const AppProvider = ({ children }) => {
     const activeRole = userObj.role || requestedRole;
     userObj.role = activeRole;
     userObj.name = formatNameByRole(userObj.name, activeRole);
+
+    saveUserToGlobalList(userObj);
 
     setCurrentUser(userObj);
     setRole(activeRole);

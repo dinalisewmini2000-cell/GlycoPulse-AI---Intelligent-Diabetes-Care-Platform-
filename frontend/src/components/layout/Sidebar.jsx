@@ -32,7 +32,6 @@ export const Sidebar = () => {
 
   const adminTabs = [
     { id: 'admin_telemetry', label: 'System Telemetry', icon: Cpu },
-    { id: 'admin_ai_models', label: 'AI Model Accuracy', icon: Brain },
     { id: 'admin_users', label: 'User & Clinic Directory', icon: Users }
   ];
 

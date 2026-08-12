@@ -38,15 +38,64 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
   const [newUserRole, setNewUserRole] = useState('patient');
 
   useEffect(() => {
+    let list = [
+      { id: 'adm-401', name: 'System Administrator', email: 'admin@glycopulse.ai', role: 'admin', status: 'Active', joined: '2025-08-01' }
+    ];
+
+    try {
+      const stored = localStorage.getItem('glycopulse_all_users');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          parsed.forEach(u => {
+            if (u.email && !list.some(item => item.email?.toLowerCase() === u.email?.toLowerCase())) {
+              list.push(u);
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    // Include single logged-in patient or current active session if available
+    try {
+      const savedUser = localStorage.getItem('glycopulse_user');
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        if (parsedUser && parsedUser.email && !list.some(item => item.email?.toLowerCase() === parsedUser.email?.toLowerCase())) {
+          list.push({
+            id: parsedUser.id || ('usr-' + Date.now()),
+            name: parsedUser.name || 'GlycoPulse Patient',
+            email: parsedUser.email,
+            role: parsedUser.role || 'patient',
+            status: 'Active',
+            joined: new Date().toISOString().split('T')[0]
+          });
+        }
+      }
+    } catch (e) {}
+
+    if (currentUser && currentUser.email) {
+      if (!list.some(item => item.email?.toLowerCase() === currentUser.email?.toLowerCase())) {
+        list.push({
+          id: currentUser.id || ('usr-' + Date.now()),
+          name: currentUser.name || 'GlycoPulse Patient',
+          email: currentUser.email,
+          role: currentUser.role || 'patient',
+          status: 'Active',
+          joined: new Date().toISOString().split('T')[0]
+        });
+      }
+    }
+
+    setUserDirectory(list);
+    setAdminStats(prev => ({ ...prev, totalUsers: list.length }));
+
     apiService.getAdminStats().then(res => {
       if (res && res.status === 'success') {
         if (res.stats) setAdminStats(prev => ({ ...prev, ...res.stats }));
-        if (res.users && Array.isArray(res.users) && res.users.length > 0) {
-          setUserDirectory(res.users);
-        }
       }
     });
-  }, []);
+  }, [currentUser]);
 
   const handleToggleStatus = (userId) => {
     setUserDirectory(prev => prev.map(u => {
@@ -59,19 +108,14 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
   };
 
   const handleDeleteUser = (userId) => {
-    setUserDirectory(prev => prev.filter(u => u.id !== userId));
+    setUserDirectory(prev => {
+      const updated = prev.filter(u => u.id !== userId);
+      try {
+        localStorage.setItem('glycopulse_all_users', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
     setAdminStats(prev => ({ ...prev, totalUsers: Math.max(1, prev.totalUsers - 1) }));
-  };
-
-  const handleRetrainPipeline = () => {
-    setIsRetraining(true);
-    setTimeout(() => {
-      setIsRetraining(false);
-      setAiModels(prev => prev.map(m => ({
-        ...m,
-        precision: (parseFloat(m.precision) + 0.2).toFixed(1) + '%'
-      })));
-    }, 1500);
   };
 
   const handleCreateUser = async (e) => {
@@ -92,7 +136,13 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
       joined: new Date().toISOString().split('T')[0]
     };
 
-    setUserDirectory(prev => [newUser, ...prev]);
+    setUserDirectory(prev => {
+      const updated = [newUser, ...prev];
+      try {
+        localStorage.setItem('glycopulse_all_users', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
     setAdminStats(prev => ({ ...prev, totalUsers: prev.totalUsers + 1 }));
     setNewUserName('');
     setNewUserEmail('');
@@ -128,35 +178,43 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
           {/* Top Metrics */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.2rem' }}>
             <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-purple)' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>TOTAL REGISTERED USERS</span>
-              <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--accent-purple)', margin: '0.3rem 0' }}>
-                {adminStats.totalUsers.toLocaleString()}
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>SYSTEM OPERATIONAL HEALTH</span>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-emerald)', margin: '0.3rem 0' }}>
+                {adminStats.systemHealth}
               </div>
-              <div className="badge badge-info">+12% Growth this month</div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>MySQL PDO & Realtime Ticker Online</span>
             </div>
 
             <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-cyan)' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>VERIFIED PHYSICIANS</span>
-              <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--accent-cyan)', margin: '0.3rem 0' }}>
-                {adminStats.activeDoctors}
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>TOTAL REGISTERED ACCOUNTS</span>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-cyan)', margin: '0.3rem 0' }}>
+                {adminStats.totalUsers} Accounts
               </div>
-              <div className="badge badge-success">Hospital Networks Synced</div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>Multi-Role Isolation Active</span>
             </div>
 
-            <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-emerald)' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>ACTIVE CGM CONNECTIONS</span>
-              <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--accent-emerald)', margin: '0.3rem 0' }}>
-                {adminStats.activeCGMConnections.toLocaleString()}
+            <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-amber)' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>ACTIVE CLINIC DOCTORS</span>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-amber)', margin: '0.3rem 0' }}>
+                {adminStats.activeDoctors} Verified
               </div>
-              <div className="badge badge-success">Bluetooth 5.2 Active</div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Licensed Medical Practitioners</span>
+            </div>
+
+            <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-rose)' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>ACTIVE TELEMETRY CGM STREAM</span>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-rose)', margin: '0.3rem 0' }}>
+                {adminStats.activeCGMConnections} Streams
+              </div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>5-Second Intermittent Sync</span>
             </div>
           </div>
 
           {/* Infrastructure Health */}
           <div className="glass-panel" style={{ padding: '1.5rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>Server & API Throughput Metrics</h3>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>Backend Server Telemetry & Database Analytics</h3>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
               <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '10px' }}>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>DAILY GLUCOSE LOGS PROCESSED</span>
                 <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-cyan)', margin: '0.2rem 0' }}>
@@ -179,38 +237,6 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
             </div>
           </div>
 
-        </div>
-      )}
-
-      {/* Sub-View 2: AI Model Accuracy & Training Pipeline */}
-      {activeTab === 'admin_ai_models' && (
-        <div className="glass-panel" style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>AI Inference Engine & Model Calibration</h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Continuous deep learning evaluation on patient CGM telemetry data</p>
-            </div>
-
-            <button onClick={handleRetrainPipeline} disabled={isRetraining} className="btn-glow">
-              <RefreshCw size={16} className={isRetraining ? 'animate-spin' : ''} />
-              <span>{isRetraining ? 'Retraining Pipeline...' : 'Trigger AI Retraining'}</span>
-            </button>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.2rem' }}>
-            {aiModels.map((m, idx) => (
-              <div key={idx} style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: 'var(--border-color)', borderLeft: '4px solid var(--accent-purple)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>{m.version}</span>
-                  <div className="badge badge-success">{m.status}</div>
-                </div>
-
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0.5rem 0 0.2rem 0' }}>{m.name}</h4>
-                <div style={{ fontSize: '0.88rem', color: 'var(--accent-purple)', fontWeight: 700 }}>Model Precision: {m.precision}</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>Inference Latency: {m.latency}</div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 
