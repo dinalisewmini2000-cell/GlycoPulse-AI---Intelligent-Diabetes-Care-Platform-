@@ -1,35 +1,36 @@
 // GlycoPulse AI - Firebase Cloud Engine
 import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut,
   updateProfile
 } from 'firebase/auth';
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
   onSnapshot,
   serverTimestamp,
   setDoc,
   doc
 } from 'firebase/firestore';
 
-// Firebase Cloud Console Configuration
+// Firebase Cloud Console Configuration (Updated)
 const firebaseConfig = {
-  apiKey: import.meta.env?.VITE_FIREBASE_API_KEY || "AIzaSyDemoKey_GlycoPulse2026_Expo",
-  authDomain: import.meta.env?.VITE_FIREBASE_AUTH_DOMAIN || "glycopulse-ai.firebaseapp.com",
-  projectId: import.meta.env?.VITE_FIREBASE_PROJECT_ID || "glycopulse-ai",
-  storageBucket: import.meta.env?.VITE_FIREBASE_STORAGE_BUCKET || "glycopulse-ai.appspot.com",
-  messagingSenderId: import.meta.env?.VITE_FIREBASE_MESSAGING_SENDER_ID || "987654321012",
-  appId: import.meta.env?.VITE_FIREBASE_APP_ID || "1:987654321012:web:abcdef123456"
+  apiKey: "AIzaSyBg192wczSUPLDnOof2WbUVMkEANDM8BVE",
+  authDomain: "cardiora-new.firebaseapp.com",
+  projectId: "cardiora-new",
+  storageBucket: "cardiora-new.firebasestorage.app",
+  messagingSenderId: "828388347647",
+  appId: "1:828388347647:web:2514468aacb62818b1d7e2",
+  measurementId: "G-YDNN3241D7"
 };
 
 // Initialize Firebase App & Services
@@ -44,22 +45,22 @@ try {
   console.warn('[Firebase Init Warning] Offline or Demo Mode:', err.message);
 }
 
-export { 
-  app, 
-  auth, 
-  db, 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
-  onSnapshot, 
-  serverTimestamp, 
-  setDoc, 
-  doc 
+export {
+  app,
+  auth,
+  db,
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+  doc
 };
 
 // --- Firebase Authentication Helpers ---
@@ -79,7 +80,7 @@ export async function signupWithFirebase(email, password, displayName, role = 'p
     if (!auth) throw new Error('Firebase Auth not initialized');
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(userCredential.user, { displayName });
-    
+
     // Save User document to Firestore `users` collection
     if (db) {
       await setDoc(doc(db, 'users', userCredential.user.uid), {
@@ -136,7 +137,7 @@ export async function getGlucoseLogsFromFirebase(userId = 'pat-976') {
 
 export function listenToGlucoseRealtime(callback) {
   try {
-    if (!db) return () => {};
+    if (!db) return () => { };
     const q = query(collection(db, 'glucose_logs'), orderBy('createdAt', 'desc'), limit(15));
     return onSnapshot(q, (snapshot) => {
       const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -144,7 +145,7 @@ export function listenToGlucoseRealtime(callback) {
     });
   } catch (err) {
     console.warn('[Firestore Realtime Listener Fallback]:', err.message);
-    return () => {};
+    return () => { };
   }
 }
 

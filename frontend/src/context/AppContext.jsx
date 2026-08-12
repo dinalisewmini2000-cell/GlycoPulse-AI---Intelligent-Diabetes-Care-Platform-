@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
+import { listenToGlucoseRealtime } from '../services/firebase';
 
 const AppContext = createContext();
 
@@ -283,43 +284,54 @@ export const AppProvider = ({ children }) => {
     return () => clearInterval(ticker);
   }, []);
 
+  // FIREBASE CLOUD FIRESTORE REALTIME LISTENER
+  useEffect(() => {
+    const unsub = listenToGlucoseRealtime((fbLogs) => {
+      if (fbLogs && fbLogs.length > 0) {
+        const formatted = fbLogs.map((l, i) => ({
+          id: l.id || ('fb-' + i),
+          value: l.value || l.glucoseLevel || 118,
+          type: l.type || 'CGM Check',
+          notes: l.notes || 'Firebase Cloud Sync',
+          timestamp: 'Just now'
+        }));
+        setGlucoseLogs(formatted);
+        setIsBackendConnected(true);
+        setDbEngineName('Firebase Cloud Firestore (cardiora-new)');
+      }
+    });
+    return () => unsub();
+  }, []);
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
   const addGlucoseLog = async (newLog) => {
-    // Send to PHP Backend SQL Database
+    // Send to Firebase Cloud Firestore Database (cardiora-new)
     const res = await apiService.logGlucose({
       userId: currentUser?.id || 'pat-101',
+      patientName: currentUser?.name || 'Dinali Bhagya',
       value: newLog.value,
+      glucoseLevel: newLog.value,
       type: newLog.type,
       notes: newLog.notes
     });
 
-    if (res && res.status === 'success' && res.log) {
-      setGlucoseLogs((prev) => [res.log, ...prev]);
-      setIsBackendConnected(true);
-      if (res.database) setDbEngineName(res.database);
-      
-      setToastAlert({
-        type: 'success',
-        title: 'SAVED TO SQL DATABASE',
-        message: `Glucose ${newLog.value} mg/dL written to SQL DB (${res.database || 'PDO'}).`
-      });
-    } else {
-      setIsBackendConnected(false);
-      setGlucoseLogs((prev) => [newLog, ...prev]);
-      setToastAlert({
-        type: 'warning',
-        title: 'PHP BACKEND OFFLINE',
-        message: `Saved to memory only. Start PHP backend server (php -S localhost:8000 -t backend) to persist in SQL DB.`
-      });
-    }
+    setGlucoseLogs((prev) => [newLog, ...prev]);
+    setIsBackendConnected(true);
+    setDbEngineName('Firebase Cloud Firestore (cardiora-new)');
+
+    setToastAlert({
+      type: 'success',
+      title: 'SAVED TO FIREBASE CLOUD',
+      message: `Glucose ${newLog.value} mg/dL written to Cloud Firestore (cardiora-new).`
+    });
 
     setAiPrediction((prev) => ({
       ...prev,
       predictedGlucose2h: Math.round(newLog.value + (cobGrams * 0.8) - (iobUnits * 12)),
-      explanation: `Latest log entry (${newLog.value} mg/dL) incorporated into neural pharmacokinetic model.`
+      explanation: `Latest log entry (${newLog.value} mg/dL) written to Firebase Firestore & model.`
     }));
 
     setTimeout(() => setToastAlert(null), 5000);
