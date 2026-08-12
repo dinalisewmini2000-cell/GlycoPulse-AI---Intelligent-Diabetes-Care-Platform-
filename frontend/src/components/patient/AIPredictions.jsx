@@ -14,8 +14,8 @@ export const AIPredictions = () => {
   const [simulationScenario, setSimulationScenario] = useState('standard');
 
   // 4-Hour Forward Predictive Forecast Points (+0m to +240m)
-  const baseGlucose = hasLogs ? (glucoseLogs[0]?.value || currentGlucose) : 118;
-  const forecast4hData = [
+  const baseGlucose = hasLogs ? (glucoseLogs[0]?.value || currentGlucose) : null;
+  const forecast4hData = hasLogs ? [
     { minute: 'Now (+0m)', predictedBg: baseGlucose, risk: 'Normal' },
     { minute: '+30m', predictedBg: Math.round(baseGlucose + (cobGrams * 0.8) - (iobUnits * 12)), risk: 'Normal' },
     { minute: '+60m', predictedBg: Math.round(baseGlucose + (cobGrams * 1.2) - (iobUnits * 18)), risk: 'Peak Meal' },
@@ -23,10 +23,10 @@ export const AIPredictions = () => {
     { minute: '+120m', predictedBg: Math.round(baseGlucose + (cobGrams * 0.4) - (iobUnits * 10)), risk: 'Normal' },
     { minute: '+180m', predictedBg: Math.round(baseGlucose - (iobUnits * 6)), risk: 'Normal' },
     { minute: '+240m', predictedBg: Math.round(baseGlucose - (iobUnits * 2)), risk: 'Baseline' }
-  ];
+  ] : [];
 
-  const minPredicted = Math.min(...forecast4hData.map(d => d.predictedBg));
-  const hypoRiskDetected = minPredicted < 70;
+  const minPredicted = forecast4hData.length > 0 ? Math.min(...forecast4hData.map(d => d.predictedBg)) : 100;
+  const hypoRiskDetected = hasLogs && minPredicted < 70;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -53,27 +53,27 @@ export const AIPredictions = () => {
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-cyan)' }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>PREDICTED 2-HOUR SUGAR</span>
           <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--accent-cyan)', margin: '0.3rem 0' }}>
-            {aiPrediction.predictedGlucose2h || 122} mg/dL
+            {hasLogs ? `${aiPrediction.predictedGlucose2h || baseGlucose} mg/dL` : '-- mg/dL'}
           </div>
-          <div className="badge badge-success">Confidence: {aiPrediction.confidenceScore}</div>
+          <div className="badge badge-success">Confidence: {hasLogs ? aiPrediction.confidenceScore : 'Awaiting Data'}</div>
         </div>
 
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: hypoRiskDetected ? '4px solid var(--accent-rose)' : '4px solid var(--accent-emerald)' }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>HYPOGLYCEMIA RISK</span>
           <div style={{ fontSize: '2.2rem', fontWeight: 900, color: hypoRiskDetected ? 'var(--accent-rose)' : 'var(--accent-emerald)', margin: '0.3rem 0' }}>
-            {hypoRiskDetected ? 'HIGH RISK' : 'LOW (2.1%)'}
+            {hasLogs ? (hypoRiskDetected ? 'HIGH RISK' : 'LOW RISK') : 'LOW'}
           </div>
           <div className={`badge ${hypoRiskDetected ? 'badge-danger' : 'badge-success'}`}>
-            {hypoRiskDetected ? 'Predicted <70 mg/dL in 60m' : 'Zero Hypo Dip Expected'}
+            {hasLogs ? (hypoRiskDetected ? 'Predicted <70 mg/dL in 60m' : 'Zero Hypo Dip Expected') : 'Awaiting Glucose Logs'}
           </div>
         </div>
 
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-purple)' }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>HYPERGLYCEMIA RISK</span>
           <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--accent-purple)', margin: '0.3rem 0' }}>
-            LOW (4.5%)
+            {hasLogs ? 'LOW RISK' : 'LOW'}
           </div>
-          <div className="badge badge-info">Post-Prandial Peak Under 160</div>
+          <div className="badge badge-info">{hasLogs ? 'Post-Prandial Peak Under 160' : 'Awaiting Glucose Logs'}</div>
         </div>
 
       </div>
@@ -92,18 +92,28 @@ export const AIPredictions = () => {
           </div>
         </div>
 
-        <div style={{ width: '100%', height: '300px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={forecast4hData} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
-              <XAxis dataKey="minute" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
-              <YAxis domain={[50, 220]} stroke="var(--text-muted)" fontSize={12} tickLine={false} />
-              <Tooltip contentStyle={{ background: 'rgba(10, 16, 32, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff' }} />
-              <ReferenceLine y={180} label={{ value: 'High Threshold (180)', fill: '#f59e0b', fontSize: 11 }} stroke="#f59e0b" strokeDasharray="3 3" />
-              <ReferenceLine y={70} label={{ value: 'Low Threshold (70)', fill: '#f43f5e', fontSize: 11 }} stroke="#f43f5e" strokeDasharray="3 3" />
-              <Line type="monotone" dataKey="predictedBg" stroke="#06b6d4" strokeWidth={3} dot={{ r: 5, fill: '#06b6d4' }} activeDot={{ r: 8 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        {!hasLogs ? (
+          <div style={{ padding: '3rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '12px', color: 'var(--text-muted)' }}>
+            <Brain size={36} color="var(--accent-cyan)" style={{ margin: '0 auto 0.8rem auto', opacity: 0.7 }} />
+            <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.3rem', color: 'var(--text-main)' }}>Awaiting Glucose Telemetry Stream</h4>
+            <p style={{ fontSize: '0.85rem', maxWidth: '420px', margin: '0 auto' }}>
+              Log your blood sugar reading under <strong>"Blood Glucose & CGM"</strong> to calculate your live 4-Hour AI predictive trajectory curve.
+            </p>
+          </div>
+        ) : (
+          <div style={{ width: '100%', height: '300px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={forecast4hData} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
+                <XAxis dataKey="minute" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
+                <YAxis domain={[50, 220]} stroke="var(--text-muted)" fontSize={12} tickLine={false} />
+                <Tooltip contentStyle={{ background: 'rgba(10, 16, 32, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff' }} />
+                <ReferenceLine y={180} label={{ value: 'High Threshold (180)', fill: '#f59e0b', fontSize: 11 }} stroke="#f59e0b" strokeDasharray="3 3" />
+                <ReferenceLine y={70} label={{ value: 'Low Threshold (70)', fill: '#f43f5e', fontSize: 11 }} stroke="#f43f5e" strokeDasharray="3 3" />
+                <Line type="monotone" dataKey="predictedBg" stroke="#06b6d4" strokeWidth={3} dot={{ r: 5, fill: '#06b6d4' }} activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       {/* AI Clinical Micro-Recommendations */}
