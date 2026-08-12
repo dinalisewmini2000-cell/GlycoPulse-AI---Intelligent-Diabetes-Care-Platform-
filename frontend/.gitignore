@@ -7,7 +7,7 @@ dist/
 build/
 
 # Environment variables & local configs
-.env
+#.env
 .env.local
 .env.development.local
 .env.production.local
