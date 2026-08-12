@@ -44,7 +44,23 @@ try {
   console.warn('[Firebase Init Warning] Offline or Demo Mode:', err.message);
 }
 
-export { app, auth, db };
+export { 
+  app, 
+  auth, 
+  db, 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  query, 
+  where, 
+  orderBy, 
+  limit, 
+  onSnapshot, 
+  serverTimestamp, 
+  setDoc, 
+  doc 
+};
 
 // --- Firebase Authentication Helpers ---
 export async function loginWithFirebase(email, password) {
