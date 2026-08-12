@@ -17,20 +17,7 @@ export const FoodNutrition = () => {
   const [customImage, setCustomImage] = useState(null);
   const fileInputRef = useRef(null);
 
-  const [foodAnalysis, setFoodAnalysis] = useState({
-    foodName: 'Mediterranean Chicken Salad & Quinoa',
-    calories: 380,
-    carbs: 28,
-    sugar: 6,
-    protein: 34,
-    fat: 12,
-    fiber: 7,
-    glycemicIndex: 42,
-    glycemicLoad: 11.7,
-    portionEstimate: '1 Bowl (approx. 350g)',
-    score: 92,
-    healthyAlternative: 'Add extra chia seeds or avocado slice for healthy omega-3 fats.'
-  });
+  const [foodAnalysis, setFoodAnalysis] = useState(null);
 
   const [shoppingList] = useState({
     Produce: ['Spinach', 'Blueberries', 'Avocados', 'Asparagus'],
@@ -192,6 +179,14 @@ export const FoodNutrition = () => {
             <RefreshCw size={36} className="animate-spin" style={{ margin: '0 auto 1rem auto' }} />
             <div style={{ fontWeight: 700 }}>Analyzing Food Image with Vision AI...</div>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Identifying portion volume, macro-nutrients, GI & GL values</p>
+          </div>
+        ) : !foodAnalysis ? (
+          <div style={{ padding: '2.5rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
+            <Utensils size={36} color="var(--accent-teal)" style={{ margin: '0 auto 0.8rem auto', opacity: 0.7 }} />
+            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.3rem' }}>No Meal Scanned Yet</h4>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '420px', margin: '0 auto' }}>
+              Upload your meal photo above or click one of the sample meal buttons to instantly calculate carbohydrates, glycemic load, and glucose impact.
+            </p>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: 'var(--border-color)' }}>

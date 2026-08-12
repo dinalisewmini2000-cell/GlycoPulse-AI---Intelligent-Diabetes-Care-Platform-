@@ -11,12 +11,7 @@ export const RiskComplications = () => {
   const [customFootPhoto, setCustomFootPhoto] = useState(null);
   const footInputRef = useRef(null);
 
-  const [ulcerResult, setUlcerResult] = useState({
-    riskLevel: 'LOW RISK (Grade 0)',
-    perfusionScore: '94% Optimal Perfusion',
-    notes: 'No erythema, skin breakdown, or plantar pressure ulceration detected. Peripheral pulses bounding.',
-    recommendation: 'Perform daily visual inspections and maintain moisturized skin avoiding interdigital spaces.'
-  });
+  const [ulcerResult, setUlcerResult] = useState(null);
 
   const handleFootScanUpload = (e) => {
     const file = e.target.files?.[0];
@@ -117,10 +112,18 @@ export const RiskComplications = () => {
             <RefreshCw size={36} className="animate-spin" style={{ margin: '0 auto 1rem auto' }} />
             <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>Evaluating Plantar Surface & Perfusion...</div>
           </div>
+        ) : !ulcerResult ? (
+          <div style={{ padding: '2.5rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
+            <ShieldAlert size={34} color="var(--accent-rose)" style={{ margin: '0 auto 0.8rem auto', opacity: 0.7 }} />
+            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.3rem' }}>No Foot Inspection Photo Uploaded</h4>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '420px', margin: '0 auto' }}>
+              Upload a clear foot photo above to run real-time computer vision erythema and tissue perfusion grading.
+            </p>
+          </div>
         ) : (
           <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', borderLeft: '4px solid var(--accent-emerald)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>AI VISION ULCE RATING</span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>AI VISION ULCER RATING</span>
               <div className="badge badge-success">{ulcerResult.riskLevel}</div>
             </div>
 

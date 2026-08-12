@@ -5,10 +5,7 @@ import {
 } from 'lucide-react';
 
 export const FitnessSleep = () => {
-  const [workouts, setWorkouts] = useState([
-    { id: 'w-1', type: 'Brisk Morning Walk', durationMinutes: 35, calories: 185, bgDropEstimate: '-18 mg/dL', date: 'Today 08:00 AM' },
-    { id: 'w-2', type: 'Resistance & Weight Training', durationMinutes: 45, calories: 260, bgDropEstimate: '-24 mg/dL', date: 'Yesterday 05:30 PM' }
-  ]);
+  const [workouts, setWorkouts] = useState([]);
 
   // Workout Modal
   const [showWorkoutModal, setShowWorkoutModal] = useState(false);
@@ -94,21 +91,31 @@ export const FitnessSleep = () => {
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-          {workouts.map(w => (
-            <div key={w.id} style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '10px', borderLeft: '4px solid var(--accent-amber)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>{w.date}</span>
-                <div className="badge badge-warning">{w.bgDropEstimate}</div>
-              </div>
+        {workouts.length === 0 ? (
+          <div style={{ padding: '2.5rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
+            <Flame size={34} color="var(--accent-amber)" style={{ margin: '0 auto 0.8rem auto', opacity: 0.7 }} />
+            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.3rem' }}>No Workouts Logged Today</h4>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '420px', margin: '0 auto' }}>
+              Click "Log Workout" above to record your physical exercise and calculate your post-workout glucose drop forecast.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            {workouts.map(w => (
+              <div key={w.id} style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '10px', borderLeft: '4px solid var(--accent-amber)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>{w.date}</span>
+                  <div className="badge badge-warning">{w.bgDropEstimate}</div>
+                </div>
 
-              <h4 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0.4rem 0 0.2rem 0' }}>{w.type}</h4>
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                Duration: {w.durationMinutes} mins | Burned: {w.calories} kcal
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0.4rem 0 0.2rem 0' }}>{w.type}</h4>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  Duration: {w.durationMinutes} mins | Burned: {w.calories} kcal
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Sleep & 4-7-8 Stress Reliever */}

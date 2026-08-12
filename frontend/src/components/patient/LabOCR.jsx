@@ -10,19 +10,7 @@ export const LabOCR = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const fileInputRef = useRef(null);
 
-  const [ocrResults, setOcrResults] = useState({
-    hba1c: '6.3%',
-    fastingGlucose: '108 mg/dL',
-    egfr: '94 mL/min/1.73m²',
-    creatinine: '0.9 mg/dL',
-    totalCholesterol: '172 mg/dL',
-    hdl: '54 mg/dL',
-    ldl: '98 mg/dL',
-    triglycerides: '110 mg/dL',
-    microalbumin: '12 mg/g (Normal)',
-    labName: 'Quest Diagnostics Clinical Report',
-    labDate: '2026-07-28'
-  });
+  const [ocrResults, setOcrResults] = useState(null);
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
@@ -100,6 +88,14 @@ export const LabOCR = () => {
           <RefreshCw size={40} className="animate-spin" style={{ margin: '0 auto 1rem auto' }} />
           <h3 style={{ fontWeight: 800, fontSize: '1.2rem' }}>Extracting Biomarkers via Vision OCR Engine...</h3>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Reading document layout, normalizing metric units, verifying medical ranges</p>
+        </div>
+      ) : !ocrResults ? (
+        <div className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center', background: 'var(--bg-secondary)' }}>
+          <FileSpreadsheet size={36} color="var(--accent-cyan)" style={{ margin: '0 auto 0.8rem auto', opacity: 0.7 }} />
+          <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.3rem' }}>No Lab Report Parsed Yet</h4>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '420px', margin: '0 auto' }}>
+            Upload your clinical lab PDF or photo scan above to automatically extract HbA1c, Fasting Glucose, Kidney eGFR, and Lipid panel values.
+          </p>
         </div>
       ) : (
         <div className="glass-panel" style={{ padding: '1.5rem' }}>
