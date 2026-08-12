@@ -63,6 +63,28 @@ export {
   doc
 };
 
+// --- Helper: Format Firebase Auth Errors ---
+function formatAuthError(error) {
+  if (!error) return 'Authentication failed.';
+  switch (error.code) {
+    case 'auth/email-already-in-use':
+      return 'This email address is already registered. Please Sign In instead.';
+    case 'auth/invalid-credential':
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+      return 'Invalid email or password. Please verify your credentials or Sign Up as a new user.';
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.';
+    case 'auth/weak-password':
+      return 'Password must be at least 6 characters long.';
+    case 'auth/api-key-not-valid':
+    case 'auth/invalid-api-key':
+      return 'Firebase API Key is invalid or restricted in Firebase Console.';
+    default:
+      return error.message || 'Authentication failed. Please check your inputs.';
+  }
+}
+
 // --- Firebase Authentication Helpers ---
 export async function loginWithFirebase(email, password) {
   try {
@@ -72,10 +94,7 @@ export async function loginWithFirebase(email, password) {
     return { status: 'success', user: userCredential.user };
   } catch (error) {
     console.warn('[Firebase Auth Note]:', error.code, error.message);
-    if (error.code === 'auth/api-key-not-valid' || error.code === 'auth/invalid-api-key') {
-      return { status: 'fallback', message: 'API key requires setup in Firebase Console.' };
-    }
-    return { status: 'error', code: error.code, message: error.message };
+    return { status: 'error', code: error.code, message: formatAuthError(error) };
   }
 }
 
@@ -100,10 +119,7 @@ export async function signupWithFirebase(email, password, displayName, role = 'p
     return { status: 'success', user: userCredential.user };
   } catch (error) {
     console.warn('[Firebase Signup Note]:', error.code, error.message);
-    if (error.code === 'auth/api-key-not-valid' || error.code === 'auth/invalid-api-key') {
-      return { status: 'fallback', message: 'API key requires setup in Firebase Console.' };
-    }
-    return { status: 'error', code: error.code, message: error.message };
+    return { status: 'error', code: error.code, message: formatAuthError(error) };
   }
 }
 

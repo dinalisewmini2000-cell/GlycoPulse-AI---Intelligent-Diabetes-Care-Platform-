@@ -76,10 +76,14 @@ export const LoginModal = () => {
 
   const handleRoleSelect = (roleKey) => {
     setSelectedRole(roleKey);
+    if (roleKey === 'admin') {
+      setIsSignUp(false);
+    }
     resetForm();
   };
 
   const handleModeSwitch = (signUpMode) => {
+    if (selectedRole === 'admin' && signUpMode) return;
     setIsSignUp(signUpMode);
     resetForm();
   };
@@ -91,6 +95,9 @@ export const LoginModal = () => {
 
     try {
       if (isSignUp) {
+        if (selectedRole === 'admin') {
+          throw new Error('Admin registration is restricted. Please sign in with admin credentials.');
+        }
         if (!name.trim()) throw new Error('Please enter your full name');
         if (password !== confirmPassword && confirmPassword) {
           throw new Error('Passwords do not match');
@@ -206,13 +213,18 @@ export const LoginModal = () => {
           </button>
           <button
             type="button"
+            disabled={selectedRole === 'admin'}
             onClick={() => handleModeSwitch(true)}
+            title={selectedRole === 'admin' ? "Admin registration is restricted" : "Register a new account"}
             style={{
               padding: '0.65rem', borderRadius: '10px', border: 'none',
               background: isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
-              color: '#ffffff', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer',
+              color: selectedRole === 'admin' ? '#475569' : '#ffffff',
+              fontWeight: 800, fontSize: '0.88rem',
+              cursor: selectedRole === 'admin' ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
               boxShadow: isSignUp ? `0 4px 15px ${currentRole.color}55` : 'none',
+              opacity: selectedRole === 'admin' ? 0.4 : 1,
               transition: 'all 0.2s ease'
             }}
           >
