@@ -18,7 +18,7 @@ export const LoginModal = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [diabetesType, setDiabetesType] = useState('');
-  const [specialty, setSpecialty] = useState('Endocrinology & Diabetology');
+  const [specialty, setSpecialty] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -58,8 +58,8 @@ export const LoginModal = () => {
       subtitle: 'Manage platform user accounts, security audit trails & database metrics',
       icon: ShieldAlert,
       color: '#a855f7',
-      defaultEmail: 'admin@glycopulse.ai',
-      defaultPassword: 'admin123',
+      defaultEmail: '',
+      defaultPassword: '',
       badge: 'Super Admin Security'
     }
   };
@@ -70,7 +70,7 @@ export const LoginModal = () => {
     setPassword('');
     setConfirmPassword('');
     setDiabetesType('');
-    setSpecialty('Endocrinology & Diabetology');
+    setSpecialty('');
     setError('');
   };
 
@@ -307,7 +307,7 @@ export const LoginModal = () => {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder={selectedRole === 'doctor' ? "e.g. Dr. Alex Morgan" : "e.g. Sarah Jenkins"}
+                  placeholder="Enter Full Name"
                   style={{
                     width: '100%', padding: '0.85rem 1rem 0.85rem 2.9rem',
                     borderRadius: '12px', background: '#090d1a',
@@ -331,12 +331,7 @@ export const LoginModal = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={
-                  selectedRole === 'doctor' ? 'doctor@hospital.org' :
-                  selectedRole === 'admin' ? 'admin@glycopulse.ai' :
-                  selectedRole === 'caregiver' ? 'caregiver@family.org' :
-                  'patient@example.com'
-                }
+                placeholder="Enter Email Address"
                 style={{
                   width: '100%', padding: '0.85rem 1rem 0.85rem 2.9rem',
                   borderRadius: '12px', background: '#090d1a',
@@ -359,7 +354,7 @@ export const LoginModal = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
+                placeholder="Enter Password"
                 style={{
                   width: '100%', padding: '0.85rem 1rem 0.85rem 2.9rem',
                   borderRadius: '12px', background: '#090d1a',
@@ -383,7 +378,7 @@ export const LoginModal = () => {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder="Confirm Password"
                   style={{
                     width: '100%', padding: '0.85rem 1rem 0.85rem 2.9rem',
                     borderRadius: '12px', background: '#090d1a',
@@ -428,7 +423,7 @@ export const LoginModal = () => {
                 type="text"
                 value={specialty}
                 onChange={(e) => setSpecialty(e.target.value)}
-                placeholder="Endocrinology & Diabetology"
+                placeholder="Enter Medical Specialty"
                 style={{
                   width: '100%', padding: '0.85rem 1rem', borderRadius: '12px',
                   background: '#090d1a', border: '1.5px solid rgba(255,255,255,0.2)',
