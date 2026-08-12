@@ -64,16 +64,24 @@ export const LoginModal = () => {
     }
   };
 
+  const resetForm = () => {
+    setName('');
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setDiabetesType('');
+    setSpecialty('Endocrinology & Diabetology');
+    setError('');
+  };
+
   const handleRoleSelect = (roleKey) => {
     setSelectedRole(roleKey);
-    if (roleKey === 'admin' && !isSignUp) {
-      setEmail('admin@glycopulse.ai');
-      setPassword('admin123');
-    } else {
-      setEmail('');
-      setPassword('');
-    }
-    setError('');
+    resetForm();
+  };
+
+  const handleModeSwitch = (signUpMode) => {
+    setIsSignUp(signUpMode);
+    resetForm();
   };
 
   const handleSubmit = async (e) => {
@@ -183,7 +191,7 @@ export const LoginModal = () => {
         }}>
           <button
             type="button"
-            onClick={() => { setIsSignUp(false); setError(''); setEmail(''); setPassword(''); setConfirmPassword(''); setName(''); }}
+            onClick={() => handleModeSwitch(false)}
             style={{
               padding: '0.65rem', borderRadius: '10px', border: 'none',
               background: !isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
@@ -198,7 +206,7 @@ export const LoginModal = () => {
           </button>
           <button
             type="button"
-            onClick={() => { setIsSignUp(true); setName(''); setEmail(''); setPassword(''); setConfirmPassword(''); setDiabetesType(''); setError(''); }}
+            onClick={() => handleModeSwitch(true)}
             style={{
               padding: '0.65rem', borderRadius: '10px', border: 'none',
               background: isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
@@ -271,28 +279,6 @@ export const LoginModal = () => {
           </div>
         )}
 
-        {/* Admin Credentials Quick Notice */}
-        {selectedRole === 'admin' && (
-          <div style={{
-            background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.4)',
-            padding: '0.65rem 0.9rem', borderRadius: '10px', color: '#e9d5ff',
-            fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            marginBottom: '1.2rem'
-          }}>
-            <span>🔑 <strong>Admin Credentials:</strong> admin@glycopulse.ai / admin123</span>
-            <button
-              type="button"
-              onClick={() => { setEmail('admin@glycopulse.ai'); setPassword('admin123'); }}
-              style={{
-                background: '#a855f7', color: '#fff', border: 'none', borderRadius: '6px',
-                padding: '0.25rem 0.55rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
-              }}
-            >
-              Autofill
-            </button>
-          </div>
-        )}
-
         {/* High-Contrast Authentication Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           
@@ -333,7 +319,12 @@ export const LoginModal = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@glucocare.ai"
+                placeholder={
+                  selectedRole === 'doctor' ? 'doctor@hospital.org' :
+                  selectedRole === 'admin' ? 'admin@glycopulse.ai' :
+                  selectedRole === 'caregiver' ? 'caregiver@family.org' :
+                  'patient@example.com'
+                }
                 style={{
                   width: '100%', padding: '0.85rem 1rem 0.85rem 2.9rem',
                   borderRadius: '12px', background: '#090d1a',
