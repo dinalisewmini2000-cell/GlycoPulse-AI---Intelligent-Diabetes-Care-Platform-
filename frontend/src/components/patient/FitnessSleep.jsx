@@ -128,13 +128,13 @@ export const FitnessSleep = () => {
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Sleep Quality Index</h3>
           </div>
 
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-purple)' }}>7 hrs 45 mins</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-purple)' }}>-- hrs</div>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.3rem 0 1rem 0' }}>
-            Deep REM: 1h 50m | Efficiency: 92% | Zero Nocturnal Hypo Events
+            Connect your smartwatch or sync health metrics to track sleep efficiency & REM cycles.
           </p>
 
-          <div style={{ background: 'var(--bg-secondary)', padding: '0.75rem', borderRadius: '8px', fontSize: '0.78rem', color: 'var(--accent-emerald)' }}>
-            ✓ Dawn Phenomenon Suppressed (Morning Glucose stable at 108 mg/dL)
+          <div style={{ background: 'var(--bg-secondary)', padding: '0.75rem', borderRadius: '8px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            ℹ️ Cortisol & Stress Telemetry Awaiting First Sleep Sync
           </div>
         </div>
 

@@ -240,18 +240,26 @@ export const GlucoseDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {(glucoseLogs || []).map(l => (
-                <tr key={l.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{l.timestamp}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: l.value < 70 ? 'var(--accent-rose)' : l.value > 180 ? 'var(--accent-amber)' : 'var(--accent-cyan)' }}>
-                    {l.value} mg/dL
+              {(!glucoseLogs || glucoseLogs.length === 0) ? (
+                <tr>
+                  <td colSpan="4" style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    No blood sugar readings recorded yet. Click <strong>"Log Glucose & Insulin"</strong> above to record your first entry.
                   </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <span className="badge badge-info">{l.type}</span>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', color: 'var(--text-main)' }}>{l.notes || '—'}</td>
                 </tr>
-              ))}
+              ) : (
+                glucoseLogs.map(l => (
+                  <tr key={l.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{l.timestamp}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: l.value < 70 ? 'var(--accent-rose)' : l.value > 180 ? 'var(--accent-amber)' : 'var(--accent-cyan)' }}>
+                      {l.value} mg/dL
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <span className="badge badge-info">{l.type}</span>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-main)' }}>{l.notes || '—'}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

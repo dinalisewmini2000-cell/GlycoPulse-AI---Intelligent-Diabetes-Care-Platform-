@@ -8,7 +8,7 @@ import {
 
 export const FoodNutrition = () => {
   const appData = useApp();
-  const waterIntake = appData?.waterIntake ?? 2.2;
+  const waterIntake = appData?.waterIntake ?? 0.0;
   const setWaterIntake = appData?.setWaterIntake || (() => {});
   const waterGoal = appData?.waterGoal ?? 2.5;
 

@@ -228,30 +228,20 @@ export const AppProvider = ({ children }) => {
     return [];
   });
 
-  const [hba1cHistory] = useState([
-    { date: 'Jan 2026', value: 6.8 },
-    { date: 'Apr 2026', value: 6.5 },
-    { date: 'Jul 2026', value: 6.3 }
-  ]);
+  const [hba1cHistory, setHba1cHistory] = useState([]);
 
   const [aiPrediction, setAiPrediction] = useState({
-    predictedGlucose2h: 122,
-    trend: 'Stable',
-    hypoglycemiaRisk: 'Low (2.1%)',
-    hyperglycemiaRisk: 'Low (4.5%)',
+    predictedGlucose2h: null,
+    trend: 'Standby',
+    hypoglycemiaRisk: 'Low',
+    hyperglycemiaRisk: 'Low',
     confidenceScore: '96.4%',
-    explanation: 'Active Insulin (1.4U) is currently matching Carbohydrate digestion (18g). Glucose will remain stable.',
-    recommendation: 'Optimal time for light physical activity. Target range (70-180 mg/dL) maintained.',
-    hourlyForecast: [
-      { time: 'Now', value: 118 },
-      { time: '+30m', value: 124 },
-      { time: '+60m', value: 130 },
-      { time: '+90m', value: 126 },
-      { time: '+120m', value: 122 }
-    ]
+    explanation: 'Awaiting blood sugar log to calculate personalized 4-Hour forecast curve.',
+    recommendation: 'Log your current blood glucose and meal carbs under Blood Glucose & CGM to generate AI trajectory guidance.',
+    hourlyForecast: []
   });
-  const [streakDays] = useState(14);
-  const [healthScore] = useState(88);
+  const [streakDays, setStreakDays] = useState(0);
+  const [healthScore, setHealthScore] = useState(0);
 
   useEffect(() => {
     localStorage.setItem('glycopulse_theme', theme);
