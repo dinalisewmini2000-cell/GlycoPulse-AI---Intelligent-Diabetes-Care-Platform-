@@ -90,14 +90,14 @@ export const GlucoseDashboard = () => {
             </div>
             
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.8rem', marginTop: '0.4rem' }}>
-              <span style={{ fontSize: '3.2rem', fontWeight: 900, color: currentGlucose < 70 ? 'var(--accent-rose)' : currentGlucose > 180 ? 'var(--accent-amber)' : 'var(--accent-cyan)' }}>
-                {currentGlucose}
+              <span style={{ fontSize: '3.2rem', fontWeight: 900, color: latestGlucose === '--' ? 'var(--accent-cyan)' : latestGlucose < 70 ? 'var(--accent-rose)' : latestGlucose > 180 ? 'var(--accent-amber)' : 'var(--accent-cyan)' }}>
+                {latestGlucose}
               </span>
               <span style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
-                mg/dL {cgmTrendArrow}
+                mg/dL {displayTrendArrow}
               </span>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                ({rateOfChange})
+                ({displayRateOfChange})
               </span>
             </div>
             
