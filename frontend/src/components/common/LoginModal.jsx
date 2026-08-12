@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { loginWithFirebase, signupWithFirebase } from '../../services/firebase';
 import { 
   UserCheck, Stethoscope, HeartHandshake, ShieldAlert, 
   Lock, Mail, Key, LogIn, UserPlus, Activity, AlertCircle, X, User
@@ -90,6 +91,12 @@ export const LoginModal = () => {
           throw new Error('Passwords do not match');
         }
 
+        // Call Firebase Signup
+        const fbRes = await signupWithFirebase(email, password, name.trim(), selectedRole);
+        if (fbRes.status === 'error') {
+          throw new Error(fbRes.message || 'Firebase Sign Up failed');
+        }
+
         await signupUser({
           name: name.trim(),
           email,
@@ -99,6 +106,12 @@ export const LoginModal = () => {
           specialty
         });
       } else {
+        // Call Firebase Login
+        const fbRes = await loginWithFirebase(email, password);
+        if (fbRes.status === 'error') {
+          throw new Error(fbRes.message || 'Firebase Authentication failed');
+        }
+
         await loginUser({
           name: name.trim() || undefined,
           email,
