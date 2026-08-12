@@ -207,14 +207,27 @@ export const AppProvider = ({ children }) => {
   };
 
   // Health Data & Live Ticker State
-  const [currentGlucose, setCurrentGlucose] = useState(118);
+  const [currentGlucose, setCurrentGlucose] = useState(null);
   const [cgmTrendArrow, setCgmTrendArrow] = useState('↗'); 
-  const [rateOfChange, setRateOfChange] = useState('+1.2 mg/dL/min');
-  const [lastCgmSync, setLastCgmSync] = useState('Just now (Dexcom G7)');
+  const [rateOfChange, setRateOfChange] = useState('Awaiting First Entry');
+  const [lastCgmSync, setLastCgmSync] = useState('Dexcom G7 Stream');
 
   const [iobUnits, setIobUnits] = useState(0); 
   const [cobGrams, setCobGrams] = useState(0);  
-  const [waterIntake, setWaterIntake] = useState(1.5);
+  
+  const [waterIntake, setWaterIntakeState] = useState(() => {
+    const saved = localStorage.getItem('glycopulse_water_intake');
+    return saved ? parseFloat(saved) : 0.0;
+  });
+
+  const setWaterIntake = (val) => {
+    setWaterIntakeState(prev => {
+      const nextVal = typeof val === 'function' ? val(prev) : val;
+      localStorage.setItem('glycopulse_water_intake', nextVal.toString());
+      return nextVal;
+    });
+  };
+
   const [waterGoal] = useState(2.5);
 
   const [glucoseLogs, setGlucoseLogs] = useState(() => {
@@ -248,8 +261,9 @@ export const AppProvider = ({ children }) => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // LIVE 5-SECOND CONTINUOUS GLUCOSE TELEMETRY STREAM TICKER
+  // LIVE 5-SECOND CONTINUOUS GLUCOSE TELEMETRY STREAM TICKER (Only active when logs exist)
   useEffect(() => {
+    if (!glucoseLogs || glucoseLogs.length === 0) return;
     const ticker = setInterval(() => {
       const delta = Math.floor(Math.random() * 7) - 3;
       

@@ -7,20 +7,25 @@ import {
 } from 'lucide-react';
 
 export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
-  const { currentUser, currentGlucose, glucoseLogs } = useApp();
+  const { currentUser, currentGlucose, glucoseLogs, waterIntake = 0 } = useApp();
 
-  const statusText = currentGlucose < 70 
+  const hasLogs = glucoseLogs && glucoseLogs.length > 0;
+  const displayBg = hasLogs ? (glucoseLogs[0]?.value || currentGlucose) : '--';
+
+  const statusText = !hasLogs 
+    ? 'Awaiting Patient Telemetry'
+    : displayBg < 70 
     ? 'Hypoglycemia Alert (< 70 mg/dL)' 
-    : (currentGlucose > 180 ? 'Hyperglycemia Spike (> 180 mg/dL)' : 'Normal & Active (Target Range)');
+    : (displayBg > 180 ? 'Hyperglycemia Spike (> 180 mg/dL)' : 'Normal & Active (Target Range)');
 
   const [patientData, setPatientData] = useState({
     patientName: currentUser?.name || 'Linked Patient',
     relationship: 'Family Caregiver Monitor',
-    currentGlucose: currentGlucose || '--',
+    currentGlucose: displayBg,
     statusText: statusText,
-    lastLogged: 'Awaiting Entry',
-    medicationAdherence: 'Awaiting Log',
-    waterIntake: '0.0L / 2.5L Goal',
+    lastLogged: hasLogs ? (glucoseLogs[0]?.timestamp || 'Recent') : 'Awaiting Entry',
+    medicationAdherence: hasLogs ? 'Logs Active' : 'Awaiting Log',
+    waterIntake: `${(waterIntake || 0).toFixed(1)}L / 2.5L Goal`,
     cgmSignal: 'Active Stream'
   });
 
@@ -28,10 +33,11 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
   useEffect(() => {
     setPatientData(prev => ({
       ...prev,
-      currentGlucose: currentGlucose || '--',
-      statusText: statusText
+      currentGlucose: displayBg,
+      statusText: statusText,
+      waterIntake: `${(waterIntake || 0).toFixed(1)}L / 2.5L Goal`
     }));
-  }, [currentGlucose, statusText]);
+  }, [displayBg, statusText, waterIntake]);
 
   const [alerts, setAlerts] = useState([]);
 
