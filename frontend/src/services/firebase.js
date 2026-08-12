@@ -68,10 +68,11 @@ export async function loginWithFirebase(email, password) {
   try {
     if (!auth) throw new Error('Firebase Auth not initialized');
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    console.log('[Firebase Auth Success] Logged in user:', userCredential.user.email);
     return { status: 'success', user: userCredential.user };
   } catch (error) {
-    console.warn('[Firebase Auth Fallback]:', error.message);
-    return { status: 'fallback', message: error.message };
+    console.error('[Firebase Auth Error]:', error.code, error.message);
+    return { status: 'error', code: error.code, message: error.message };
   }
 }
 
@@ -92,10 +93,11 @@ export async function signupWithFirebase(email, password, displayName, role = 'p
       });
     }
 
+    console.log('[Firebase Signup Success] Account created in Firebase Auth & Firestore:', userCredential.user.email);
     return { status: 'success', user: userCredential.user };
   } catch (error) {
-    console.warn('[Firebase Signup Fallback]:', error.message);
-    return { status: 'fallback', message: error.message };
+    console.error('[Firebase Signup Error]:', error.code, error.message);
+    return { status: 'error', code: error.code, message: error.message };
   }
 }
 
