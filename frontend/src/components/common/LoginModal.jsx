@@ -58,14 +58,21 @@ export const LoginModal = () => {
       subtitle: 'Manage platform user accounts, security audit trails & database metrics',
       icon: ShieldAlert,
       color: '#a855f7',
-      defaultEmail: '',
-      defaultPassword: '',
+      defaultEmail: 'admin@glycopulse.ai',
+      defaultPassword: 'admin123',
       badge: 'Super Admin Security'
     }
   };
 
   const handleRoleSelect = (roleKey) => {
     setSelectedRole(roleKey);
+    if (roleKey === 'admin' && !isSignUp) {
+      setEmail('admin@glycopulse.ai');
+      setPassword('admin123');
+    } else {
+      setEmail('');
+      setPassword('');
+    }
     setError('');
   };
 
@@ -261,6 +268,28 @@ export const LoginModal = () => {
           }}>
             <AlertCircle size={20} />
             <span>{error}</span>
+          </div>
+        )}
+
+        {/* Admin Credentials Quick Notice */}
+        {selectedRole === 'admin' && (
+          <div style={{
+            background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.4)',
+            padding: '0.65rem 0.9rem', borderRadius: '10px', color: '#e9d5ff',
+            fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: '1.2rem'
+          }}>
+            <span>🔑 <strong>Admin Credentials:</strong> admin@glycopulse.ai / admin123</span>
+            <button
+              type="button"
+              onClick={() => { setEmail('admin@glycopulse.ai'); setPassword('admin123'); }}
+              style={{
+                background: '#a855f7', color: '#fff', border: 'none', borderRadius: '6px',
+                padding: '0.25rem 0.55rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
+              }}
+            >
+              Autofill
+            </button>
           </div>
         )}
 
