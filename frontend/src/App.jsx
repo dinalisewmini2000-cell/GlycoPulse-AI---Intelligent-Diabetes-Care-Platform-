@@ -12,7 +12,6 @@ import { FitnessSleep } from './components/patient/FitnessSleep';
 import { RiskComplications } from './components/patient/RiskComplications';
 import { LabOCR } from './components/patient/LabOCR';
 import { SmartDevicesHub } from './components/patient/SmartDevicesHub';
-import { GamificationBar } from './components/patient/GamificationBar';
 import { EmergencySOSModal } from './components/patient/EmergencySOSModal';
 
 // Doctor, Caregiver, Admin Components
@@ -42,7 +41,6 @@ const MainContentArea = () => {
       case 'complications': return <RiskComplications />;
       case 'lab': return <LabOCR />;
       case 'devices': return <SmartDevicesHub />;
-      case 'gamification': return <GamificationBar />;
       default: return <GlucoseDashboard />;
     }
   };
