@@ -3,7 +3,10 @@ import { useApp } from '../../context/AppContext';
 import { MessageSquare, X, Send, Bot, User, Sparkles } from 'lucide-react';
 
 export const AIChatWidget = () => {
-  const { currentUser, currentGlucose, glucoseLogs, iobUnits: iob = 1.4, cobGrams: cob = 18 } = useApp();
+  const { role, currentUser, currentGlucose, glucoseLogs, iobUnits: iob = 1.4, cobGrams: cob = 18 } = useApp();
+  
+  if (role === 'admin') return null;
+
   const [isOpen, setIsOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
