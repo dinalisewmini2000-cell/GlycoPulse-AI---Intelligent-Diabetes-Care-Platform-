@@ -83,8 +83,10 @@ export const LoginModal = () => {
   };
 
   const handleModeSwitch = (signUpMode) => {
-    if (selectedRole === 'admin' && signUpMode) return;
     setIsSignUp(signUpMode);
+    if (signUpMode && selectedRole === 'admin') {
+      setSelectedRole('patient');
+    }
     resetForm();
   };
 
@@ -213,18 +215,13 @@ export const LoginModal = () => {
           </button>
           <button
             type="button"
-            disabled={selectedRole === 'admin'}
             onClick={() => handleModeSwitch(true)}
-            title={selectedRole === 'admin' ? "Admin registration is restricted" : "Register a new account"}
             style={{
               padding: '0.65rem', borderRadius: '10px', border: 'none',
               background: isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
-              color: selectedRole === 'admin' ? '#475569' : '#ffffff',
-              fontWeight: 800, fontSize: '0.88rem',
-              cursor: selectedRole === 'admin' ? 'not-allowed' : 'pointer',
+              color: '#ffffff', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
               boxShadow: isSignUp ? `0 4px 15px ${currentRole.color}55` : 'none',
-              opacity: selectedRole === 'admin' ? 0.4 : 1,
               transition: 'all 0.2s ease'
             }}
           >
@@ -235,19 +232,21 @@ export const LoginModal = () => {
 
         {/* Role Selection Tabs */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem',
+          display: 'grid', gridTemplateColumns: `repeat(${isSignUp ? 3 : 4}, 1fr)`, gap: '0.5rem',
           background: '#090d1a', padding: '0.4rem', borderRadius: '16px',
           border: '1px solid rgba(255,255,255,0.12)', marginBottom: '1.4rem'
         }}>
-          {Object.keys(roleDetails).map((rKey) => {
-            const r = roleDetails[rKey];
-            const IconComp = r.icon;
-            const isSelected = selectedRole === rKey;
-            return (
-              <button
-                key={rKey}
-                type="button"
-                onClick={() => handleRoleSelect(rKey)}
+          {Object.keys(roleDetails)
+            .filter((rKey) => !isSignUp || rKey !== 'admin')
+            .map((rKey) => {
+              const r = roleDetails[rKey];
+              const IconComp = r.icon;
+              const isSelected = selectedRole === rKey;
+              return (
+                <button
+                  key={rKey}
+                  type="button"
+                  onClick={() => handleRoleSelect(rKey)}
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
                   gap: '0.35rem', padding: '0.7rem 0.2rem', borderRadius: '12px',
