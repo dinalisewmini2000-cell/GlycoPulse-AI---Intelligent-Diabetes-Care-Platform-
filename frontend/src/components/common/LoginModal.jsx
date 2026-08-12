@@ -285,7 +285,7 @@ export const LoginModal = () => {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Dr. Alex Morgan or Sarah Jenkins"
+                  placeholder={selectedRole === 'doctor' ? "e.g. Dr. Alex Morgan" : "e.g. Sarah Jenkins"}
                   style={{
                     width: '100%', padding: '0.85rem 1rem 0.85rem 2.9rem',
                     borderRadius: '12px', background: '#090d1a',
