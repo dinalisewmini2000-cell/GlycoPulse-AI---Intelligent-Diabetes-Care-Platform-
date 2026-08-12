@@ -186,7 +186,7 @@ export const LoginModal = () => {
         }}>
           <button
             type="button"
-            onClick={() => setIsSignUp(false)}
+            onClick={() => { setIsSignUp(false); setError(''); }}
             style={{
               padding: '0.65rem', borderRadius: '10px', border: 'none',
               background: !isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
@@ -201,7 +201,7 @@ export const LoginModal = () => {
           </button>
           <button
             type="button"
-            onClick={() => { setIsSignUp(true); setName(''); setConfirmPassword(''); }}
+            onClick={() => { setIsSignUp(true); setName(''); setConfirmPassword(''); setError(''); }}
             style={{
               padding: '0.65rem', borderRadius: '10px', border: 'none',
               background: isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
