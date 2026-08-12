@@ -47,14 +47,12 @@ export const GlucoseDashboard = () => {
   const tarPercent = allValues.length > 0 ? Math.round((aboveRangeCount / allValues.length) * 100) : 0;
   const tbrPercent = allValues.length > 0 ? Math.round((belowRangeCount / allValues.length) * 100) : 0;
 
-  // Mean & CV Calculation
-  const meanGlucose = allValues.length > 0 ? Math.round(allValues.reduce((a, b) => a + b, 0) / allValues.length) : 0;
-  const gmiValue = meanGlucose > 0 ? (3.31 + 0.02392 * meanGlucose).toFixed(1) : '--';
-  const displayGlucose = hasLogs ? (glucoseLogs[0]?.value || currentGlucose) : 'No Data';
-  const cvPercent = 18.4; // Glycemic variability CV %
+  const latestGlucose = hasLogs ? (glucoseLogs[0]?.value || currentGlucose) : '--';
+  const displayTrendArrow = hasLogs ? cgmTrendArrow : '';
+  const displayRateOfChange = hasLogs ? rateOfChange : 'Awaiting First Entry';
 
   const handleOpenModal = () => {
-    setLogValue(currentGlucose || 118);
+    setLogValue(118);
     setShowLogModal(true);
   };
 
