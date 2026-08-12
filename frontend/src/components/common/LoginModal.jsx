@@ -245,7 +245,7 @@ export const LoginModal = () => {
             fontSize: '0.9rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem'
           }}>
             <Activity className="spin-slow" size={20} color={currentRole.color} />
-            <span>Authenticating with SQL Database... Please wait</span>
+            <span>Authenticating with Firebase Cloud... Please wait</span>
           </div>
         )}
 
