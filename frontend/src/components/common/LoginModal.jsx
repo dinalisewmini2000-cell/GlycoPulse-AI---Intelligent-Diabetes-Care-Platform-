@@ -14,8 +14,8 @@ export const LoginModal = () => {
   
   // Form Fields
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('dinali@glucocare.ai');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [securityKey, setSecurityKey] = useState('');
   const [diabetesType, setDiabetesType] = useState('Type 2');
@@ -32,8 +32,8 @@ export const LoginModal = () => {
       subtitle: 'Track blood sugar logs, AI risk predictions & food nutrition',
       icon: UserCheck,
       color: '#10b981',
-      defaultEmail: 'kasun@glucocare.ai',
-      defaultPassword: 'password123',
+      defaultEmail: '',
+      defaultPassword: '',
       badge: 'Type 1 / Type 2 Care'
     },
     doctor: {
@@ -41,8 +41,8 @@ export const LoginModal = () => {
       subtitle: 'Access patient telemetry rosters, sign prescriptions & AI risk alerts',
       icon: Stethoscope,
       color: '#06b6d4',
-      defaultEmail: 'kasun.doc@glucocare.ai',
-      defaultPassword: 'password123',
+      defaultEmail: '',
+      defaultPassword: '',
       badge: 'Medical Practitioner'
     },
     caregiver: {
@@ -59,19 +59,14 @@ export const LoginModal = () => {
       subtitle: 'Manage platform user accounts, security audit trails & database metrics',
       icon: ShieldAlert,
       color: '#a855f7',
-      defaultEmail: 'admin@glucocare.ai',
-      defaultPassword: 'admin123',
+      defaultEmail: '',
+      defaultPassword: '',
       badge: 'Super Admin Security'
     }
   };
 
   const handleRoleSelect = (roleKey) => {
     setSelectedRole(roleKey);
-    if (!isSignUp) {
-      setEmail(roleDetails[roleKey].defaultEmail);
-      setPassword(roleDetails[roleKey].defaultPassword);
-      if (roleKey === 'admin') setSecurityKey('ADMIN123');
-    }
     setError('');
   };
 
@@ -186,7 +181,7 @@ export const LoginModal = () => {
         }}>
           <button
             type="button"
-            onClick={() => { setIsSignUp(false); setError(''); }}
+            onClick={() => { setIsSignUp(false); setError(''); setEmail(''); setPassword(''); setConfirmPassword(''); setName(''); }}
             style={{
               padding: '0.65rem', borderRadius: '10px', border: 'none',
               background: !isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
@@ -201,7 +196,7 @@ export const LoginModal = () => {
           </button>
           <button
             type="button"
-            onClick={() => { setIsSignUp(true); setName(''); setConfirmPassword(''); setError(''); }}
+            onClick={() => { setIsSignUp(true); setName(''); setEmail(''); setPassword(''); setConfirmPassword(''); setError(''); }}
             style={{
               padding: '0.65rem', borderRadius: '10px', border: 'none',
               background: isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
