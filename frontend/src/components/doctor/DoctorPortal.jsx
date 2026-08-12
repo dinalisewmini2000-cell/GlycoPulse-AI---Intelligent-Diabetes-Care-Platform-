@@ -9,36 +9,38 @@ import {
 export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
   const { currentUser, currentGlucose } = useApp();
 
-  const [patients, setPatients] = useState([
-    { id: 'pat-976', name: 'Kasun Jayalath', age: 24, type: 'Type 1', lastGlucose: currentGlucose || 118, hba1c: 6.3, tirPercent: 84, alertStatus: 'Stable', lastVisit: '2026-06-15', nextAppointment: '2026-08-20', weightKg: 64, phone: '+1 555 349-2011', doctorNotes: 'Patient adhering well to 1:10 carb ratio.' },
-    { id: 'pat-102', name: 'Dinali Bhagya', age: 26, type: 'Type 1', lastGlucose: 104, hba1c: 6.1, tirPercent: 88, alertStatus: 'Optimal Control', lastVisit: '2026-07-10', nextAppointment: '2026-08-22', weightKg: 58, phone: '+1 555 882-1920', doctorNotes: 'Basal rate adjusted. Glycemic targets achieved.' },
-    { id: 'pat-103', name: 'Elena Rostova', age: 29, type: 'Gestational', lastGlucose: 98, hba1c: 5.9, tirPercent: 91, alertStatus: 'Optimal Control', lastVisit: '2026-07-18', nextAppointment: '2026-08-15', weightKg: 68, phone: '+1 555 233-9011', doctorNotes: 'Post-prandial spikes under control with low-GI diet.' }
-  ]);
-
-  // Keep Patient roster updated with real-time CGM telemetry stream
-  useEffect(() => {
-    setPatients(prev => prev.map(p => {
-      if (p.id === 'pat-976') {
-        const nextStatus = currentGlucose < 70 
-          ? 'Hypoglycemia Warning (Action Needed)' 
-          : (currentGlucose > 180 ? 'Hyperglycemia Spike (Attention Needed)' : 'Stable');
-        return { ...p, lastGlucose: currentGlucose, alertStatus: nextStatus };
+  const [patients, setPatients] = useState(() => {
+    try {
+      const saved = localStorage.getItem('glycopulse_all_users');
+      if (saved) {
+        const list = JSON.parse(saved);
+        if (Array.isArray(list)) {
+          const patientOnly = list.filter(u => u.role === 'patient');
+          if (patientOnly.length > 0) {
+            return patientOnly.map(p => ({
+              id: p.id,
+              name: p.name,
+              age: 26,
+              type: p.diabetesType || 'Type 1',
+              lastGlucose: currentGlucose || '--',
+              hba1c: '--',
+              tirPercent: '--',
+              alertStatus: 'Active Sync',
+              lastVisit: 'Recent',
+              nextAppointment: 'Pending',
+              weightKg: '--',
+              phone: p.email || 'N/A',
+              doctorNotes: 'Awaiting clinical consultation.'
+            }));
+          }
+        }
       }
-      return p;
-    }));
-  }, [currentGlucose]);
+    } catch (e) {}
+    return [];
+  });
 
-  const [prescriptions, setPrescriptions] = useState([
-    { id: 'rx-1', patientName: 'Dinali Bhagya', medName: 'Novolog (Insulin Aspart)', dose: '1 Unit per 10g Carbs', date: '2026-07-15', status: 'Active In Wallet' },
-    { id: 'rx-2', patientName: 'Marcus Vance', medName: 'Metformin Hydrochloride 500mg', dose: '1 Tablet twice daily with meals', date: '2026-06-01', status: 'Refill Due' },
-    { id: 'rx-3', patientName: 'Elena Rostova', medName: 'Lantus Solostar (Insulin Glargine)', dose: '8 Units at Bedtime', date: '2026-07-20', status: 'Active In Wallet' }
-  ]);
-
-  const [appointments, setAppointments] = useState([
-    { id: 'apt-1', patientName: 'Marcus Vance', date: '2026-08-08 10:00 AM', reason: 'HbA1c & Medication Review', type: 'Tele-Health Video', link: 'https://glycopulse.ai/telehealth/vance-882' },
-    { id: 'apt-2', patientName: 'Elena Rostova', date: '2026-08-15 02:30 PM', reason: 'Gestational Diabetes Follow-up', type: 'In-Clinic Room 304', link: '' },
-    { id: 'apt-3', patientName: 'Dinali Bhagya', date: '2026-08-20 11:15 AM', reason: 'Quarterly CGM Telemetry Review', type: 'Tele-Health Video', link: 'https://glycopulse.ai/telehealth/dinali-bhagya' }
-  ]);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [appointments, setAppointments] = useState([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatientModal, setSelectedPatientModal] = useState(null);

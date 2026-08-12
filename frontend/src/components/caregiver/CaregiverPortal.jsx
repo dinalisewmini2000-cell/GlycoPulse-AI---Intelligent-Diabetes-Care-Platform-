@@ -14,30 +14,26 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
     : (currentGlucose > 180 ? 'Hyperglycemia Spike (> 180 mg/dL)' : 'Normal & Active (Target Range)');
 
   const [patientData, setPatientData] = useState({
-    patientName: 'Kasun Jayalath',
+    patientName: currentUser?.name || 'Linked Patient',
     relationship: 'Family Caregiver Monitor',
-    currentGlucose: currentGlucose || 118,
+    currentGlucose: currentGlucose || '--',
     statusText: statusText,
-    lastLogged: 'Just now (CGM Dexcom G7)',
-    medicationAdherence: '100% (3/3 doses taken today)',
-    waterIntake: '2.2L / 2.5L Goal',
-    cgmSignal: 'Strong (Dexcom G7 Live Sync)'
+    lastLogged: 'Awaiting Entry',
+    medicationAdherence: 'Awaiting Log',
+    waterIntake: '0.0L / 2.5L Goal',
+    cgmSignal: 'Active Stream'
   });
 
   // Keep patientData synchronized with real-time CGM telemetry
   useEffect(() => {
     setPatientData(prev => ({
       ...prev,
-      currentGlucose: currentGlucose,
+      currentGlucose: currentGlucose || '--',
       statusText: statusText
     }));
   }, [currentGlucose, statusText]);
 
-  const [alerts, setAlerts] = useState([
-    { id: 'alt-1', time: 'Today 07:30 AM', level: 'Info', msg: 'Fasting glucose logged: 112 mg/dL', acknowledged: true },
-    { id: 'alt-2', time: 'Yesterday 10:15 PM', level: 'Success', msg: 'Night Lantus insulin dose confirmed taken.', acknowledged: true },
-    { id: 'alt-3', time: 'Yesterday 04:30 PM', level: 'Warning', msg: 'Mild post-lunch spike: 168 mg/dL', acknowledged: false }
-  ]);
+  const [alerts, setAlerts] = useState([]);
 
   // Modal States
   const [showSmsModal, setShowSmsModal] = useState(false);
