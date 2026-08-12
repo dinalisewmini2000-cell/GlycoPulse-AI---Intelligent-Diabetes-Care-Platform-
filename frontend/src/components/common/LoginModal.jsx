@@ -17,7 +17,7 @@ export const LoginModal = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [diabetesType, setDiabetesType] = useState('Type 2');
+  const [diabetesType, setDiabetesType] = useState('');
   const [specialty, setSpecialty] = useState('Endocrinology & Diabetology');
 
   const [loading, setLoading] = useState(false);
@@ -191,7 +191,7 @@ export const LoginModal = () => {
           </button>
           <button
             type="button"
-            onClick={() => { setIsSignUp(true); setName(''); setEmail(''); setPassword(''); setConfirmPassword(''); setError(''); }}
+            onClick={() => { setIsSignUp(true); setName(''); setEmail(''); setPassword(''); setConfirmPassword(''); setDiabetesType(''); setError(''); }}
             style={{
               padding: '0.65rem', borderRadius: '10px', border: 'none',
               background: isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
@@ -375,9 +375,10 @@ export const LoginModal = () => {
                 style={{
                   width: '100%', padding: '0.85rem 1rem', borderRadius: '12px',
                   background: '#090d1a', border: '1.5px solid rgba(255,255,255,0.2)',
-                  color: '#ffffff', outline: 'none', fontSize: '0.95rem', fontWeight: 600
+                  color: diabetesType ? '#ffffff' : '#94a3b8', outline: 'none', fontSize: '0.95rem', fontWeight: 600
                 }}
               >
+                <option value="" disabled>Select Diabetes Type</option>
                 <option value="Type 1">Type 1 Diabetes</option>
                 <option value="Type 2">Type 2 Diabetes</option>
                 <option value="Pre-diabetes">Pre-diabetes</option>
