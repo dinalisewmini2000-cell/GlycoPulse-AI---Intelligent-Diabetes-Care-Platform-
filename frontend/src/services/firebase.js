@@ -22,15 +22,15 @@ import {
   doc
 } from 'firebase/firestore';
 
-// Firebase Cloud Console Configuration (Updated)
+// Firebase Cloud Console Configuration (Updated Live Key)
 const firebaseConfig = {
-  apiKey: "AIzaSyBg192wczSUPLDnOof2WbUVMkEANDM8BVE",
+  apiKey: "AIzaSyC8xrJ3_xuYuqbkX8XI0rb33neMV_3Mj5s",
   authDomain: "cardiora-new.firebaseapp.com",
   projectId: "cardiora-new",
   storageBucket: "cardiora-new.firebasestorage.app",
-  messagingSenderId: "828388347647",
-  appId: "1:828388347647:web:2514468aacb62818b1d7e2",
-  measurementId: "G-YDNN3241D7"
+  messagingSenderId: "828308347847",
+  appId: "1:828308347847:web:e57e3a4310a7fcdbb1d7e2",
+  measurementId: "G-MYFGCNWBJ5"
 };
 
 // Initialize Firebase App & Services
