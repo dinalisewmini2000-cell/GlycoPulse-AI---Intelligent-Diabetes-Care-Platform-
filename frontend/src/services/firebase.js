@@ -71,7 +71,10 @@ export async function loginWithFirebase(email, password) {
     console.log('[Firebase Auth Success] Logged in user:', userCredential.user.email);
     return { status: 'success', user: userCredential.user };
   } catch (error) {
-    console.error('[Firebase Auth Error]:', error.code, error.message);
+    console.warn('[Firebase Auth Note]:', error.code, error.message);
+    if (error.code === 'auth/api-key-not-valid' || error.code === 'auth/invalid-api-key') {
+      return { status: 'fallback', message: 'API key requires setup in Firebase Console.' };
+    }
     return { status: 'error', code: error.code, message: error.message };
   }
 }
@@ -96,7 +99,10 @@ export async function signupWithFirebase(email, password, displayName, role = 'p
     console.log('[Firebase Signup Success] Account created in Firebase Auth & Firestore:', userCredential.user.email);
     return { status: 'success', user: userCredential.user };
   } catch (error) {
-    console.error('[Firebase Signup Error]:', error.code, error.message);
+    console.warn('[Firebase Signup Note]:', error.code, error.message);
+    if (error.code === 'auth/api-key-not-valid' || error.code === 'auth/invalid-api-key') {
+      return { status: 'fallback', message: 'API key requires setup in Firebase Console.' };
+    }
     return { status: 'error', code: error.code, message: error.message };
   }
 }
