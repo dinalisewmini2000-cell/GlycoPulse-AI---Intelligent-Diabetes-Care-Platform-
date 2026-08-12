@@ -7,14 +7,14 @@ import {
 } from 'lucide-react';
 
 export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
-  const { currentUser } = useApp();
+  const { currentUser, currentGlucose, glucoseLogs } = useApp();
 
   const [adminStats, setAdminStats] = useState({
     systemHealth: '100% Operational',
     totalUsers: 3,
     activeDoctors: 1,
     aiPredictionAccuracy: '96.4%',
-    dailyGlucoseLogs: 6,
+    dailyGlucoseLogs: glucoseLogs?.length || 6,
     activeCGMConnections: 2
   });
 

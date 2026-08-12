@@ -7,13 +7,26 @@ import {
 } from 'lucide-react';
 
 export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
-  const { currentUser } = useApp();
+  const { currentUser, currentGlucose } = useApp();
 
   const [patients, setPatients] = useState([
-    { id: 'pat-976', name: 'Dinali Bhagya', age: 24, type: 'Type 1', lastGlucose: 118, hba1c: 6.3, tirPercent: 84, alertStatus: 'Stable', lastVisit: '2026-06-15', nextAppointment: '2026-08-20', weightKg: 64, phone: '+1 555 349-2011', doctorNotes: 'Patient adhering well to 1:10 carb ratio.' },
-    { id: 'pat-102', name: 'Marcus Vance', age: 58, type: 'Type 2', lastGlucose: 195, hba1c: 7.8, tirPercent: 58, alertStatus: 'Attention Needed (Hyperglycemia)', lastVisit: '2026-05-10', nextAppointment: '2026-08-08', weightKg: 88, phone: '+1 555 882-1920', doctorNotes: 'Recommend increasing Metformin to 1000mg BID.' },
+    { id: 'pat-976', name: 'Kasun Jayalath', age: 24, type: 'Type 1', lastGlucose: currentGlucose || 118, hba1c: 6.3, tirPercent: 84, alertStatus: 'Stable', lastVisit: '2026-06-15', nextAppointment: '2026-08-20', weightKg: 64, phone: '+1 555 349-2011', doctorNotes: 'Patient adhering well to 1:10 carb ratio.' },
+    { id: 'pat-102', name: 'Dinali Bhagya', age: 26, type: 'Type 1', lastGlucose: 104, hba1c: 6.1, tirPercent: 88, alertStatus: 'Optimal Control', lastVisit: '2026-07-10', nextAppointment: '2026-08-22', weightKg: 58, phone: '+1 555 882-1920', doctorNotes: 'Basal rate adjusted. Glycemic targets achieved.' },
     { id: 'pat-103', name: 'Elena Rostova', age: 29, type: 'Gestational', lastGlucose: 98, hba1c: 5.9, tirPercent: 91, alertStatus: 'Optimal Control', lastVisit: '2026-07-18', nextAppointment: '2026-08-15', weightKg: 68, phone: '+1 555 233-9011', doctorNotes: 'Post-prandial spikes under control with low-GI diet.' }
   ]);
+
+  // Keep Patient roster updated with real-time CGM telemetry stream
+  useEffect(() => {
+    setPatients(prev => prev.map(p => {
+      if (p.id === 'pat-976') {
+        const nextStatus = currentGlucose < 70 
+          ? 'Hypoglycemia Warning (Action Needed)' 
+          : (currentGlucose > 180 ? 'Hyperglycemia Spike (Attention Needed)' : 'Stable');
+        return { ...p, lastGlucose: currentGlucose, alertStatus: nextStatus };
+      }
+      return p;
+    }));
+  }, [currentGlucose]);
 
   const [prescriptions, setPrescriptions] = useState([
     { id: 'rx-1', patientName: 'Dinali Bhagya', medName: 'Novolog (Insulin Aspart)', dose: '1 Unit per 10g Carbs', date: '2026-07-15', status: 'Active In Wallet' },

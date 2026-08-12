@@ -7,18 +7,31 @@ import {
 } from 'lucide-react';
 
 export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
-  const { currentUser } = useApp();
+  const { currentUser, currentGlucose, glucoseLogs } = useApp();
+
+  const statusText = currentGlucose < 70 
+    ? 'Hypoglycemia Alert (< 70 mg/dL)' 
+    : (currentGlucose > 180 ? 'Hyperglycemia Spike (> 180 mg/dL)' : 'Normal & Active (Target Range)');
 
   const [patientData, setPatientData] = useState({
-    patientName: 'Dinali Bhagya',
-    relationship: 'Family Caregiver',
-    currentGlucose: 118,
-    statusText: 'Normal & Active',
-    lastLogged: '12 mins ago (Bedtime Check)',
+    patientName: 'Kasun Jayalath',
+    relationship: 'Family Caregiver Monitor',
+    currentGlucose: currentGlucose || 118,
+    statusText: statusText,
+    lastLogged: 'Just now (CGM Dexcom G7)',
     medicationAdherence: '100% (3/3 doses taken today)',
     waterIntake: '2.2L / 2.5L Goal',
-    cgmSignal: 'Strong (Dexcom G7)'
+    cgmSignal: 'Strong (Dexcom G7 Live Sync)'
   });
+
+  // Keep patientData synchronized with real-time CGM telemetry
+  useEffect(() => {
+    setPatientData(prev => ({
+      ...prev,
+      currentGlucose: currentGlucose,
+      statusText: statusText
+    }));
+  }, [currentGlucose, statusText]);
 
   const [alerts, setAlerts] = useState([
     { id: 'alt-1', time: 'Today 07:30 AM', level: 'Info', msg: 'Fasting glucose logged: 112 mg/dL', acknowledged: true },
