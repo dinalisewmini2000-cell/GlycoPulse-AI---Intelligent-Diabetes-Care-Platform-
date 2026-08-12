@@ -29,7 +29,12 @@ export const AppProvider = ({ children }) => {
 
   const formatNameByRole = (name, targetRole) => {
     const raw = (name || '').trim();
-    if (!raw) return targetRole === 'doctor' ? 'Dr. Practitioner' : 'Patient User';
+    if (!raw || raw.toLowerCase() === 'member' || raw.toLowerCase() === 'patient user') {
+      if (targetRole === 'admin') return 'System Administrator';
+      if (targetRole === 'doctor') return 'Dr. Medical Practitioner';
+      if (targetRole === 'caregiver') return 'Family Caregiver';
+      return 'GlycoPulse Patient';
+    }
     const clean = raw.replace(/^Dr\.\s*/i, '').trim();
     const formatted = clean.split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '').join(' ');
     return targetRole === 'doctor' ? `Dr. ${formatted}` : formatted;
@@ -86,9 +91,14 @@ export const AppProvider = ({ children }) => {
   const loginUser = async (credentials) => {
     const res = await apiService.login(credentials);
     const requestedRole = credentials.role || 'patient';
+    let defaultName = 'GlycoPulse Patient';
+    if (requestedRole === 'admin') defaultName = 'System Administrator';
+    else if (requestedRole === 'doctor') defaultName = 'Dr. Medical Practitioner';
+    else if (requestedRole === 'caregiver') defaultName = 'Family Caregiver';
+
     let userObj = {
       id: 'usr-' + Date.now(),
-      name: credentials.name || credentials.email?.split('@')[0] || 'Member',
+      name: credentials.name || defaultName,
       email: credentials.email,
       role: requestedRole
     };
