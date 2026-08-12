@@ -17,7 +17,6 @@ export const LoginModal = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [securityKey, setSecurityKey] = useState('');
   const [diabetesType, setDiabetesType] = useState('Type 2');
   const [specialty, setSpecialty] = useState('Endocrinology & Diabetology');
 
@@ -76,10 +75,6 @@ export const LoginModal = () => {
     setError('');
 
     try {
-      if (selectedRole === 'admin' && securityKey && securityKey !== 'ADMIN123' && securityKey !== 'admin') {
-        throw new Error('Invalid Admin Security Passcode. Use "ADMIN123"');
-      }
-
       if (isSignUp) {
         if (!name.trim()) throw new Error('Please enter your full name');
         if (password !== confirmPassword && confirmPassword) {
@@ -407,30 +402,6 @@ export const LoginModal = () => {
                   color: '#ffffff', outline: 'none', fontSize: '0.95rem', fontWeight: 600
                 }}
               />
-            </div>
-          )}
-
-          {/* Admin Specific Passcode */}
-          {selectedRole === 'admin' && (
-            <div>
-              <label style={{ fontSize: '0.8rem', color: currentRole.color, fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
-                ADMIN SECURITY PASSCODE (Default: ADMIN123)
-              </label>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <Key size={19} style={{ position: 'absolute', left: '1rem', color: currentRole.color }} />
-                <input
-                  type="password"
-                  value={securityKey}
-                  onChange={(e) => setSecurityKey(e.target.value)}
-                  placeholder="Enter ADMIN123"
-                  style={{
-                    width: '100%', padding: '0.85rem 1rem 0.85rem 2.9rem',
-                    borderRadius: '12px', background: '#090d1a',
-                    border: `1.5px solid ${currentRole.color}`, color: '#ffffff',
-                    outline: 'none', fontSize: '0.95rem', fontWeight: 600
-                  }}
-                />
-              </div>
             </div>
           )}
 
