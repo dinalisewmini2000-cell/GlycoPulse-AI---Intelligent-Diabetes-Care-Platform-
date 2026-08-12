@@ -70,44 +70,51 @@ export const AIChatWidget = () => {
       return `Your latest glucose reading is ${currentGlucose} mg/dL.\nActive Insulin (IOB): ${iob} U | Carbs on Board (COB): ${cob} g.\n\n${targetState}`;
     }
 
-    // 3. HbA1c & Lab OCR
+    // 3. HbA1c & Lab Analysis
     if (q.includes('hba1c') || q.includes('a1c') || q.includes('lab') || q.includes('egfr') || q.includes('test')) {
-      return `Your current estimated HbA1c is 6.3%, corresponding to an Estimated Average Glucose (eAG) of ~134 mg/dL.\n\nKey Lab Biomarkers:\n• Fasting Plasma Glucose: 108 mg/dL\n• Kidney eGFR: 94 mL/min/1.73m² (Normal renal filtration)\n• Microalbuminuria: 12 mg/g (Zero nephropathy risk)`;
+      const hasReadings = glucoseLogs && glucoseLogs.length > 0;
+      if (hasReadings) {
+        const sum = glucoseLogs.reduce((acc, l) => acc + (l.value || 118), 0);
+        const mean = Math.round(sum / glucoseLogs.length);
+        const estA1c = (3.31 + 0.02392 * mean).toFixed(1);
+        return `Based on your ${glucoseLogs.length} logged glucose reading(s):\n• Mean Glucose: ${mean} mg/dL\n• Estimated HbA1c (GMI): ${estA1c}%\n\nUpload your full diagnostic PDF under 'Lab OCR & Reports' to parse exact renal & lipid biomarkers!`;
+      }
+      return `No recent lab report uploaded yet.\n\nTo view your personalized HbA1c estimate, log your blood sugar readings under 'Blood Glucose & CGM' or upload a diagnostic PDF report under 'Lab OCR & Reports'.`;
     }
 
     // 4. Hypoglycemia / Low Blood Sugar
     if (q.includes('low') || q.includes('hypo') || q.includes('shaky') || q.includes('sweat') || q.includes('dizzy')) {
-      return `🚨 For low blood sugar (< 70 mg/dL), follow the 15-15 Rule:\n1. Eat/drink 15g fast-acting carbs (e.g., 4 oz fruit juice, 3-4 glucose tablets, or 1 tbsp honey).\n2. Wait 15 minutes and re-check your blood glucose.\n3. Repeat if still < 70 mg/dL.\n\nIf you feel faint or severe hypo symptoms persist, click the red 'SOS EMERGENCY' button at the top of the screen immediately!`;
+      return `🚨 For low blood sugar (< 70 mg/dL), follow the 15-15 Rule:\n1. Consume 15g fast-acting carbs (e.g., 4 oz fruit juice, 3-4 glucose tablets, or 1 tbsp honey).\n2. Wait 15 minutes and re-check your blood glucose.\n3. Repeat if still < 70 mg/dL.\n\nIf severe hypo symptoms persist, click the red 'SOS EMERGENCY' button at the top of the screen!`;
     }
 
     // 5. Hyperglycemia / High Blood Sugar
     if (q.includes('high') || q.includes('hyper') || q.includes('spike') || q.includes('thirsty') || q.includes('ketone')) {
-      return `📈 For elevated blood sugar (> 180 mg/dL):\n1. Check your Active Insulin on Board (IOB: ${iob}U) to avoid insulin stacking.\n2. Hydrate with plenty of water to help your kidneys clear glucose.\n3. If blood sugar is over 250 mg/dL, check for urine/blood ketones and contact Dr. Robert Vance.`;
+      return `📈 For elevated blood sugar (> 180 mg/dL):\n1. Check your Active Insulin on Board (IOB: ${iob}U) to avoid insulin stacking.\n2. Hydrate with plenty of water to assist renal clearance.\n3. If blood sugar exceeds 250 mg/dL, check for ketones and consult your medical practitioner.`;
     }
 
     // 6. Food / Meals / Carbs
     if (q.includes('food') || q.includes('meal') || q.includes('eat') || q.includes('carb') || q.includes('diet') || q.includes('lunch') || q.includes('dinner') || q.includes('breakfast')) {
-      return `🥗 Nutritious Low-GI Meal Advice:\n• Prioritize complex carbs with high dietary fiber (quinoa, brown rice, steel-cut oats) paired with lean protein.\n• Fiber slows gastric emptying, preventing sharp post-meal sugar spikes.\n• Use the AI Food Vision tab to scan your plate and calculate exact carb ratios!`;
+      return `🥗 Low-GI Meal Guidance:\n• Prioritize complex carbs with high dietary fiber paired with lean protein.\n• Fiber slows gastric emptying, preventing post-prandial sugar spikes.\n• Use the 'AI Food Vision' tab to scan your plate and calculate exact carb ratios!`;
     }
 
     // 7. Insulin & Medication
-    if (q.includes('insulin') || q.includes('bolus') || q.includes('basal') || q.includes('lantus') || q.includes('novolog') || q.includes('dose') || q.includes('medication')) {
-      return `💉 Medication & Insulin Guidelines:\n• Rapid Insulin (Novolog): Ratio 1:10g Carbs.\n• Basal Insulin (Lantus): 18 Units nightly at 10:00 PM.\n• Metformin: 500mg twice daily with meals.\n\nAlways rotate injection sites to prevent lipohypertrophy. Use the Doctor Portal if you need an updated e-Prescription.`;
+    if (q.includes('insulin') || q.includes('bolus') || q.includes('basal') || q.includes('dose') || q.includes('medication')) {
+      return `💉 Medication & Insulin Protocol:\n• Always consult your physician for individualized insulin-to-carb ratios and correction factors.\n• Check active IOB (${iob}U) before administering additional boluses.\n• Rotate injection sites to prevent lipohypertrophy. View 'E-Prescriptions' under the Doctor Portal for active prescriptions.`;
     }
 
     // 8. Exercise & Fitness
     if (q.includes('exercise') || q.includes('walk') || q.includes('workout') || q.includes('gym') || q.includes('running') || q.includes('fitness')) {
-      return `🏃 Exercise & Insulin Sensitivity:\nPhysical movement stimulates GLUT-4 receptors in muscle tissue, allowing glucose uptake without extra insulin.\nA light 15-20 minute walk after meals can reduce peak post-prandial glucose spikes by up to 25-40 mg/dL!`;
+      return `🏃 Exercise & Glucose Sensitivity:\nPhysical movement stimulates GLUT-4 receptors in muscle tissue, enabling glucose uptake.\nA light 15-20 minute walk after meals can reduce peak sugar spikes by up to 25-40 mg/dL!`;
     }
 
     // 9. Sleep & Stress
     if (q.includes('sleep') || q.includes('stress') || q.includes('tired') || q.includes('cortisol') || q.includes('dawn')) {
-      return `🌙 Sleep & Cortisol Impact:\nPoor sleep or high stress triggers cortisol and epinephrine surges, inducing insulin resistance and the morning 'Dawn Phenomenon'.\nTry the interactive 4-7-8 Breathing Guide under Fitness & Sleep to calm your vagal tone!`;
+      return `🌙 Sleep & Cortisol Impact:\nHigh stress or poor sleep triggers cortisol and epinephrine surges, inducing transient insulin resistance.\nTry the interactive 4-7-8 Breathing Guide under 'Fitness & Sleep' to relax!`;
     }
 
     // 10. Doctor / Telehealth
-    if (q.includes('doctor') || q.includes('dr') || q.includes('vance') || q.includes('appointment') || q.includes('consultation')) {
-      return `👨‍⚕️ Tele-Health & Clinical Oversight:\nYour primary endocrinologist is Dr. Robert Vance, MD.\n• Next Scheduled Review: In 14 days\n• E-Prescriptions: Active\n• You can request a live video consultation through the Doctor View tab at the top!`;
+    if (q.includes('doctor') || q.includes('dr') || q.includes('appointment') || q.includes('consultation')) {
+      return `👨‍⚕️ Tele-Health & Clinical Care:\n• You are connected to GlycoPulse Healthcare Network.\n• Your recorded logs are available for clinical review by your medical practitioner.\n• To request a consultation, switch to or contact your physician via the Doctor View!`;
     }
 
     // 11. Gratitude
