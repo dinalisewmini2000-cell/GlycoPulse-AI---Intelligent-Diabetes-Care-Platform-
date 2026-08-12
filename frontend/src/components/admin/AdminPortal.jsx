@@ -215,7 +215,7 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
                   placeholder="Search user or email..." 
                   value={userSearch}
                   onChange={e => setUserSearch(e.target.value)}
-                  style={{ padding: '0.5rem 0.8rem 0.5rem 2.2rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff', fontSize: '0.85rem' }}
+                  style={{ padding: '0.5rem 0.8rem 0.5rem 2.2rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.85rem' }}
                 />
               </div>
 
@@ -277,7 +277,7 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
                   value={newUserName}
                   onChange={e => setNewUserName(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                 />
               </div>
 
@@ -288,7 +288,7 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
                   value={newUserEmail}
                   onChange={e => setNewUserEmail(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                 />
               </div>
 
@@ -297,12 +297,12 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
                 <select 
                   value={newUserRole}
                   onChange={e => setNewUserRole(e.target.value)}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontWeight: 600 }}
                 >
-                  <option value="patient">Patient</option>
-                  <option value="doctor">Doctor</option>
-                  <option value="caregiver">Caregiver</option>
-                  <option value="admin">System Admin</option>
+                  <option value="patient" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Patient</option>
+                  <option value="doctor" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Doctor</option>
+                  <option value="caregiver" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Caregiver</option>
+                  <option value="admin" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>System Admin</option>
                 </select>
               </div>
 

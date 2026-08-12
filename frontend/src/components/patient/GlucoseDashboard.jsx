@@ -269,20 +269,36 @@ export const GlucoseDashboard = () => {
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
                   BLOOD GLUCOSE (mg/dL)
                 </label>
-                <input 
-                  type="number" 
-                  value={logValue} 
-                  onChange={e => setLogValue(e.target.value)}
-                  required
-                  min={30}
-                  max={500}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff', fontSize: '1.1rem', fontWeight: 700 }}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setLogValue(prev => Math.max(30, (Number(prev) || 118) - 5))}
+                    style={{ padding: '0.65rem 1.1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontSize: '1.3rem', fontWeight: 800, cursor: 'pointer' }}
+                  >
+                    -
+                  </button>
+                  <input 
+                    type="number" 
+                    value={logValue} 
+                    onChange={e => setLogValue(e.target.value)}
+                    required
+                    min={30}
+                    max={500}
+                    style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '1.15rem', fontWeight: 800, textAlign: 'center' }}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setLogValue(prev => Math.min(500, (Number(prev) || 118) + 5))}
+                    style={{ padding: '0.65rem 1.1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontSize: '1.3rem', fontWeight: 800, cursor: 'pointer' }}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
@@ -290,27 +306,59 @@ export const GlucoseDashboard = () => {
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
                     RAPID INSULIN (Units)
                   </label>
-                  <input 
-                    type="number" 
-                    step="0.5"
-                    placeholder="e.g. 4.5"
-                    value={logInsulinBolus} 
-                    onChange={e => setLogInsulinBolus(e.target.value)}
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setLogInsulinBolus(prev => Math.max(0, (Number(prev) || 0) - 0.5).toFixed(1))}
+                      style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      -
+                    </button>
+                    <input 
+                      type="number" 
+                      step="0.5"
+                      placeholder="0.0"
+                      value={logInsulinBolus} 
+                      onChange={e => setLogInsulinBolus(e.target.value)}
+                      style={{ flex: 1, padding: '0.65rem', borderRadius: '6px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setLogInsulinBolus(prev => (Math.max(0, (Number(prev) || 0) + 0.5)).toFixed(1))}
+                      style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
                     CARBS (Grams)
                   </label>
-                  <input 
-                    type="number" 
-                    placeholder="e.g. 45"
-                    value={logCarbs} 
-                    onChange={e => setLogCarbs(e.target.value)}
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setLogCarbs(prev => Math.max(0, (Number(prev) || 0) - 5))}
+                      style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      -
+                    </button>
+                    <input 
+                      type="number" 
+                      placeholder="0"
+                      value={logCarbs} 
+                      onChange={e => setLogCarbs(e.target.value)}
+                      style={{ flex: 1, padding: '0.65rem', borderRadius: '6px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setLogCarbs(prev => (Number(prev) || 0) + 5)}
+                      style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -321,13 +369,13 @@ export const GlucoseDashboard = () => {
                 <select 
                   value={logType}
                   onChange={e => setLogType(e.target.value)}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontWeight: 600 }}
                 >
-                  <option value="Fasting">Fasting (Morning Wake Up)</option>
-                  <option value="Before Meal">Before Meal (Pre-prandial)</option>
-                  <option value="After Meal">After Meal (Post-prandial)</option>
-                  <option value="Post Exercise">Post Exercise / Walking</option>
-                  <option value="Bedtime">Bedtime Target Check</option>
+                  <option value="Fasting" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Fasting (Morning Wake Up)</option>
+                  <option value="Before Meal" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Before Meal (Pre-prandial)</option>
+                  <option value="After Meal" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>After Meal (Post-prandial)</option>
+                  <option value="Post Exercise" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Post Exercise / Walking</option>
+                  <option value="Bedtime" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Bedtime Target Check</option>
                 </select>
               </div>
 
@@ -340,7 +388,7 @@ export const GlucoseDashboard = () => {
                   placeholder="e.g. Had salmon salad, 30m walk"
                   value={logNotes} 
                   onChange={e => setLogNotes(e.target.value)}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                 />
               </div>
 

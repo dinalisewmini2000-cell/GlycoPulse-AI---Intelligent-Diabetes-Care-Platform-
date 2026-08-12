@@ -213,7 +213,7 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
                   onChange={e => setSmsText(e.target.value)}
                   rows={4}
                   required
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff', fontSize: '0.9rem' }}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.9rem' }}
                 />
 
                 <div style={{ display: 'flex', gap: '0.8rem' }}>
@@ -241,7 +241,7 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
                 value={noteText}
                 onChange={e => setNoteText(e.target.value)}
                 required
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
               />
 
               <div style={{ display: 'flex', gap: '0.8rem' }}>

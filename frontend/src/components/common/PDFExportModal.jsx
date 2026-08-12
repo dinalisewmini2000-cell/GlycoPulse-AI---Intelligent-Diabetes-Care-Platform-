@@ -139,11 +139,11 @@ export const PDFExportModal = () => {
               <select 
                 value={dateRange}
                 onChange={e => setDateRange(e.target.value)}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff', fontSize: '0.9rem' }}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.9rem', fontWeight: 600 }}
               >
-                <option value="7">Past 7 Days Telemetry</option>
-                <option value="30">Past 30 Days Telemetry (Recommended)</option>
-                <option value="90">Past 90 Days Telemetry (Quarterly HbA1c)</option>
+                <option value="7" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Past 7 Days Telemetry</option>
+                <option value="30" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Past 30 Days Telemetry (Recommended)</option>
+                <option value="90" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Past 90 Days Telemetry (Quarterly HbA1c)</option>
               </select>
             </div>
 

@@ -196,6 +196,8 @@ export const AppProvider = ({ children }) => {
 
   const [iobUnits, setIobUnits] = useState(1.4); 
   const [cobGrams, setCobGrams] = useState(18);  
+  const [waterIntake, setWaterIntake] = useState(2.2);
+  const [waterGoal] = useState(2.5);
 
   const [glucoseLogs, setGlucoseLogs] = useState([
     { id: 'g1', timestamp: '07:30 AM', value: 112, type: 'Fasting', notes: 'Morning wake up' },
@@ -354,6 +356,9 @@ export const AppProvider = ({ children }) => {
         setIobUnits,
         cobGrams,
         setCobGrams,
+        waterIntake,
+        setWaterIntake,
+        waterGoal,
         glucoseLogs,
         addGlucoseLog,
         hba1cHistory,

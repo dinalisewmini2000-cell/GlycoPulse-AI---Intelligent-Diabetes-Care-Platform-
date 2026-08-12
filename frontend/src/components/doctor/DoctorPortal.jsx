@@ -245,25 +245,33 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>AI Clinical Insulin Dose Calculator</h3>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '10px' }}>
               <div>
                 <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>Carbohydrate Load (g)</label>
-                <input 
-                  type="number" 
-                  value={calcCarbs} 
-                  onChange={e => setCalcCarbs(e.target.value)} 
-                  style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'var(--bg-primary)', border: 'var(--border-color)', color: '#fff' }}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <button type="button" onClick={() => setCalcCarbs(p => Math.max(0, Number(p) - 5))} style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}>-</button>
+                  <input 
+                    type="number" 
+                    value={calcCarbs} 
+                    onChange={e => setCalcCarbs(e.target.value)} 
+                    style={{ flex: 1, padding: '0.6rem', borderRadius: '6px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
+                  />
+                  <button type="button" onClick={() => setCalcCarbs(p => Number(p) + 5)} style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}>+</button>
+                </div>
               </div>
 
               <div>
                 <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>Current Glucose (mg/dL)</label>
-                <input 
-                  type="number" 
-                  value={calcBG} 
-                  onChange={e => setCalcBG(e.target.value)} 
-                  style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', background: 'var(--bg-primary)', border: 'var(--border-color)', color: '#fff' }}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <button type="button" onClick={() => setCalcBG(p => Math.max(30, Number(p) - 5))} style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}>-</button>
+                  <input 
+                    type="number" 
+                    value={calcBG} 
+                    onChange={e => setCalcBG(e.target.value)} 
+                    style={{ flex: 1, padding: '0.6rem', borderRadius: '6px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
+                  />
+                  <button type="button" onClick={() => setCalcBG(p => Number(p) + 5)} style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}>+</button>
+                </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'flex-end' }}>
@@ -442,10 +450,10 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
                   <select 
                     value={rxPatient} 
                     onChange={e => setRxPatient(e.target.value)}
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontWeight: 600 }}
                   >
                     {patients.map(p => (
-                      <option key={p.id} value={p.name}>{p.name} ({p.type})</option>
+                      <option key={p.id} value={p.name} style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>{p.name} ({p.type})</option>
                     ))}
                   </select>
                 </div>
@@ -457,7 +465,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
                     value={medName} 
                     onChange={e => setMedName(e.target.value)}
                     required
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                   />
                 </div>
 
@@ -468,7 +476,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
                     value={dosage} 
                     onChange={e => setDosage(e.target.value)}
                     required
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                   />
                 </div>
 
@@ -501,10 +509,10 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
                   <select 
                     value={aptPatient} 
                     onChange={e => setAptPatient(e.target.value)}
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontWeight: 600 }}
                   >
                     {patients.map(p => (
-                      <option key={p.id} value={p.name}>{p.name} ({p.type})</option>
+                      <option key={p.id} value={p.name} style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>{p.name} ({p.type})</option>
                     ))}
                   </select>
                 </div>
@@ -517,7 +525,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
                       value={aptDate} 
                       onChange={e => setAptDate(e.target.value)}
                       required
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                     />
                   </div>
 
@@ -528,7 +536,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
                       value={aptTime} 
                       onChange={e => setAptTime(e.target.value)}
                       required
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                     />
                   </div>
                 </div>
@@ -540,7 +548,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
                     value={aptReason} 
                     onChange={e => setAptReason(e.target.value)}
                     required
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                   />
                 </div>
 

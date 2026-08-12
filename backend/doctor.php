@@ -31,9 +31,9 @@ if ($method === 'POST') {
     }
 }
 
-// Fetch patients from SQL users table
+// Fetch registered patients from SQL users table
 $stmt = $pdo->query("SELECT user_uid as id, full_name as name, diabetes_type as type, role FROM users WHERE role = 'patient'");
-$patientUsers = $stmt->fetchAll();
+$sqlPatients = $stmt->fetchAll();
 
 $doctorPatients = [
     [
@@ -82,6 +82,34 @@ $doctorPatients = [
         'doctorNotes' => 'Post-prandial spikes under control with low-GI diet.'
     ]
 ];
+
+// Merge any dynamically registered patients into the roster
+$existingIds = array_column($doctorPatients, 'id');
+$gStmt = $pdo->prepare("SELECT glucose_value FROM glucose_logs WHERE user_id = ? ORDER BY id DESC LIMIT 1");
+
+foreach ($sqlPatients as $sp) {
+    if (!in_array($sp['id'], $existingIds)) {
+        // Get last logged glucose for this patient if available
+        $gStmt->execute([$sp['id']]);
+        $lastG = $gStmt->fetchColumn();
+
+        $doctorPatients[] = [
+            'id' => $sp['id'],
+            'name' => $sp['name'],
+            'age' => 28,
+            'type' => $sp['type'] ?? 'Type 1',
+            'lastGlucose' => $lastG ? (int)$lastG : 115,
+            'hba1c' => 6.2,
+            'tirPercent' => 86,
+            'alertStatus' => $lastG && $lastG > 180 ? 'Attention Needed' : 'Stable',
+            'lastVisit' => date('Y-m-d', strtotime('-14 days')),
+            'nextAppointment' => date('Y-m-d', strtotime('+7 days')),
+            'weightKg' => 65,
+            'phone' => '+1 555 019-9800',
+            'doctorNotes' => 'Registered patient profile active in system database.'
+        ];
+    }
+}
 
 // Query recent prescriptions from SQL
 $prescStmt = $pdo->query("SELECT * FROM prescriptions ORDER BY id DESC LIMIT 10");

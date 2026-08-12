@@ -7,7 +7,11 @@ import {
 } from 'lucide-react';
 
 export const FoodNutrition = () => {
-  const { waterIntake, setWaterIntake, waterGoal } = useApp();
+  const appData = useApp();
+  const waterIntake = appData?.waterIntake ?? 2.2;
+  const setWaterIntake = appData?.setWaterIntake || (() => {});
+  const waterGoal = appData?.waterGoal ?? 2.5;
+
   const [selectedFood, setSelectedFood] = useState('salad');
   const [isScanning, setIsScanning] = useState(false);
   const [customImage, setCustomImage] = useState(null);

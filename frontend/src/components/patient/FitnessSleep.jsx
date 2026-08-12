@@ -181,28 +181,32 @@ export const FitnessSleep = () => {
                 <select 
                   value={workoutType}
                   onChange={e => setWorkoutType(e.target.value)}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontWeight: 600 }}
                 >
-                  <option value="Brisk Walking">Brisk Walking</option>
-                  <option value="Running / Jogging">Running / Jogging</option>
-                  <option value="Cycling">Cycling</option>
-                  <option value="Swimming">Swimming</option>
-                  <option value="Weight Training">Weight Training</option>
-                  <option value="Yoga / Pilates">Yoga / Pilates</option>
+                  <option value="Brisk Walking" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Brisk Walking</option>
+                  <option value="Running / Jogging" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Running / Jogging</option>
+                  <option value="Cycling" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Cycling</option>
+                  <option value="Swimming" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Swimming</option>
+                  <option value="Weight Training" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Weight Training</option>
+                  <option value="Yoga / Pilates" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Yoga / Pilates</option>
                 </select>
               </div>
 
               <div>
                 <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.3rem' }}>Duration (Minutes)</label>
-                <input 
-                  type="number" 
-                  value={duration}
-                  onChange={e => setDuration(Number(e.target.value))}
-                  required
-                  min={5}
-                  max={180}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: 'var(--border-color)', color: '#fff' }}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <button type="button" onClick={() => setDuration(p => Math.max(5, p - 5))} style={{ padding: '0.6rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}>-</button>
+                  <input 
+                    type="number" 
+                    value={duration}
+                    onChange={e => setDuration(Number(e.target.value))}
+                    required
+                    min={5}
+                    max={180}
+                    style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
+                  />
+                  <button type="button" onClick={() => setDuration(p => Math.min(180, p + 5))} style={{ padding: '0.6rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}>+</button>
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '0.8rem', marginTop: '0.5rem' }}>
