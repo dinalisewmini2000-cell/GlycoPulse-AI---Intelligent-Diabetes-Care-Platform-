@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { apiService } from '../../services/apiService';
 import { 
   ShieldAlert, Cpu, Brain, Users, Activity, CheckCircle2, 
-  Search, UserPlus, RefreshCw, Server, Zap, Lock, Unlock, X 
+  Search, UserPlus, RefreshCw, Server, Zap, Lock, Unlock, X, Trash2
 } from 'lucide-react';
 
 export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
@@ -11,7 +11,7 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
 
   const [adminStats, setAdminStats] = useState({
     systemHealth: '100% Operational',
-    totalUsers: 3,
+    totalUsers: 1,
     activeDoctors: 1,
     aiPredictionAccuracy: '96.4%',
     dailyGlucoseLogs: glucoseLogs?.length || 6,
@@ -25,9 +25,7 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
   ]);
 
   const [userDirectory, setUserDirectory] = useState([
-    { id: 'pat-976', name: 'Kasun Jayalath', email: 'kasun@glucocare.ai', role: 'patient', status: 'Active', joined: '2026-01-10' },
-    { id: 'doc-598', name: 'Dr. Kasun Jayalath', email: 'kasun.doc@glucocare.ai', role: 'doctor', status: 'Active', joined: '2025-11-04' },
-    { id: 'adm-401', name: 'System Administrator', email: 'admin@glucocare.ai', role: 'admin', status: 'Active', joined: '2025-08-01' }
+    { id: 'adm-401', name: 'System Administrator', email: 'admin@glycopulse.ai', role: 'admin', status: 'Active', joined: '2025-08-01' }
   ]);
 
   const [userSearch, setUserSearch] = useState('');
@@ -58,6 +56,11 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
       }
       return u;
     }));
+  };
+
+  const handleDeleteUser = (userId) => {
+    setUserDirectory(prev => prev.filter(u => u.id !== userId));
+    setAdminStats(prev => ({ ...prev, totalUsers: Math.max(1, prev.totalUsers - 1) }));
   };
 
   const handleRetrainPipeline = () => {
@@ -260,10 +263,18 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
                         {u.status}
                       </span>
                     </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
+                    <td style={{ padding: '0.75rem 1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                       <button onClick={() => handleToggleStatus(u.id)} className="btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}>
                         {u.status === 'Active' ? <Lock size={13} /> : <Unlock size={13} />}
                         <span>{u.status === 'Active' ? 'Suspend' : 'Activate'}</span>
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteUser(u.id)} 
+                        className="btn-outline" 
+                        style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', borderColor: 'rgba(239, 68, 68, 0.4)', color: '#fca5a5' }}
+                      >
+                        <Trash2 size={13} color="#ef4444" />
+                        <span>Delete</span>
                       </button>
                     </td>
                   </tr>
