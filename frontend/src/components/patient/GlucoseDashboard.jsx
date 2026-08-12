@@ -25,35 +25,27 @@ export const GlucoseDashboard = () => {
   const [logType, setLogType] = useState('Fasting');
   const [logNotes, setLogNotes] = useState('');
 
-  // 24-Hour CGM Stream Data Points
-  const cgm24hData = [
-    { time: '00:00', bg: 110, targetLow: 70, targetHigh: 180 },
-    { time: '02:00', bg: 104, targetLow: 70, targetHigh: 180 },
-    { time: '04:00', bg: 98, targetLow: 70, targetHigh: 180 },
-    { time: '06:00', bg: 112, targetLow: 70, targetHigh: 180 },
-    { time: '08:00', bg: 145, targetLow: 70, targetHigh: 180 },
-    { time: '10:00', bg: 132, targetLow: 70, targetHigh: 180 },
-    { time: '12:00', bg: 108, targetLow: 70, targetHigh: 180 },
-    { time: '14:00', bg: 162, targetLow: 70, targetHigh: 180 },
-    { time: '16:00', bg: 138, targetLow: 70, targetHigh: 180 },
-    { time: '18:00', bg: 125, targetLow: 70, targetHigh: 180 },
-    { time: '20:00', bg: 118, targetLow: 70, targetHigh: 180 },
-    { time: 'Now', bg: currentGlucose, targetLow: 70, targetHigh: 180 }
-  ];
+  const hasLogs = glucoseLogs && glucoseLogs.length > 0;
 
-  // Calculate TIR / TAR / TBR metrics based on 24h stream + logs
+  // 24-Hour CGM Stream Data Points from actual user logs
+  const cgm24hData = hasLogs
+    ? glucoseLogs.map((l, idx) => ({
+        time: l.timestamp || `Log #${glucoseLogs.length - idx}`,
+        bg: l.value,
+        targetLow: 70,
+        targetHigh: 180
+      })).reverse()
+    : [];
+
+  // Calculate TIR / TAR / TBR metrics based on user's actual logs
   const allValues = cgm24hData.map(d => d.bg);
   const inRangeCount = allValues.filter(v => v >= 70 && v <= 180).length;
-  const aboveRangeCount = allValues.filter(v => v > 180).length;
-  const belowRangeCount = allValues.filter(v => v < 70).length;
-
-  const tirPercent = Math.round((inRangeCount / allValues.length) * 100);
-  const tarPercent = Math.round((aboveRangeCount / allValues.length) * 100);
-  const tbrPercent = Math.round((belowRangeCount / allValues.length) * 100);
+  const tirPercent = allValues.length > 0 ? Math.round((inRangeCount / allValues.length) * 100) : '--';
 
   // Mean & CV Calculation
-  const meanGlucose = Math.round(allValues.reduce((a, b) => a + b, 0) / allValues.length);
-  const gmiValue = (3.31 + 0.02392 * meanGlucose).toFixed(1); // GMI = Estimated HbA1c
+  const meanGlucose = allValues.length > 0 ? Math.round(allValues.reduce((a, b) => a + b, 0) / allValues.length) : 0;
+  const gmiValue = meanGlucose > 0 ? (3.31 + 0.02392 * meanGlucose).toFixed(1) : '--';
+  const displayGlucose = hasLogs ? (glucoseLogs[0]?.value || currentGlucose) : 'No Data';
   const cvPercent = 18.4; // Glycemic variability CV %
 
   const handleOpenModal = () => {

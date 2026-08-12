@@ -189,7 +189,16 @@ export const AppProvider = ({ children }) => {
   const [waterIntake, setWaterIntake] = useState(1.5);
   const [waterGoal] = useState(2.5);
 
-  const [glucoseLogs, setGlucoseLogs] = useState([]);
+  const [glucoseLogs, setGlucoseLogs] = useState(() => {
+    const saved = localStorage.getItem('glycopulse_glucose_logs');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (err) {}
+    }
+    return [];
+  });
 
   const [hba1cHistory] = useState([
     { date: 'Jan 2026', value: 6.8 },
@@ -290,6 +299,20 @@ export const AppProvider = ({ children }) => {
   };
 
   const addGlucoseLog = async (newLog) => {
+    const formattedLog = {
+      ...newLog,
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setGlucoseLogs((prev) => {
+      const updated = [formattedLog, ...prev];
+      localStorage.setItem('glycopulse_glucose_logs', JSON.stringify(updated));
+      return updated;
+    });
+
+    setCurrentGlucose(newLog.value);
+
     // Send to Firebase Cloud Firestore Database (cardiora-new)
     const res = await apiService.logGlucose({
       userId: currentUser?.id || 'pat-101',
@@ -300,7 +323,6 @@ export const AppProvider = ({ children }) => {
       notes: newLog.notes
     });
 
-    setGlucoseLogs((prev) => [newLog, ...prev]);
     setIsBackendConnected(true);
     setDbEngineName('Firebase Cloud Firestore (cardiora-new)');
 

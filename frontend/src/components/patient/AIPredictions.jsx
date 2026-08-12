@@ -8,19 +8,21 @@ import {
 } from 'lucide-react';
 
 export const AIPredictions = () => {
-  const { currentGlucose, iobUnits, cobGrams, aiPrediction } = useApp();
+  const { currentGlucose, iobUnits, cobGrams, aiPrediction, glucoseLogs } = useApp();
+  const hasLogs = glucoseLogs && glucoseLogs.length > 0;
 
   const [simulationScenario, setSimulationScenario] = useState('standard');
 
   // 4-Hour Forward Predictive Forecast Points (+0m to +240m)
+  const baseGlucose = hasLogs ? (glucoseLogs[0]?.value || currentGlucose) : 118;
   const forecast4hData = [
-    { minute: 'Now (+0m)', predictedBg: currentGlucose, risk: 'Normal' },
-    { minute: '+30m', predictedBg: Math.round(currentGlucose + (cobGrams * 0.8) - (iobUnits * 12)), risk: 'Normal' },
-    { minute: '+60m', predictedBg: Math.round(currentGlucose + (cobGrams * 1.2) - (iobUnits * 18)), risk: 'Peak Meal' },
-    { minute: '+90m', predictedBg: Math.round(currentGlucose + (cobGrams * 0.9) - (iobUnits * 15)), risk: 'Normal' },
-    { minute: '+120m', predictedBg: Math.round(currentGlucose + (cobGrams * 0.4) - (iobUnits * 10)), risk: 'Normal' },
-    { minute: '+180m', predictedBg: Math.round(currentGlucose - (iobUnits * 6)), risk: 'Normal' },
-    { minute: '+240m', predictedBg: Math.round(currentGlucose - (iobUnits * 2)), risk: 'Baseline' }
+    { minute: 'Now (+0m)', predictedBg: baseGlucose, risk: 'Normal' },
+    { minute: '+30m', predictedBg: Math.round(baseGlucose + (cobGrams * 0.8) - (iobUnits * 12)), risk: 'Normal' },
+    { minute: '+60m', predictedBg: Math.round(baseGlucose + (cobGrams * 1.2) - (iobUnits * 18)), risk: 'Peak Meal' },
+    { minute: '+90m', predictedBg: Math.round(baseGlucose + (cobGrams * 0.9) - (iobUnits * 15)), risk: 'Normal' },
+    { minute: '+120m', predictedBg: Math.round(baseGlucose + (cobGrams * 0.4) - (iobUnits * 10)), risk: 'Normal' },
+    { minute: '+180m', predictedBg: Math.round(baseGlucose - (iobUnits * 6)), risk: 'Normal' },
+    { minute: '+240m', predictedBg: Math.round(baseGlucose - (iobUnits * 2)), risk: 'Baseline' }
   ];
 
   const minPredicted = Math.min(...forecast4hData.map(d => d.predictedBg));
@@ -45,6 +47,16 @@ export const AIPredictions = () => {
         </p>
       </div>
 
+      {!hasLogs ? (
+        <div className="glass-panel" style={{ padding: '3rem 2rem', textAlign: 'center', background: 'rgba(9, 13, 26, 0.6)' }}>
+          <Brain size={48} color="var(--accent-cyan)" style={{ marginBottom: '1rem', opacity: 0.8 }} />
+          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.5rem' }}>AI Model Standby</h3>
+          <p style={{ color: 'var(--text-muted)', maxWidth: '520px', margin: '0 auto', fontSize: '0.9rem', lineHeight: 1.6 }}>
+            The 4-Hour AI Predictive Glucose Engine requires telemetry data. Log your first blood sugar reading under <strong>Blood Glucose & CGM</strong> to calculate your projected trajectory curve and risk probabilities.
+          </p>
+        </div>
+      ) : (
+        <>
       {/* Primary Forecast Summary Card */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.2rem' }}>
         
@@ -122,6 +134,9 @@ export const AIPredictions = () => {
           </p>
         </div>
       </div>
+
+        </>
+      )}
 
     </div>
   );
