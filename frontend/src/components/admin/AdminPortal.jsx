@@ -150,9 +150,9 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
   };
 
   const filteredUsers = userDirectory.filter(u => 
-    u.name.toLowerCase().includes(userSearch.toLowerCase()) || 
-    u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
-    u.role.toLowerCase().includes(userSearch.toLowerCase())
+    (u.name || '').toLowerCase().includes(userSearch.toLowerCase()) || 
+    (u.email || '').toLowerCase().includes(userSearch.toLowerCase()) ||
+    (u.role || '').toLowerCase().includes(userSearch.toLowerCase())
   );
 
   return (
@@ -282,7 +282,7 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
                   <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                     <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>{u.name}</td>
                     <td style={{ padding: '0.75rem 1rem', color: 'var(--accent-cyan)' }}>{u.email}</td>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>{u.role.toUpperCase()}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>{(u.role || 'patient').toUpperCase()}</td>
                     <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{u.joined}</td>
                     <td style={{ padding: '0.75rem 1rem' }}>
                       <span className={`badge ${u.status === 'Active' ? 'badge-success' : 'badge-danger'}`}>
