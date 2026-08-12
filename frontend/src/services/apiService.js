@@ -37,9 +37,11 @@ export const apiService = {
   addPrescription: (data) => fetchAPI('doctor.php', { method: 'POST', body: JSON.stringify({ action: 'addPrescription', ...data }) }),
   
   getCaregiverData: () => fetchAPI('caregiver.php'),
+  postCaregiverAction: (data) => fetchAPI('caregiver.php', { method: 'POST', body: JSON.stringify(data) }),
   
   triggerEmergencySOS: (location) => fetchAPI('emergency.php', { method: 'POST', body: JSON.stringify({ location }) }),
   getMedicalID: () => fetchAPI('emergency.php'),
   
-  getAdminStats: () => fetchAPI('admin.php')
+  getAdminStats: () => fetchAPI('admin.php'),
+  postAdminAction: (data) => fetchAPI('admin.php', { method: 'POST', body: JSON.stringify(data) })
 };

@@ -57,6 +57,32 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
 
   const handleSendSms = (e) => {
     e.preventDefault();
+    if (!smsText.trim()) return;
+
+    // 1. Send POST to PHP Backend API
+    apiService.postCaregiverAction({
+      action: 'send_sms',
+      patientId: 'pat-976',
+      text: smsText
+    });
+
+    // 2. Append sent SMS to active alerts feed
+    const newAlert = {
+      id: 'alt-' + Date.now(),
+      time: 'Just now',
+      level: 'Info',
+      msg: `SMS Check-in sent to ${patientData.patientName}: "${smsText}"`,
+      acknowledged: true
+    };
+    setAlerts(prev => [newAlert, ...prev]);
+
+    // 3. Trigger native SMS app (Phone Link, iMessage, Android SMS)
+    try {
+      window.open(`sms:+15553492011?body=${encodeURIComponent(smsText)}`, '_blank');
+    } catch(err) {
+      console.log('SMS protocol opened');
+    }
+
     setSmsSent(true);
     setTimeout(() => {
       setSmsSent(false);

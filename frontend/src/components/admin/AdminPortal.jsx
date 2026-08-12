@@ -11,11 +11,11 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
 
   const [adminStats, setAdminStats] = useState({
     systemHealth: '100% Operational',
-    totalUsers: 14250,
-    activeDoctors: 380,
+    totalUsers: 3,
+    activeDoctors: 1,
     aiPredictionAccuracy: '96.4%',
-    dailyGlucoseLogs: 42100,
-    activeCGMConnections: 8920
+    dailyGlucoseLogs: 6,
+    activeCGMConnections: 2
   });
 
   const [aiModels, setAiModels] = useState([
@@ -25,11 +25,9 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
   ]);
 
   const [userDirectory, setUserDirectory] = useState([
-    { id: 'u-101', name: 'Sarah Jenkins', email: 'patient@glucocare.ai', role: 'patient', status: 'Active', joined: '2026-01-10' },
-    { id: 'u-201', name: 'Dr. Robert Vance, MD', email: 'doctor@glucocare.ai', role: 'doctor', status: 'Active', joined: '2025-11-04' },
-    { id: 'u-301', name: 'David Jenkins', email: 'caregiver@glucocare.ai', role: 'caregiver', status: 'Active', joined: '2026-01-12' },
-    { id: 'u-401', name: 'System Administrator', email: 'admin@glucocare.ai', role: 'admin', status: 'Active', joined: '2025-08-01' },
-    { id: 'u-102', name: 'Marcus Vance', email: 'marcus@glucocare.ai', role: 'patient', status: 'Active', joined: '2026-03-22' }
+    { id: 'pat-976', name: 'Kasun Jayalath', email: 'kasun@glucocare.ai', role: 'patient', status: 'Active', joined: '2026-01-10' },
+    { id: 'doc-598', name: 'Dr. Kasun Jayalath', email: 'kasun.doc@glucocare.ai', role: 'doctor', status: 'Active', joined: '2025-11-04' },
+    { id: 'adm-401', name: 'System Administrator', email: 'admin@glucocare.ai', role: 'admin', status: 'Active', joined: '2025-08-01' }
   ]);
 
   const [userSearch, setUserSearch] = useState('');
@@ -43,8 +41,11 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
 
   useEffect(() => {
     apiService.getAdminStats().then(res => {
-      if (res && res.status === 'success' && res.stats) {
-        setAdminStats(prev => ({ ...prev, ...res.stats }));
+      if (res && res.status === 'success') {
+        if (res.stats) setAdminStats(prev => ({ ...prev, ...res.stats }));
+        if (res.users && Array.isArray(res.users) && res.users.length > 0) {
+          setUserDirectory(res.users);
+        }
       }
     });
   }, []);
@@ -70,17 +71,26 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
     }, 1500);
   };
 
-  const handleCreateUser = (e) => {
+  const handleCreateUser = async (e) => {
     e.preventDefault();
-    const newUser = {
-      id: 'u-' + Date.now().toString().slice(-4),
+    const res = await apiService.postAdminAction({
+      action: 'create_user',
+      name: newUserName,
+      email: newUserEmail,
+      role: newUserRole
+    });
+
+    const newUser = (res && res.status === 'success' && res.user) ? res.user : {
+      id: 'usr-' + Date.now().toString().slice(-4),
       name: newUserName,
       email: newUserEmail,
       role: newUserRole,
       status: 'Active',
       joined: new Date().toISOString().split('T')[0]
     };
+
     setUserDirectory(prev => [newUser, ...prev]);
+    setAdminStats(prev => ({ ...prev, totalUsers: prev.totalUsers + 1 }));
     setNewUserName('');
     setNewUserEmail('');
     setShowAddUserModal(false);
