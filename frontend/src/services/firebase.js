@@ -1,21 +1,20 @@
-// GlycoPulse AI - Firebase Cloud Engine
-import { initializeApp } from 'firebase/app';
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
   signOut,
   updateProfile
 } from 'firebase/auth';
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  limit,
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  query, 
+  where, 
+  orderBy, 
+  limit, 
   onSnapshot,
   serverTimestamp,
   setDoc,
@@ -33,16 +32,16 @@ const firebaseConfig = {
   measurementId: "G-MYFGCNWBJ5"
 };
 
-// Initialize Firebase App & Services
+// Initialize Firebase App & Services (HMR Safe)
 let app, auth, db;
 
 try {
-  app = initializeApp(firebaseConfig);
+  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
-  console.log('[Firebase Initialized] Connected to Firebase Cloud Firestore & Auth');
+  console.log('[Firebase Initialized] Connected to Firebase Cloud Firestore & Auth (cardiora-new)');
 } catch (err) {
-  console.warn('[Firebase Init Warning] Offline or Demo Mode:', err.message);
+  console.warn('[Firebase Init Warning]:', err.message);
 }
 
 export {
