@@ -59,7 +59,7 @@ export const PDFExportModal = () => {
     doc.setFont('helvetica', 'normal');
     y += 6;
 
-    glucoseLogs.slice(0, 7).forEach(l => {
+    (glucoseLogs || []).slice(0, 7).forEach(l => {
       doc.text(l.timestamp, 14, y);
       doc.text(String(l.value), 60, y);
       doc.text(l.type, 110, y);

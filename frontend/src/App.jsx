@@ -23,6 +23,8 @@ import { AIChatWidget } from './components/common/AIChatWidget';
 import { PDFExportModal } from './components/common/PDFExportModal';
 import { LoginModal } from './components/common/LoginModal';
 
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+
 const MainContentArea = () => {
   const { role, activeTab } = useApp();
 
@@ -45,7 +47,9 @@ const MainContentArea = () => {
 
   return (
     <main className="main-content">
-      {renderTabContent()}
+      <ErrorBoundary>
+        {renderTabContent()}
+      </ErrorBoundary>
     </main>
   );
 };
@@ -76,8 +80,10 @@ const AppShell = () => {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppShell />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppShell />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
