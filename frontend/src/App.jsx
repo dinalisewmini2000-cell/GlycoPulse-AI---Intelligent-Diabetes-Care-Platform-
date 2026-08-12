@@ -1,8 +1,8 @@
-// import React from 'react';
-// import { AppProvider, useApp } from './context/AppContext';
-// import { Navbar } from './components/layout/Navbar';
-// import { Sidebar } from './components/layout/Sidebar';
-// import { LandingPage } from './components/common/LandingPage';
+import React from 'react';
+import { AppProvider, useApp } from './context/AppContext';
+import { Navbar } from './components/layout/Navbar';
+import { Sidebar } from './components/layout/Sidebar';
+import { LandingPage } from './components/common/LandingPage';
 
 // Patient Components
 import { GlucoseDashboard } from './components/patient/GlucoseDashboard';
