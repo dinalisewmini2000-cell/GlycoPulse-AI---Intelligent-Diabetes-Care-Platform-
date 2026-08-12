@@ -1,47 +1,48 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { 
-  getAuth, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+// GlycoPulse AI - Firebase Cloud Engine
+import { initializeApp } from 'firebase/app';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut,
   updateProfile
 } from 'firebase/auth';
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
   onSnapshot,
   serverTimestamp,
   setDoc,
   doc
 } from 'firebase/firestore';
 
-// Firebase Cloud Console Configuration (Environment Variable Driven)
+// Firebase Cloud Console Configuration (Updated)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyC8xrJ3_xuYuqbkX8XI0rb33neMV_3Mj5s",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBg192wczSUPLDnOof2WbUVMkEANDM8BVE",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "cardiora-new.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "cardiora-new",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "cardiora-new.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "828308347847",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:828308347847:web:e57e3a4310a7fcdbb1d7e2",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-MYFGCNWBJ5"
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "828388347647",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:828388347647:web:2514468aacb62818b1d7e2",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-YDNN3241D7"
 };
 
-// Initialize Firebase App & Services (HMR Safe)
+// Initialize Firebase App & Services
 let app, auth, db;
 
 try {
-  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
-  console.log('[Firebase Initialized] Connected to Firebase Cloud Firestore & Auth (cardiora-new)');
+  console.log('[Firebase Initialized] Connected to Firebase Cloud Firestore & Auth');
 } catch (err) {
-  console.warn('[Firebase Init Warning]:', err.message);
+  console.warn('[Firebase Init Warning] Offline or Demo Mode:', err.message);
 }
 
 export {
