@@ -11,7 +11,6 @@ import { FoodNutrition } from './components/patient/FoodNutrition';
 import { FitnessSleep } from './components/patient/FitnessSleep';
 import { RiskComplications } from './components/patient/RiskComplications';
 import { LabOCR } from './components/patient/LabOCR';
-import { SmartDevicesHub } from './components/patient/SmartDevicesHub';
 import { EmergencySOSModal } from './components/patient/EmergencySOSModal';
 
 // Doctor, Caregiver, Admin Components
@@ -40,7 +39,6 @@ const MainContentArea = () => {
       case 'fitness': return <FitnessSleep />;
       case 'complications': return <RiskComplications />;
       case 'lab': return <LabOCR />;
-      case 'devices': return <SmartDevicesHub />;
       default: return <GlucoseDashboard />;
     }
   };

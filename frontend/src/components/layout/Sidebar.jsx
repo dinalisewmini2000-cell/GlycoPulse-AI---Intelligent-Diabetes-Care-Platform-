@@ -16,8 +16,7 @@ export const Sidebar = () => {
     { id: 'food', label: 'AI Food Vision & Meals', icon: Utensils },
     { id: 'fitness', label: 'Fitness & Sleep Tracker', icon: Flame },
     { id: 'complications', label: 'Complications & Risks', icon: ShieldAlert },
-    { id: 'lab', label: 'Lab OCR & Reports', icon: FileSpreadsheet },
-    { id: 'devices', label: 'Smart Device Hub', icon: Radio }
+    { id: 'lab', label: 'Lab OCR & Reports', icon: FileSpreadsheet }
   ];
 
   const doctorTabs = [
