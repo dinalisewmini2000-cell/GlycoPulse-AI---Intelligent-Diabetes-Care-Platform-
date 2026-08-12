@@ -24,13 +24,13 @@ import {
 
 // Firebase Cloud Console Configuration (Updated)
 const firebaseConfig = {
-  apiKey: "AIzaSyBg192wczSUPLDnOof2WbUVMkEANDM8BVE",
-  authDomain: "cardiora-new.firebaseapp.com",
-  projectId: "cardiora-new",
-  storageBucket: "cardiora-new.firebasestorage.app",
-  messagingSenderId: "828388347647",
-  appId: "1:828388347647:web:2514468aacb62818b1d7e2",
-  measurementId: "G-YDNN3241D7"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBg192wczSUPLDnOof2WbUVMkEANDM8BVE",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "cardiora-new.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "cardiora-new",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "cardiora-new.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "828388347647",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:828388347647:web:2514468aacb62818b1d7e2",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-YDNN3241D7"
 };
 
 // Initialize Firebase App & Services
