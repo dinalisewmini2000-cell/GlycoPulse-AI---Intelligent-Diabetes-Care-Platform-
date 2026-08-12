@@ -21,15 +21,15 @@ import {
   doc
 } from 'firebase/firestore';
 
-// Firebase Cloud Console Configuration (Updated Live Key)
+// Firebase Cloud Console Configuration (Environment Variable Driven)
 const firebaseConfig = {
-  apiKey: "AIzaSyC8xrJ3_xuYuqbkX8XI0rb33neMV_3Mj5s",
-  authDomain: "cardiora-new.firebaseapp.com",
-  projectId: "cardiora-new",
-  storageBucket: "cardiora-new.firebasestorage.app",
-  messagingSenderId: "828308347847",
-  appId: "1:828308347847:web:e57e3a4310a7fcdbb1d7e2",
-  measurementId: "G-MYFGCNWBJ5"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyC8xrJ3_xuYuqbkX8XI0rb33neMV_3Mj5s",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "cardiora-new.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "cardiora-new",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "cardiora-new.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "828308347847",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:828308347847:web:e57e3a4310a7fcdbb1d7e2",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-MYFGCNWBJ5"
 };
 
 // Initialize Firebase App & Services (HMR Safe)
