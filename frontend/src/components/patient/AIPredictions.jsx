@@ -47,16 +47,6 @@ export const AIPredictions = () => {
         </p>
       </div>
 
-      {!hasLogs ? (
-        <div className="glass-panel" style={{ padding: '3rem 2rem', textAlign: 'center', background: 'rgba(9, 13, 26, 0.6)' }}>
-          <Brain size={48} color="var(--accent-cyan)" style={{ marginBottom: '1rem', opacity: 0.8 }} />
-          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.5rem' }}>AI Model Standby</h3>
-          <p style={{ color: 'var(--text-muted)', maxWidth: '520px', margin: '0 auto', fontSize: '0.9rem', lineHeight: 1.6 }}>
-            The 4-Hour AI Predictive Glucose Engine requires telemetry data. Log your first blood sugar reading under <strong>Blood Glucose & CGM</strong> to calculate your projected trajectory curve and risk probabilities.
-          </p>
-        </div>
-      ) : (
-        <>
       {/* Primary Forecast Summary Card */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.2rem' }}>
         
@@ -134,9 +124,6 @@ export const AIPredictions = () => {
           </p>
         </div>
       </div>
-
-        </>
-      )}
 
     </div>
   );

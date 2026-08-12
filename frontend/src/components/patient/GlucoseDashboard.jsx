@@ -40,7 +40,12 @@ export const GlucoseDashboard = () => {
   // Calculate TIR / TAR / TBR metrics based on user's actual logs
   const allValues = cgm24hData.map(d => d.bg);
   const inRangeCount = allValues.filter(v => v >= 70 && v <= 180).length;
-  const tirPercent = allValues.length > 0 ? Math.round((inRangeCount / allValues.length) * 100) : '--';
+  const aboveRangeCount = allValues.filter(v => v > 180).length;
+  const belowRangeCount = allValues.filter(v => v < 70).length;
+
+  const tirPercent = allValues.length > 0 ? Math.round((inRangeCount / allValues.length) * 100) : 0;
+  const tarPercent = allValues.length > 0 ? Math.round((aboveRangeCount / allValues.length) * 100) : 0;
+  const tbrPercent = allValues.length > 0 ? Math.round((belowRangeCount / allValues.length) * 100) : 0;
 
   // Mean & CV Calculation
   const meanGlucose = allValues.length > 0 ? Math.round(allValues.reduce((a, b) => a + b, 0) / allValues.length) : 0;
@@ -233,7 +238,7 @@ export const GlucoseDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {glucoseLogs.map(l => (
+              {(glucoseLogs || []).map(l => (
                 <tr key={l.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                   <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{l.timestamp}</td>
                   <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: l.value < 70 ? 'var(--accent-rose)' : l.value > 180 ? 'var(--accent-amber)' : 'var(--accent-cyan)' }}>
