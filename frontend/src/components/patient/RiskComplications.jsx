@@ -49,22 +49,22 @@ export const RiskComplications = () => {
       {/* Complication Risk Matrix Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.2rem' }}>
         
-        <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-emerald)' }}>
+        <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-cyan)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
-            <Eye size={20} color="var(--accent-emerald)" />
+            <Eye size={20} color="var(--accent-cyan)" />
             <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>RETINOPATHY RISK</span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>LOW (4.2%)</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Fundus exam clean | Next: Oct 2026</div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>PENDING EXAM</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Fundus photo scan required</div>
         </div>
 
-        <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-emerald)' }}>
+        <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-cyan)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
-            <Activity size={20} color="var(--accent-emerald)" />
+            <Activity size={20} color="var(--accent-cyan)" />
             <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>NEPHROPATHY RISK</span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>OPTIMAL (eGFR 94)</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Microalbumin: 12 mg/g</div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>PENDING LAB</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>eGFR / Microalbumin report required</div>
         </div>
 
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-cyan)' }}>
@@ -72,8 +72,8 @@ export const RiskComplications = () => {
             <Heart size={20} color="var(--accent-cyan)" />
             <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>CARDIOVASCULAR (ASCVD)</span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>6.8% (10-Yr Risk)</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>BP: 118/76 mmHg | LDL: 98 mg/dL</div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>PENDING EVALUATION</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>BP & Lipid profile required</div>
         </div>
 
       </div>
