@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { MessageSquare, X, Send, Bot, User, Sparkles } from 'lucide-react';
 
 export const AIChatWidget = () => {
-  const { role, currentUser, currentGlucose, glucoseLogs, iobUnits: iob = 1.4, cobGrams: cob = 18 } = useApp();
+  const { role, currentUser, currentGlucose, glucoseLogs, iobUnits: iob = 0, cobGrams: cob = 0 } = useApp();
   
   // Show 24/7 AI Chatbot exclusively for Patient accounts
   if (role !== 'patient') return null;
@@ -12,6 +12,8 @@ export const AIChatWidget = () => {
   const messagesEndRef = useRef(null);
 
   const userName = currentUser?.name ? currentUser.name.split(' ')[0] : 'Patient';
+  const hasLogs = glucoseLogs && glucoseLogs.length > 0;
+  const latestVal = hasLogs ? (glucoseLogs[0]?.value || currentGlucose) : null;
 
   const [messages, setMessages] = useState([
     { 
@@ -45,7 +47,7 @@ export const AIChatWidget = () => {
 
   const quickPrompts = [
     'How am I doing today?',
-    'Explain my HbA1c of 6.3%',
+    'Explain my HbA1c estimate',
     'What to eat during low blood sugar?',
     'How does sleep affect glucose?'
   ];
@@ -55,31 +57,37 @@ export const AIChatWidget = () => {
 
     // 1. Greetings
     if (/^(hi|hello|hey|greetings|good morning|good afternoon|good evening|hihhi|sup|howdy)$/i.test(q) || q.startsWith('hi ') || q.startsWith('hello ')) {
-      const statusStr = currentGlucose < 70 ? 'Low Warning' : currentGlucose > 180 ? 'Elevated' : 'Optimal Target';
-      return `Hello ${userName}! 👋 How are you feeling today? Your live glucose is currently ${currentGlucose} mg/dL (${statusStr}). How can I assist with your diabetes care or meal planning today?`;
+      if (!hasLogs) {
+        return `Hello ${userName}! 👋 How are you feeling today? You haven't recorded any blood sugar readings yet. Log your first reading under 'Blood Glucose & CGM' so I can analyze your health!`;
+      }
+      const statusStr = latestVal < 70 ? 'Low Warning' : latestVal > 180 ? 'Elevated' : 'Optimal Target';
+      return `Hello ${userName}! 👋 How are you feeling today? Your latest logged glucose reading is ${latestVal} mg/dL (${statusStr}). How can I assist with your diabetes care today?`;
     }
 
     // 2. Status / Glucose check
     if (q.includes('how am i') || q.includes('my glucose') || q.includes('my level') || q.includes('my sugar') || q.includes('status') || q.includes('reading')) {
-      const targetState = currentGlucose >= 70 && currentGlucose <= 180 
-        ? '🌟 You are currently in your optimal target glycemic range (70-180 mg/dL)!'
-        : currentGlucose < 70 
-        ? '⚠️ Caution: Your glucose level is below 70 mg/dL. Please follow the 15-15 rule and consume fast-acting carbs!'
-        : '📈 Your glucose level is elevated (>180 mg/dL). Consider checking your active insulin (IOB) or taking a correction dose as prescribed by your doctor.';
+      if (!hasLogs) {
+        return `You have not recorded any blood glucose readings yet, ${userName}! 📋\n\nPlease log your blood sugar reading under 'Blood Glucose & CGM' so I can give you an accurate analysis of your glycemic condition.`;
+      }
 
-      return `Your latest glucose reading is ${currentGlucose} mg/dL.\nActive Insulin (IOB): ${iob} U | Carbs on Board (COB): ${cob} g.\n\n${targetState}`;
+      const targetState = latestVal >= 70 && latestVal <= 180 
+        ? '🌟 You are currently in your optimal target glycemic range (70-180 mg/dL)!'
+        : latestVal < 70 
+        ? '⚠️ Caution: Your latest reading is below 70 mg/dL. Follow the 15-15 rule and consume fast-acting carbs!'
+        : '📈 Your latest reading is elevated (>180 mg/dL). Check your active insulin (IOB) or consult your physician.';
+
+      return `Your latest recorded glucose reading is ${latestVal} mg/dL.\nActive Insulin (IOB): ${iob} U | Carbs on Board (COB): ${cob} g.\n\n${targetState}`;
     }
 
     // 3. HbA1c & Lab Analysis
     if (q.includes('hba1c') || q.includes('a1c') || q.includes('lab') || q.includes('egfr') || q.includes('test')) {
-      const hasReadings = glucoseLogs && glucoseLogs.length > 0;
-      if (hasReadings) {
+      if (hasLogs) {
         const sum = glucoseLogs.reduce((acc, l) => acc + (l.value || 118), 0);
         const mean = Math.round(sum / glucoseLogs.length);
         const estA1c = (3.31 + 0.02392 * mean).toFixed(1);
         return `Based on your ${glucoseLogs.length} logged glucose reading(s):\n• Mean Glucose: ${mean} mg/dL\n• Estimated HbA1c (GMI): ${estA1c}%\n\nUpload your full diagnostic PDF under 'Lab OCR & Reports' to parse exact renal & lipid biomarkers!`;
       }
-      return `No recent lab report uploaded yet.\n\nTo view your personalized HbA1c estimate, log your blood sugar readings under 'Blood Glucose & CGM' or upload a diagnostic PDF report under 'Lab OCR & Reports'.`;
+      return `No blood sugar readings recorded yet.\n\nTo view your personalized HbA1c estimate, log your readings under 'Blood Glucose & CGM' or upload a diagnostic PDF report under 'Lab OCR & Reports'.`;
     }
 
     // 4. Hypoglycemia / Low Blood Sugar
@@ -123,7 +131,8 @@ export const AIChatWidget = () => {
     }
 
     // 12. Intelligent Smart Fallback
-    return `I am your AI Clinical Companion, ${userName}! 🤖\n\nI can help you with:\n• Live glucose telemetry & HbA1c breakdown\n• Insulin bolus & carb ratio calculations\n• Low/High blood sugar emergency steps\n• Meal guidance & Lab report explanations\n\nYour current glucose is ${currentGlucose} mg/dL. What would you like to explore?`;
+    const statusMsg = hasLogs ? `Your latest glucose reading is ${latestVal} mg/dL.` : 'You have no blood glucose logs recorded yet.';
+    return `I am your AI Clinical Companion, ${userName}! 🤖\n\nI can help you with:\n• Live glucose telemetry & HbA1c breakdown\n• Insulin bolus & carb ratio calculations\n• Low/High blood sugar emergency steps\n• Meal guidance & Lab report explanations\n\n${statusMsg} What would you like to explore?`;
   };
 
   const handleSend = (textToSend) => {
