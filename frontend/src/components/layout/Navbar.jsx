@@ -69,43 +69,40 @@ export const Navbar = () => {
         {/* Action Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
           
-          {/* User Profile & Logout Status */}
-          {isAuthenticated && currentUser ? (
-            <div style={{ 
-              display: 'flex', alignItems: 'center', gap: '0.6rem', 
-              background: 'rgba(255,255,255,0.05)', padding: '0.35rem 0.75rem', 
-              borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' 
-            }}>
-              <div style={{
-                width: '32px', height: '32px', borderRadius: '50%',
-                background: `linear-gradient(135deg, ${roleConfigs[role]?.color || '#06b6d4'}, #3b82f6)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 700, fontSize: '0.85rem', color: '#fff'
+          {/* User Profile & Logout / Sign In Control */}
+          {isAuthenticated ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div style={{ 
+                display: 'flex', alignItems: 'center', gap: '0.65rem', 
+                background: 'rgba(255,255,255,0.06)', padding: '0.4rem 0.85rem', 
+                borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' 
               }}>
-                {currentUser.name ? currentUser.name.charAt(0) : 'U'}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                  {currentUser.name || 'Dinali Bhagya'}
-                </span>
-                <span style={{ fontSize: '0.7rem', color: roleConfigs[role]?.color || '#06b6d4', fontWeight: 600 }}>
-                  {role.toUpperCase()}
-                </span>
+                <div style={{
+                  width: '32px', height: '32px', borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${roleConfigs[role]?.color || '#06b6d4'}, #3b82f6)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 700, fontSize: '0.88rem', color: '#fff',
+                  boxShadow: `0 0 10px ${roleConfigs[role]?.color || '#06b6d4'}44`
+                }}>
+                  {(currentUser?.name || 'Dinali Bhagya').charAt(0).toUpperCase()}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                    {currentUser?.name || 'Dinali Bhagya'}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: roleConfigs[role]?.color || '#06b6d4', fontWeight: 700 }}>
+                    {role.toUpperCase()}
+                  </span>
+                </div>
               </div>
 
-              {/* Logout Button */}
+              {/* Dedicated Logout Button */}
               <button 
                 onClick={logoutUser}
-                title="Sign Out"
-                style={{
-                  marginLeft: '0.4rem', background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px',
-                  padding: '0.4rem 0.6rem', color: '#f87171', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem',
-                  fontWeight: 600, transition: 'all 0.2s ease'
-                }}
+                title="Log out of session"
+                className="btn-danger-outline"
               >
-                <LogOut size={15} />
+                <LogOut size={16} />
                 <span>Logout</span>
               </button>
             </div>
@@ -128,12 +125,6 @@ export const Navbar = () => {
           {/* Theme Toggle */}
           <button onClick={toggleTheme} className="btn-outline" style={{ padding: '0.5rem', borderRadius: '50%' }}>
             {theme === 'dark' ? <Sun size={18} color="#f59e0b" /> : <Moon size={18} color="#8b5cf6" />}
-          </button>
-
-          {/* Emergency SOS Button */}
-          <button onClick={() => setSosActive(true)} className="btn-danger-glow sos-anim" style={{ fontSize: '0.85rem' }}>
-            <AlertTriangle size={17} />
-            <span>SOS EMERGENCY</span>
           </button>
         </div>
 

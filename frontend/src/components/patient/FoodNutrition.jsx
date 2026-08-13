@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { apiService } from '../../services/apiService';
+import { analyzeFoodImage } from '../../services/foodVisionService';
 import { 
   Utensils, Camera, Sparkles, CheckCircle2, AlertTriangle, 
-  ShoppingCart, Droplets, Flame, PieChart, RefreshCw, ChevronRight, UploadCloud, Download 
+  ShoppingCart, Droplets, Flame, PieChart, RefreshCw, ChevronRight, UploadCloud, Download, AlertCircle, RotateCcw 
 } from 'lucide-react';
 
 export const FoodNutrition = () => {
@@ -19,50 +19,35 @@ export const FoodNutrition = () => {
 
   const [foodAnalysis, setFoodAnalysis] = useState(null);
 
+  const handleResetFoodScan = () => {
+    setCustomImage(null);
+    setFoodAnalysis(null);
+    setSelectedFood('salad');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const [shoppingList] = useState({
     Produce: ['Spinach', 'Blueberries', 'Avocados', 'Asparagus'],
     Proteins: ['Wild Salmon', 'Chicken Breast', 'Greek Yogurt'],
     Grains: ['Sprouted Grain Bread', 'Quinoa', 'Walnuts', 'Chia Seeds']
   });
 
-  const handleScanMeal = (typeKey) => {
+  const handleScanMeal = async (typeKey) => {
     setSelectedFood(typeKey);
     setIsScanning(true);
     setCustomImage(null);
     
-    apiService.analyzeFood(typeKey).then(res => {
-      setTimeout(() => {
-        if (res && res.status === 'success' && res.analysis) {
-          setFoodAnalysis(res.analysis);
-        } else {
-          const presets = {
-            salad: {
-              foodName: 'Mediterranean Chicken Salad & Quinoa',
-              calories: 380, carbs: 28, sugar: 6, protein: 34, fat: 12, fiber: 7,
-              glycemicIndex: 42, glycemicLoad: 11.7, portionEstimate: '1 Bowl (350g)', score: 92,
-              healthyAlternative: 'Add chia seeds or avocado slice for healthy omega-3 fats.'
-            },
-            pizza: {
-              foodName: 'Pepperoni & Cheese Pizza (2 Slices)',
-              calories: 580, carbs: 62, sugar: 8, protein: 22, fat: 26, fiber: 2,
-              glycemicIndex: 75, glycemicLoad: 46.5, portionEstimate: '2 Slices (240g)', score: 45,
-              healthyAlternative: 'Switch to cauliflower crust pizza with lean turkey breast & spinach.'
-            },
-            oatmeal: {
-              foodName: 'Steel-Cut Oats with Berries & Almonds',
-              calories: 310, carbs: 44, sugar: 9, protein: 11, fat: 9, fiber: 9,
-              glycemicIndex: 50, glycemicLoad: 22.0, portionEstimate: '1 Bowl (250g)', score: 88,
-              healthyAlternative: 'Stir in cinnamon powder to naturally improve insulin sensitivity.'
-            }
-          };
-          setFoodAnalysis(presets[typeKey]);
-        }
-        setIsScanning(false);
-      }, 800);
-    });
+    try {
+      const result = await analyzeFoodImage(null, typeKey);
+      setFoodAnalysis(result);
+    } catch (err) {
+      console.error('Food scan error:', err);
+    } finally {
+      setIsScanning(false);
+    }
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
@@ -71,23 +56,14 @@ export const FoodNutrition = () => {
     setSelectedFood('custom');
     setIsScanning(true);
 
-    setTimeout(() => {
-      setFoodAnalysis({
-        foodName: `Scanned: ${file.name.replace(/\.[^/.]+$/, "")}`,
-        calories: 420,
-        carbs: 38,
-        sugar: 7,
-        protein: 26,
-        fat: 14,
-        fiber: 6,
-        glycemicIndex: 52,
-        glycemicLoad: 19.7,
-        portionEstimate: 'Uploaded Photo Portion (approx. 320g)',
-        score: 84,
-        healthyAlternative: 'AI Vision recommends pairing this dish with 1 glass of water to stabilize post-meal glucose absorption.'
-      });
+    try {
+      const result = await analyzeFoodImage(file);
+      setFoodAnalysis(result);
+    } catch (err) {
+      console.error('Food upload error:', err);
+    } finally {
       setIsScanning(false);
-    }, 1200);
+    }
   };
 
   const handleExportShoppingList = () => {
@@ -154,6 +130,13 @@ export const FoodNutrition = () => {
               <span>Upload Custom Food Photo</span>
             </button>
 
+            {(customImage || foodAnalysis) && (
+              <button onClick={handleResetFoodScan} className="btn-outline" style={{ fontSize: '0.82rem', borderColor: 'var(--accent-teal)' }}>
+                <RotateCcw size={16} />
+                <span>Refresh & New Scan</span>
+              </button>
+            )}
+
             <button onClick={() => handleScanMeal('salad')} className={`btn-outline ${selectedFood === 'salad' ? 'active' : ''}`} style={{ borderColor: selectedFood === 'salad' ? 'var(--accent-teal)' : '' }}>
               🥗 Chicken Salad
             </button>
@@ -167,18 +150,24 @@ export const FoodNutrition = () => {
         </div>
 
         {/* Custom Image Preview if uploaded */}
-        {customImage && !isScanning && (
-          <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
-            <img src={customImage} alt="Uploaded meal" style={{ maxWidth: '200px', maxHeight: '150px', borderRadius: '12px', border: '2px solid var(--accent-teal)', objectFit: 'cover' }} />
+        {customImage && (
+          <div style={{ marginBottom: '1rem', textAlign: 'center', position: 'relative' }}>
+            <img src={customImage} alt="Uploaded meal scan" style={{ maxWidth: '220px', maxHeight: '160px', borderRadius: '12px', border: '2px solid var(--accent-teal)', objectFit: 'cover', boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }} />
+            <div style={{ marginTop: '0.5rem' }}>
+              <button onClick={() => fileInputRef.current?.click()} className="btn-outline" style={{ fontSize: '0.78rem', padding: '0.3rem 0.75rem' }}>
+                <RotateCcw size={14} />
+                <span>Change / Re-upload Image</span>
+              </button>
+            </div>
           </div>
         )}
 
         {/* Scanner Result Card */}
         {isScanning ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--accent-teal)' }}>
-            <RefreshCw size={36} className="animate-spin" style={{ margin: '0 auto 1rem auto' }} />
-            <div style={{ fontWeight: 700 }}>Analyzing Food Image with Vision AI...</div>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Identifying portion volume, macro-nutrients, GI & GL values</p>
+            <RefreshCw size={36} className="spin-slow" style={{ margin: '0 auto 1rem auto' }} />
+            <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>Analyzing Food Pixels with Vision AI...</div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Checking image validity, food chrominance, portion volume, and macronutrients...</p>
           </div>
         ) : !foodAnalysis ? (
           <div style={{ padding: '2.5rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
@@ -188,12 +177,41 @@ export const FoodNutrition = () => {
               Upload your meal photo above or click one of the sample meal buttons to instantly calculate carbohydrates, glycemic load, and glucose impact.
             </p>
           </div>
+        ) : foodAnalysis.isFood === false ? (
+          /* NON-FOOD IMAGE DETECTED CARD */
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '1.5rem', borderRadius: '14px', border: '1px solid rgba(239, 68, 68, 0.3)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#f87171' }}>
+                <AlertCircle size={22} />
+                <h4 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>
+                  {foodAnalysis.statusText || 'No Food Detected'}
+                </h4>
+              </div>
+              <button onClick={() => fileInputRef.current?.click()} className="btn-glow" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
+                <RotateCcw size={14} />
+                <span>Upload New Photo</span>
+              </button>
+            </div>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-main)', margin: 0 }}>
+              {foodAnalysis.subText || 'The uploaded image appears to be a mobile screenshot, document, or non-food image.'}
+            </p>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              💡 <strong>Instruction:</strong> {foodAnalysis.recommendation || 'Please upload a clear photograph of a real meal, plate, or food item to perform food nutrition recognition.'}
+            </div>
+          </div>
         ) : (
+          /* VALID FOOD ANALYSIS CARD */
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: 'var(--border-color)' }}>
             
             {/* Meal Title & Score */}
             <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>IDENTIFIED MEAL</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>IDENTIFIED MEAL</span>
+                <button onClick={handleResetFoodScan} className="btn-outline" style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}>
+                  <RotateCcw size={13} />
+                  <span>Scan Different Meal</span>
+                </button>
+              </div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0.3rem 0' }}>{foodAnalysis.foodName}</h3>
               <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.8rem' }}>Portion: {foodAnalysis.portionEstimate}</div>
 

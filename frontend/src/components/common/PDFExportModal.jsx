@@ -4,7 +4,7 @@ import { jsPDF } from 'jspdf';
 import { FileText, Download, CheckCircle2, X, Calendar, Filter } from 'lucide-react';
 
 export const PDFExportModal = () => {
-  const { pdfModalOpen, setPdfModalOpen, glucoseLogs, currentGlucose, currentUser } = useApp();
+  const { pdfModalOpen, setPdfModalOpen, glucoseLogs, currentGlucose, currentUser, dfuScanResult } = useApp();
   const [downloaded, setDownloaded] = useState(false);
   const [dateRange, setDateRange] = useState('30');
   const [includeLab, setIncludeLab] = useState(true);
@@ -89,14 +89,30 @@ export const PDFExportModal = () => {
       y += 10;
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('4. Micro-Vascular & Ulcer Risk Screening', 14, y);
+      doc.text('4. DFU AI Visual Foot Inspection & Screening', 14, y);
       y += 8;
 
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text('• Diabetic Retinopathy Risk: Low (4.2%)', 14, y);
-      y += 6;
-      doc.text('• Diabetic Foot Ulcer (DFU) Vision Grade: Grade 0 (96% Perfusion)', 14, y);
+      if (dfuScanResult) {
+        doc.text(`• Visual Screening Result: ${dfuScanResult.statusText || dfuScanResult.screeningResult}`, 14, y);
+        y += 6;
+        doc.text(`• Assessment Confidence: ${dfuScanResult.confidence}`, 14, y);
+        y += 6;
+        if (dfuScanResult.findings && dfuScanResult.findings.length > 0) {
+          dfuScanResult.findings.forEach(f => {
+            doc.text(`• Finding: ${f.type} (${f.location})`, 14, y);
+            y += 6;
+          });
+        }
+        if (dfuScanResult.recommendation) {
+          doc.text(`• Clinical Recommendation: ${dfuScanResult.recommendation.slice(0, 85)}...`, 14, y);
+          y += 6;
+        }
+        doc.text('• Safety Note: Image-based visual screening only; clinical evaluation required.', 14, y);
+      } else {
+        doc.text('• DFU Foot Inspection: No foot photo uploaded for visual screening.', 14, y);
+      }
     }
 
     // Save PDF

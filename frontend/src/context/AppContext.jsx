@@ -14,7 +14,6 @@ export const AppProvider = ({ children }) => {
 
   // Active Main Tab
   const [activeTab, setActiveTab] = useState('glucose'); 
-  const [sosActive, setSosActive] = useState(false);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
 
   // Global Toast Alert Banner
@@ -22,7 +21,9 @@ export const AppProvider = ({ children }) => {
 
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('glycopulse_auth') === 'true' && !!localStorage.getItem('glycopulse_user');
+    const auth = localStorage.getItem('glycopulse_auth');
+    if (auth !== null) return auth === 'true';
+    return true; // Default session active on initial load
   });
   const [role, setRole] = useState(() => localStorage.getItem('glycopulse_role') || 'patient');
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -52,7 +53,12 @@ export const AppProvider = ({ children }) => {
         }
       } catch (err) {}
     }
-    return null;
+    return {
+      id: 'usr-101',
+      name: 'Dinali Bhagya',
+      email: 'dinali@glucocare.ai',
+      role: localStorage.getItem('glycopulse_role') || 'patient'
+    };
   });
 
   // Check Backend Connection & Fetch DB Logs on Mount
@@ -200,7 +206,7 @@ export const AppProvider = ({ children }) => {
     setIsAuthenticated(false);
     setCurrentUser(null);
     setGlucoseLogs([]);
-    localStorage.removeItem('glycopulse_auth');
+    localStorage.setItem('glycopulse_auth', 'false');
     localStorage.removeItem('glycopulse_user');
     localStorage.removeItem('glycopulse_role');
     setAuthModalOpen(false);
@@ -255,6 +261,15 @@ export const AppProvider = ({ children }) => {
   });
   const [streakDays, setStreakDays] = useState(0);
   const [healthScore, setHealthScore] = useState(0);
+
+  // DFU Foot Vision Scanner State
+  const [dfuScanResult, setDfuScanResult] = useState(null);
+  const [dfuPhotoUrl, setDfuPhotoUrl] = useState(null);
+
+  // Complication Risk Matrix States (Retinopathy, Nephropathy, ASCVD)
+  const [retinopathyStatus, setRetinopathyStatus] = useState(null);
+  const [nephropathyStatus, setNephropathyStatus] = useState(null);
+  const [ascvdStatus, setAscvdStatus] = useState(null);
 
   useEffect(() => {
     localStorage.setItem('glycopulse_theme', theme);
@@ -385,8 +400,6 @@ export const AppProvider = ({ children }) => {
         setRole,
         activeTab,
         setActiveTab,
-        sosActive,
-        setSosActive,
         pdfModalOpen,
         setPdfModalOpen,
         isAuthenticated,
@@ -414,7 +427,17 @@ export const AppProvider = ({ children }) => {
         streakDays,
         healthScore,
         toastAlert,
-        setToastAlert
+        setToastAlert,
+        dfuScanResult,
+        setDfuScanResult,
+        dfuPhotoUrl,
+        setDfuPhotoUrl,
+        retinopathyStatus,
+        setRetinopathyStatus,
+        nephropathyStatus,
+        setNephropathyStatus,
+        ascvdStatus,
+        setAscvdStatus
       }}
     >
       {children}

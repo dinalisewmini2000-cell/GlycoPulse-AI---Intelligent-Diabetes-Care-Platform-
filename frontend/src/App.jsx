@@ -11,7 +11,6 @@ import { FoodNutrition } from './components/patient/FoodNutrition';
 import { FitnessSleep } from './components/patient/FitnessSleep';
 import { RiskComplications } from './components/patient/RiskComplications';
 import { LabOCR } from './components/patient/LabOCR';
-import { EmergencySOSModal } from './components/patient/EmergencySOSModal';
 
 // Doctor, Caregiver, Admin Components
 import { DoctorPortal } from './components/doctor/DoctorPortal';
@@ -71,7 +70,6 @@ const AppShell = () => {
       )}
 
       <AIChatWidget />
-      <EmergencySOSModal />
       <PDFExportModal />
       <LoginModal />
     </div>
