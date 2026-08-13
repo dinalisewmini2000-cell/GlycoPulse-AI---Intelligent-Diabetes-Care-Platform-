@@ -113,7 +113,6 @@ export const Navbar = () => {
             <button 
               onClick={() => setAuthModalOpen(true)} 
               className="btn-primary" 
-              style={{ fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
             >
               <LogIn size={16} />
               <span>Sign In</span>
