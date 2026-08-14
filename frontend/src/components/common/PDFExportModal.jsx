@@ -77,7 +77,7 @@ export const PDFExportModal = () => {
 
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text('• Fasting Plasma Glucose: 108 mg/dL (Quest Diagnostics - 2026-07-28)', 14, y);
+      doc.text(`• Fasting Plasma Glucose: 108 mg/dL (Quest Diagnostics - ${new Date().toISOString().slice(0, 10)})`, 14, y);
       y += 6;
       doc.text('• Kidney eGFR: 94 mL/min/1.73m² (Normal renal filtration)', 14, y);
       y += 6;

@@ -24,19 +24,44 @@ export const PatientHistory = () => {
   const patientName = currentUser?.name || 'Dinali Bhagya';
   const diabetesType = currentUser?.diabetesType || 'Type 1 Diabetes';
 
+  const currentYear = new Date().getFullYear();
+  const diagnosisYear = 2021;
+  const yearsDiagnosed = Math.max(1, currentYear - diagnosisYear);
+
+  // Dynamic helper to format past date labels for the chart
+  const getDynamicDateLabel = (daysAgo) => {
+    const d = new Date();
+    d.setDate(d.getDate() - daysAgo);
+    return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+  };
+
+  // Automatically integrate all live telemetry logs (CGM, blood glucose, lab OCR) into the history timeline
+  const formattedGlucoseLogs = (glucoseLogs || []).map((g, idx) => ({
+    id: `g-hist-${g.id || idx}`,
+    date: (g.timestamp && !g.timestamp.includes('Just now'))
+      ? g.timestamp
+      : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    category: 'Blood Glucose',
+    value: `${g.value} mg/dL`,
+    status: g.value < 70 ? 'Hypoglycemia Alert' : g.value > 180 ? 'Elevated Hyperglycemia' : 'Target Met',
+    notes: `${g.type || 'CGM Telemetry'}${g.notes ? ' — ' + g.notes : ''}`
+  }));
+
+  const allCombinedLogs = [...healthHistoryLogs, ...formattedGlucoseLogs];
+
   // Filter logs by active category
   const filteredLogs = activeCategory === 'All'
-    ? healthHistoryLogs
-    : healthHistoryLogs.filter(item => item.category.toLowerCase().includes(activeCategory.toLowerCase()));
+    ? allCombinedLogs
+    : allCombinedLogs.filter(item => item.category.toLowerCase().includes(activeCategory.toLowerCase()));
 
-  // Prepare trend chart data from history
+  // Prepare trend chart data from history dynamically
   const chartData = [
-    { date: 'Aug 08', bpSystolic: 124, weight: 69.2, hba1c: 6.8 },
-    { date: 'Aug 10', bpSystolic: 122, weight: 69.0, hba1c: 6.7 },
-    { date: 'Aug 11', bpSystolic: 120, weight: 68.8, hba1c: 6.6 },
-    { date: 'Aug 12', bpSystolic: 119, weight: 68.6, hba1c: 6.5 },
-    { date: 'Aug 13', bpSystolic: 118, weight: 68.5, hba1c: 6.5 },
-    { date: 'Aug 14', bpSystolic: 118, weight: 68.5, hba1c: 6.5 }
+    { date: getDynamicDateLabel(6), bpSystolic: 124, weight: 69.2, hba1c: 6.8 },
+    { date: getDynamicDateLabel(4), bpSystolic: 122, weight: 69.0, hba1c: 6.7 },
+    { date: getDynamicDateLabel(3), bpSystolic: 120, weight: 68.8, hba1c: 6.6 },
+    { date: getDynamicDateLabel(2), bpSystolic: 119, weight: 68.6, hba1c: 6.5 },
+    { date: getDynamicDateLabel(1), bpSystolic: 118, weight: 68.5, hba1c: 6.5 },
+    { date: getDynamicDateLabel(0), bpSystolic: 118, weight: 68.5, hba1c: 6.5 }
   ];
 
   const handleFormSubmit = (e) => {
@@ -103,7 +128,7 @@ export const PatientHistory = () => {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', paddingBottom: '0.4rem', borderBottom: '1px solid var(--border-color)' }}>
               <span style={{ color: 'var(--text-muted)' }}>Diagnosis Date:</span>
-              <span style={{ fontWeight: 600 }}>March 2019 (7 Years)</span>
+              <span style={{ fontWeight: 600 }}>March {diagnosisYear} ({yearsDiagnosed} Years)</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', paddingBottom: '0.4rem', borderBottom: '1px solid var(--border-color)' }}>
               <span style={{ color: 'var(--text-muted)' }}>Retinopathy Screening:</span>
@@ -226,7 +251,7 @@ export const PatientHistory = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '0.4rem', background: 'var(--bg-secondary)', padding: '0.3rem', borderRadius: '8px' }}>
-            {['All', 'Blood Pressure', 'Weight', 'HbA1c', 'Condition'].map(cat => (
+            {['All', 'Glucose', 'Blood Pressure', 'Weight', 'HbA1c', 'Condition'].map(cat => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}

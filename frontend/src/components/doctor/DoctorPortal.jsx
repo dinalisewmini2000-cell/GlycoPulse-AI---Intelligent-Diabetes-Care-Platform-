@@ -96,7 +96,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
   // Appointment Modal State
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [aptPatient, setAptPatient] = useState(() => patients[0]?.name || '');
-  const [aptDate, setAptDate] = useState('2026-08-25');
+  const [aptDate, setAptDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [aptTime, setAptTime] = useState('10:00 AM');
   const [aptReason, setAptReason] = useState('Routine Telemetry Checkup');
   const [aptSuccess, setAptSuccess] = useState(false);

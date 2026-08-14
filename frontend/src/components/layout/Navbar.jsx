@@ -45,58 +45,34 @@ export const Navbar = () => {
           </div>
         </div>
 
-        {/* Active Role Indicator (Static Portal Badge) */}
-        {isAuthenticated && (
-          <div
-            style={{
-              display: 'flex', alignItems: 'center', gap: '0.6rem',
-              background: 'rgba(0,0,0,0.3)', padding: '0.5rem 1.1rem', borderRadius: '14px',
-              border: `1.5px solid ${roleConfigs[role]?.color || '#10b981'}66`,
-              boxShadow: `0 0 15px ${roleConfigs[role]?.color || '#10b981'}22`,
-              color: '#fff'
-            }}
-          >
-            {React.createElement(roleConfigs[role]?.icon || UserCheck, {
-              size: 19,
-              color: roleConfigs[role]?.color || '#10b981'
-            })}
-            <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                ACTIVE PORTAL VIEW
-              </span>
-              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: roleConfigs[role]?.color || '#10b981' }}>
-                {roleConfigs[role]?.label || 'Patient View'}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Action Controls */}
+        {/* Action Controls & Single Professional User Profile Card */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
           
-          {/* User Profile & Logout / Sign In Control */}
           {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+              
+              {/* Sleek Consolidated User Profile Badge */}
               <div style={{ 
-                display: 'flex', alignItems: 'center', gap: '0.65rem', 
-                background: 'rgba(255,255,255,0.06)', padding: '0.4rem 0.85rem', 
-                borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' 
+                display: 'flex', alignItems: 'center', gap: '0.75rem', 
+                background: 'rgba(255,255,255,0.05)', padding: '0.45rem 0.95rem', 
+                borderRadius: '14px', border: `1px solid ${roleConfigs[role]?.color || '#10b981'}44`
               }}>
                 <div style={{
-                  width: '32px', height: '32px', borderRadius: '50%',
+                  width: '34px', height: '34px', borderRadius: '50%',
                   background: `linear-gradient(135deg, ${roleConfigs[role]?.color || '#10b981'}, #3b82f6)`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 700, fontSize: '0.88rem', color: '#fff',
-                  boxShadow: `0 0 10px ${roleConfigs[role]?.color || '#10b981'}44`
+                  fontWeight: 800, fontSize: '0.9rem', color: '#fff',
+                  boxShadow: `0 0 12px ${roleConfigs[role]?.color || '#10b981'}55`
                 }}>
                   {(currentUser?.name || 'Dinali Bhagya').charAt(0).toUpperCase()}
                 </div>
+                
                 <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.2 }}>
                     {currentUser?.name || 'Dinali Bhagya'}
                   </span>
-                  <span style={{ fontSize: '0.7rem', color: roleConfigs[role]?.color || '#10b981', fontWeight: 800 }}>
-                    LOGGED IN AS {(role || 'patient').toUpperCase()}
+                  <span style={{ fontSize: '0.72rem', color: roleConfigs[role]?.color || '#10b981', fontWeight: 700 }}>
+                    {roleConfigs[role]?.label || 'Patient View'}
                   </span>
                 </div>
               </div>
@@ -106,10 +82,12 @@ export const Navbar = () => {
                 onClick={logoutUser}
                 title="Log out of session"
                 className="btn-danger-outline"
+                style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
               >
-                <LogOut size={16} />
+                <LogOut size={15} />
                 <span>Logout</span>
               </button>
+
             </div>
           ) : (
             <button 

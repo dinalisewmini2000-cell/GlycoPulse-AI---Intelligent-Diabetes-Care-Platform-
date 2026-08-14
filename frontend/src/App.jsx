@@ -9,7 +9,6 @@ import { GlucoseDashboard } from './components/patient/GlucoseDashboard';
 import { AIPredictions } from './components/patient/AIPredictions';
 import { FoodNutrition } from './components/patient/FoodNutrition';
 import { FitnessSleep } from './components/patient/FitnessSleep';
-import { PatientHistory } from './components/patient/PatientHistory';
 import { RiskComplications } from './components/patient/RiskComplications';
 import { LabOCR } from './components/patient/LabOCR';
 
@@ -39,7 +38,6 @@ const MainContentArea = () => {
       case 'predictions': return <AIPredictions />;
       case 'food': return <FoodNutrition />;
       case 'fitness': return <FitnessSleep />;
-      case 'history': return <PatientHistory />;
       case 'complications': return <RiskComplications />;
       case 'lab': return <LabOCR />;
       default: return <GlucoseDashboard />;

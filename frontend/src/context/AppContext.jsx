@@ -320,13 +320,19 @@ export const AppProvider = ({ children }) => {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) {}
     }
+    const formatPastDate = (daysAgo, timeStr) => {
+      const d = new Date();
+      d.setDate(d.getDate() - daysAgo);
+      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+      return `${dateStr} ${timeStr}`;
+    };
     return [
-      { id: 'h-1', date: 'Aug 14, 2026 09:30', category: 'Blood Pressure', value: '118/76 mmHg', status: 'Normal', notes: 'Morning resting vitals' },
-      { id: 'h-2', date: 'Aug 13, 2026 18:15', category: 'Body Weight', value: '68.5 kg', status: 'Optimal', notes: 'Post-workout measurement' },
-      { id: 'h-3', date: 'Aug 12, 2026 11:00', category: 'HbA1c Lab', value: '6.5 %', status: 'Target Met', notes: 'Quarterly Lab Scan (OCR Verified)' },
-      { id: 'h-4', date: 'Aug 11, 2026 08:00', category: 'Health Condition', value: 'Retinopathy Assessment', status: 'Mild Stage 1', notes: 'Annual fundus exam clear, non-proliferative' },
-      { id: 'h-5', date: 'Aug 10, 2026 14:20', category: 'Heart Rate', value: '72 bpm (SpO2 98%)', status: 'Normal', notes: 'Smartwatch live sync' },
-      { id: 'h-6', date: 'Aug 08, 2026 10:00', category: 'Kidney Function', value: 'eGFR 95 mL/min', status: 'Healthy', notes: 'Microalbuminuria negative' }
+      { id: 'h-1', date: formatPastDate(0, '09:30'), category: 'Blood Pressure', value: '118/76 mmHg', status: 'Normal', notes: 'Morning resting vitals' },
+      { id: 'h-2', date: formatPastDate(1, '18:15'), category: 'Body Weight', value: '68.5 kg', status: 'Optimal', notes: 'Post-workout measurement' },
+      { id: 'h-3', date: formatPastDate(2, '11:00'), category: 'HbA1c Lab', value: '6.5 %', status: 'Target Met', notes: 'Quarterly Lab Scan (OCR Verified)' },
+      { id: 'h-4', date: formatPastDate(3, '08:00'), category: 'Health Condition', value: 'Retinopathy Assessment', status: 'Mild Stage 1', notes: 'Annual fundus exam clear, non-proliferative' },
+      { id: 'h-5', date: formatPastDate(4, '14:20'), category: 'Heart Rate', value: '72 bpm (SpO2 98%)', status: 'Normal', notes: 'Smartwatch live sync' },
+      { id: 'h-6', date: formatPastDate(6, '10:00'), category: 'Kidney Function', value: 'eGFR 95 mL/min', status: 'Healthy', notes: 'Microalbuminuria negative' }
     ];
   });
 
@@ -431,6 +437,14 @@ export const AppProvider = ({ children }) => {
     });
 
     setCurrentGlucose(newLog.value);
+
+    // Automatically record entry in Patient Health History & Vitals
+    addHealthHistoryLog({
+      category: 'Blood Glucose',
+      value: `${newLog.value} mg/dL`,
+      status: newLog.value < 70 ? 'Hypoglycemia Alert' : newLog.value > 180 ? 'Elevated Hyperglycemia' : 'Target Met',
+      notes: `${newLog.type || 'Glucose Log'}${newLog.notes ? ' — ' + newLog.notes : ''}`
+    });
 
     // Send to Firebase Cloud Firestore Database (cardiora-new)
     const res = await apiService.logGlucose({

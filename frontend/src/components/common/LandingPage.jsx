@@ -469,7 +469,7 @@ export const LandingPage = () => {
 
       {/* Footer */}
       <footer style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', borderTop: '1px solid var(--border-color)', marginTop: 'auto' }}>
-        <div>GlycoPulse AI - Clinical Diabetes Care Platform &copy; 2026. All Rights Reserved.</div>
+        <div>GlycoPulse AI - Clinical Diabetes Care Platform &copy; {new Date().getFullYear()}. All Rights Reserved.</div>
       </footer>
 
     </div>
