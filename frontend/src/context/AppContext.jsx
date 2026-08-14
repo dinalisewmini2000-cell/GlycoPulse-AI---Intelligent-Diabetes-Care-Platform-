@@ -34,7 +34,7 @@ export const AppProvider = ({ children }) => {
       if (targetRole === 'admin') return 'System Administrator';
       if (targetRole === 'doctor') return 'Dr. Medical Practitioner';
       if (targetRole === 'caregiver') return 'Family Caregiver';
-      return 'GlycoPulse Patient';
+      return 'Dinali Bhagya';
     }
     const clean = raw.replace(/^Dr\.\s*/i, '').trim();
     const formatted = clean.split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '').join(' ');
@@ -103,7 +103,7 @@ export const AppProvider = ({ children }) => {
       const existsIndex = list.findIndex(u => u.email?.toLowerCase() === userObj.email?.toLowerCase());
       const entry = {
         id: userObj.id || ('usr-' + Date.now()),
-        name: userObj.name || 'GlycoPulse Patient',
+        name: userObj.name || 'Dinali Bhagya',
         email: userObj.email,
         role: userObj.role || 'patient',
         status: 'Active',
@@ -121,7 +121,7 @@ export const AppProvider = ({ children }) => {
   const loginUser = async (credentials) => {
     const res = await apiService.login(credentials);
     const requestedRole = credentials.role || 'patient';
-    let defaultName = 'GlycoPulse Patient';
+    let defaultName = 'Dinali Bhagya';
     if (requestedRole === 'admin') defaultName = 'System Administrator';
     else if (requestedRole === 'doctor') defaultName = 'Dr. Medical Practitioner';
     else if (requestedRole === 'caregiver') defaultName = 'Family Caregiver';
@@ -212,6 +212,46 @@ export const AppProvider = ({ children }) => {
     setAuthModalOpen(false);
   };
 
+  const switchRole = (newRole) => {
+    setRole(newRole);
+    localStorage.setItem('glycopulse_role', newRole);
+    
+    let name = 'Dinali Bhagya';
+    let email = 'dinali@glucocare.ai';
+    if (newRole === 'doctor') {
+      name = 'Dr. Medical Practitioner';
+      email = 'doctor@glycopulse.ai';
+    } else if (newRole === 'caregiver') {
+      name = 'Family Caregiver';
+      email = 'caregiver@glycopulse.ai';
+    } else if (newRole === 'admin') {
+      name = 'System Administrator';
+      email = 'admin@glycopulse.ai';
+    }
+
+    const updatedUser = {
+      id: 'usr-' + newRole + '-101',
+      name,
+      email,
+      role: newRole
+    };
+
+    setCurrentUser(updatedUser);
+    localStorage.setItem('glycopulse_user', JSON.stringify(updatedUser));
+
+    if (newRole === 'doctor') setActiveTab('doctor_patients');
+    else if (newRole === 'caregiver') setActiveTab('caregiver_feed');
+    else if (newRole === 'admin') setActiveTab('admin_telemetry');
+    else setActiveTab('glucose');
+
+    setToastAlert({
+      type: 'info',
+      title: `SWITCHED TO ${newRole.toUpperCase()} PORTAL`,
+      message: `Active profile: ${name} (${email})`
+    });
+    setTimeout(() => setToastAlert(null), 3500);
+  };
+
   // Health Data & Live Ticker State
   const [currentGlucose, setCurrentGlucose] = useState(null);
   const [cgmTrendArrow, setCgmTrendArrow] = useState('↗'); 
@@ -270,6 +310,38 @@ export const AppProvider = ({ children }) => {
   const [retinopathyStatus, setRetinopathyStatus] = useState(null);
   const [nephropathyStatus, setNephropathyStatus] = useState(null);
   const [ascvdStatus, setAscvdStatus] = useState(null);
+
+  // Comprehensive Patient Health History & Measurements State
+  const [healthHistoryLogs, setHealthHistoryLogs] = useState(() => {
+    const saved = localStorage.getItem('glycopulse_health_history');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return [
+      { id: 'h-1', date: 'Aug 14, 2026 09:30', category: 'Blood Pressure', value: '118/76 mmHg', status: 'Normal', notes: 'Morning resting vitals' },
+      { id: 'h-2', date: 'Aug 13, 2026 18:15', category: 'Body Weight', value: '68.5 kg', status: 'Optimal', notes: 'Post-workout measurement' },
+      { id: 'h-3', date: 'Aug 12, 2026 11:00', category: 'HbA1c Lab', value: '6.5 %', status: 'Target Met', notes: 'Quarterly Lab Scan (OCR Verified)' },
+      { id: 'h-4', date: 'Aug 11, 2026 08:00', category: 'Health Condition', value: 'Retinopathy Assessment', status: 'Mild Stage 1', notes: 'Annual fundus exam clear, non-proliferative' },
+      { id: 'h-5', date: 'Aug 10, 2026 14:20', category: 'Heart Rate', value: '72 bpm (SpO2 98%)', status: 'Normal', notes: 'Smartwatch live sync' },
+      { id: 'h-6', date: 'Aug 08, 2026 10:00', category: 'Kidney Function', value: 'eGFR 95 mL/min', status: 'Healthy', notes: 'Microalbuminuria negative' }
+    ];
+  });
+
+  const addHealthHistoryLog = (entry) => {
+    const newLog = {
+      id: 'h-' + Date.now(),
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      ...entry
+    };
+    setHealthHistoryLogs(prev => {
+      const updated = [newLog, ...prev];
+      localStorage.setItem('glycopulse_health_history', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   useEffect(() => {
     localStorage.setItem('glycopulse_theme', theme);
@@ -409,6 +481,7 @@ export const AppProvider = ({ children }) => {
         loginUser,
         signupUser,
         logoutUser,
+        switchRole,
         currentGlucose,
         cgmTrendArrow,
         rateOfChange,
@@ -437,7 +510,9 @@ export const AppProvider = ({ children }) => {
         nephropathyStatus,
         setNephropathyStatus,
         ascvdStatus,
-        setAscvdStatus
+        setAscvdStatus,
+        healthHistoryLogs,
+        addHealthHistoryLog
       }}
     >
       {children}

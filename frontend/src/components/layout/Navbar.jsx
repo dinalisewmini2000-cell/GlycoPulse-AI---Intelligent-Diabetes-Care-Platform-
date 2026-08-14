@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
-  Activity, Sun, Moon, AlertTriangle, FileText, 
+  Activity, Sun, Moon, FileText, 
   UserCheck, Stethoscope, HeartHandshake, ShieldAlert, LogOut, LogIn
 } from 'lucide-react';
 
@@ -9,16 +9,16 @@ export const Navbar = () => {
   const { 
     role, 
     theme, toggleTheme, 
-    setSosActive, setPdfModalOpen,
+    setPdfModalOpen,
     isAuthenticated, setAuthModalOpen,
     currentUser, logoutUser
   } = useApp();
 
   const roleConfigs = {
-    patient: { label: 'Patient View', icon: UserCheck, color: '#10b981' },
-    doctor: { label: 'Doctor Portal', icon: Stethoscope, color: '#06b6d4' },
-    caregiver: { label: 'Caregiver Portal', icon: HeartHandshake, color: '#ec4899' },
-    admin: { label: 'Admin Dashboard', icon: ShieldAlert, color: '#a855f7' }
+    patient: { label: 'Patient View', name: 'Dinali Bhagya', icon: UserCheck, color: '#10b981' },
+    doctor: { label: 'Doctor Portal', name: 'Dr. Medical Practitioner', icon: Stethoscope, color: '#06b6d4' },
+    caregiver: { label: 'Caregiver Portal', name: 'Family Caregiver', icon: HeartHandshake, color: '#ec4899' },
+    admin: { label: 'Admin Dashboard', name: 'System Administrator', icon: ShieldAlert, color: '#a855f7' }
   };
 
   return (
@@ -45,24 +45,29 @@ export const Navbar = () => {
           </div>
         </div>
 
-        {/* Active Role Indicator Badge */}
+        {/* Active Role Indicator (Static Portal Badge) */}
         {isAuthenticated && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            background: 'rgba(0,0,0,0.25)', padding: '0.45rem 1rem', borderRadius: '12px',
-            border: `1px solid ${roleConfigs[role]?.color || '#06b6d4'}44`,
-            boxShadow: `0 0 12px ${roleConfigs[role]?.color || '#06b6d4'}22`
-          }}>
+          <div
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.6rem',
+              background: 'rgba(0,0,0,0.3)', padding: '0.5rem 1.1rem', borderRadius: '14px',
+              border: `1.5px solid ${roleConfigs[role]?.color || '#10b981'}66`,
+              boxShadow: `0 0 15px ${roleConfigs[role]?.color || '#10b981'}22`,
+              color: '#fff'
+            }}
+          >
             {React.createElement(roleConfigs[role]?.icon || UserCheck, {
-              size: 18,
-              color: roleConfigs[role]?.color || '#06b6d4'
+              size: 19,
+              color: roleConfigs[role]?.color || '#10b981'
             })}
-            <span style={{
-              fontSize: '0.85rem', fontWeight: 700,
-              color: roleConfigs[role]?.color || '#06b6d4', letterSpacing: '0.3px'
-            }}>
-              {roleConfigs[role]?.label}
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                ACTIVE PORTAL VIEW
+              </span>
+              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: roleConfigs[role]?.color || '#10b981' }}>
+                {roleConfigs[role]?.label || 'Patient View'}
+              </span>
+            </div>
           </div>
         )}
 
@@ -79,10 +84,10 @@ export const Navbar = () => {
               }}>
                 <div style={{
                   width: '32px', height: '32px', borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${roleConfigs[role]?.color || '#06b6d4'}, #3b82f6)`,
+                  background: `linear-gradient(135deg, ${roleConfigs[role]?.color || '#10b981'}, #3b82f6)`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontWeight: 700, fontSize: '0.88rem', color: '#fff',
-                  boxShadow: `0 0 10px ${roleConfigs[role]?.color || '#06b6d4'}44`
+                  boxShadow: `0 0 10px ${roleConfigs[role]?.color || '#10b981'}44`
                 }}>
                   {(currentUser?.name || 'Dinali Bhagya').charAt(0).toUpperCase()}
                 </div>
@@ -90,8 +95,8 @@ export const Navbar = () => {
                   <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
                     {currentUser?.name || 'Dinali Bhagya'}
                   </span>
-                  <span style={{ fontSize: '0.7rem', color: roleConfigs[role]?.color || '#06b6d4', fontWeight: 700 }}>
-                    {role.toUpperCase()}
+                  <span style={{ fontSize: '0.7rem', color: roleConfigs[role]?.color || '#10b981', fontWeight: 800 }}>
+                    LOGGED IN AS {(role || 'patient').toUpperCase()}
                   </span>
                 </div>
               </div>

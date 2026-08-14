@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { 
   BarChart3, Brain, Utensils, Activity, Flame, FileSpreadsheet, 
   ShieldAlert, Radio, Award, Stethoscope, Users, HeartPulse, Cpu,
-  Pill, Moon, AlertCircle
+  Pill, Moon, AlertCircle, History
 } from 'lucide-react';
 
 export const Sidebar = () => {
@@ -15,6 +15,7 @@ export const Sidebar = () => {
     { id: 'predictions', label: 'AI Glucose Forecast', icon: Brain },
     { id: 'food', label: 'AI Food Vision & Meals', icon: Utensils },
     { id: 'fitness', label: 'Fitness & Sleep Tracker', icon: Flame },
+    { id: 'history', label: 'Health History & Vitals', icon: History },
     { id: 'complications', label: 'Complications & Risks', icon: ShieldAlert },
     { id: 'lab', label: 'Lab OCR & Reports', icon: FileSpreadsheet }
   ];
