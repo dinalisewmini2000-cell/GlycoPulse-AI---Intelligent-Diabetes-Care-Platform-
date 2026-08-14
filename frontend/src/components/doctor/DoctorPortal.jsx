@@ -572,7 +572,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
 
       {/* E-Prescription Modal */}
       {showPrescriptionModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '1rem' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000, padding: '1rem' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '1.75rem' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem' }}>Issue E-Prescription & Dose Adjustment</h3>
             
@@ -631,7 +631,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
 
       {/* Appointment Modal */}
       {showAppointmentModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000, padding: '1rem' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '1.75rem' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem' }}>Schedule Tele-Health Consultation</h3>
             
@@ -703,8 +703,8 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
 
       {/* Interactive In-App HD Tele-Health Video Call Room Modal */}
       {activeVideoCall && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '1.5rem' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '960px', height: '90vh', maxHeight: '650px', display: 'flex', flexDirection: 'column', border: '1px solid rgba(6, 182, 212, 0.4)', borderRadius: '16px', overflow: 'hidden' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '1rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '980px', height: '88vh', maxHeight: '720px', display: 'flex', flexDirection: 'column', border: '1px solid rgba(6, 182, 212, 0.4)', borderRadius: '16px', overflow: 'hidden' }}>
             
             {/* Video Call Header */}
             <div style={{ padding: '1rem 1.5rem', background: 'rgba(15, 23, 42, 0.95)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -716,11 +716,18 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
                 <span className="badge badge-success" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   <ShieldCheck size={13} />
                   <span>HIPAA Compliant Session</span>
                 </span>
+                <button 
+                  onClick={() => setActiveVideoCall(null)}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0.2rem' }}
+                  title="Close Consultation Room"
+                >
+                  <X size={22} />
+                </button>
               </div>
             </div>
 
