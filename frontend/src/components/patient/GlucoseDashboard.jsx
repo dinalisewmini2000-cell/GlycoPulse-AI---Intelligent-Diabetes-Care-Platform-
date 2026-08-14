@@ -313,11 +313,11 @@ export const GlucoseDashboard = () => {
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
                     RAPID INSULIN (Units)
                   </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', width: '100%' }}>
                     <button 
                       type="button" 
                       onClick={() => setLogInsulinBolus(prev => Math.max(0, (Number(prev) || 0) - 0.5).toFixed(1))}
-                      style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}
+                      style={{ padding: '0.5rem 0.6rem', minWidth: '32px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
                     >
                       -
                     </button>
@@ -327,12 +327,12 @@ export const GlucoseDashboard = () => {
                       placeholder="0.0"
                       value={logInsulinBolus} 
                       onChange={e => setLogInsulinBolus(e.target.value)}
-                      style={{ flex: 1, padding: '0.65rem', borderRadius: '6px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
+                      style={{ flex: 1, minWidth: 0, width: '100%', padding: '0.6rem 0.4rem', borderRadius: '6px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
                     />
                     <button 
                       type="button" 
                       onClick={() => setLogInsulinBolus(prev => (Math.max(0, (Number(prev) || 0) + 0.5)).toFixed(1))}
-                      style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}
+                      style={{ padding: '0.5rem 0.6rem', minWidth: '32px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
                     >
                       +
                     </button>
@@ -343,11 +343,11 @@ export const GlucoseDashboard = () => {
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
                     CARBS (Grams)
                   </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', width: '100%' }}>
                     <button 
                       type="button" 
                       onClick={() => setLogCarbs(prev => Math.max(0, (Number(prev) || 0) - 5))}
-                      style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}
+                      style={{ padding: '0.5rem 0.6rem', minWidth: '32px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
                     >
                       -
                     </button>
@@ -356,12 +356,12 @@ export const GlucoseDashboard = () => {
                       placeholder="0"
                       value={logCarbs} 
                       onChange={e => setLogCarbs(e.target.value)}
-                      style={{ flex: 1, padding: '0.65rem', borderRadius: '6px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
+                      style={{ flex: 1, minWidth: 0, width: '100%', padding: '0.6rem 0.4rem', borderRadius: '6px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
                     />
                     <button 
                       type="button" 
                       onClick={() => setLogCarbs(prev => (Number(prev) || 0) + 5)}
-                      style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' }}
+                      style={{ padding: '0.5rem 0.6rem', minWidth: '32px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
                     >
                       +
                     </button>

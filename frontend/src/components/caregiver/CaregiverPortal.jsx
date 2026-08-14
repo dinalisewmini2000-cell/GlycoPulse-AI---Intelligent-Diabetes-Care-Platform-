@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { apiService } from '../../services/apiService';
 import { 
   HeartHandshake, Bell, ShieldAlert, CheckCircle2, PhoneCall, 
-  Clock, Send, AlertCircle, PlusCircle, Check, MessageSquare, Droplet, Activity 
+  Clock, Send, AlertCircle, PlusCircle, Check, MessageSquare, Mail, Activity 
 } from 'lucide-react';
 
 export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
@@ -18,8 +18,22 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
     ? 'Hypoglycemia Alert (< 70 mg/dL)' 
     : (displayBg > 180 ? 'Hyperglycemia Spike (> 180 mg/dL)' : 'Normal & Active (Target Range)');
 
+  const isCaregiverUser = currentUser?.role === 'caregiver';
+
+  const linkedPatientName = isCaregiverUser 
+    ? (currentUser?.linkedPatientName || 'Dinali Bhagya') 
+    : (currentUser?.name || 'Dinali Bhagya');
+
+  const patientPhone = isCaregiverUser 
+    ? (currentUser?.linkedPatientPhone || '+94 77 123 4567') 
+    : (currentUser?.phone || '+94 77 123 4567');
+
+  const patientEmergencyEmail = isCaregiverUser 
+    ? (currentUser?.linkedPatientEmail || 'dinali@glucocare.ai') 
+    : (currentUser?.emergencyEmail || 'dinali@glucocare.ai');
+
   const [patientData, setPatientData] = useState({
-    patientName: currentUser?.name || 'Linked Patient',
+    patientName: linkedPatientName,
     relationship: 'Family Caregiver Monitor',
     currentGlucose: displayBg,
     statusText: statusText,
@@ -33,17 +47,18 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
   useEffect(() => {
     setPatientData(prev => ({
       ...prev,
+      patientName: linkedPatientName,
       currentGlucose: displayBg,
       statusText: statusText,
       waterIntake: `${(waterIntake || 0).toFixed(1)}L / 2.5L Goal`
     }));
-  }, [displayBg, statusText, waterIntake]);
+  }, [displayBg, statusText, waterIntake, linkedPatientName]);
 
   const [alerts, setAlerts] = useState([]);
 
   // Modal States
   const [showSmsModal, setShowSmsModal] = useState(false);
-  const [smsText, setSmsText] = useState('Hi Dinali, checking in on your evening blood sugar reading!');
+  const [smsText, setSmsText] = useState(`Hi ${currentUser?.name || 'Dinali'}, checking in on your blood sugar reading!`);
   const [smsSent, setSmsSent] = useState(false);
 
   const [showNoteModal, setShowNoteModal] = useState(false);
@@ -70,6 +85,24 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
     setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, acknowledged: true } : a));
   };
 
+  const handleSendEmailAlert = () => {
+    const subject = encodeURIComponent(`URGENT: GlycoPulse Emergency Alert for ${patientData.patientName}`);
+    const body = encodeURIComponent(`HIGH PRIORITY EMERGENCY ALERT\n\nPatient Name: ${patientData.patientName}\nCurrent Glucose Level: ${patientData.currentGlucose} mg/dL\nStatus: ${patientData.statusText}\nEmergency Phone: ${patientPhone}\n\nPlease check in on patient immediately.`);
+    
+    // Log emergency dispatch to alerts feed
+    const newAlert = {
+      id: 'alt-' + Date.now(),
+      time: 'Just now',
+      level: 'Warning',
+      msg: `Emergency Email dispatched to ${patientEmergencyEmail} for ${patientData.patientName}`,
+      acknowledged: true
+    };
+    setAlerts(prev => [newAlert, ...prev]);
+
+    // Trigger mail client
+    window.location.href = `mailto:${patientEmergencyEmail}?subject=${subject}&body=${body}`;
+  };
+
   const handleSendSms = (e) => {
     e.preventDefault();
     if (!smsText.trim()) return;
@@ -86,14 +119,14 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
       id: 'alt-' + Date.now(),
       time: 'Just now',
       level: 'Info',
-      msg: `SMS Check-in sent to ${patientData.patientName}: "${smsText}"`,
+      msg: `SMS Check-in sent to ${patientData.patientName} (${patientPhone}): "${smsText}"`,
       acknowledged: true
     };
     setAlerts(prev => [newAlert, ...prev]);
 
-    // 3. Trigger native SMS app (Phone Link, iMessage, Android SMS)
+    // 3. Trigger native SMS app
     try {
-      window.open(`sms:+15553492011?body=${encodeURIComponent(smsText)}`, '_blank');
+      window.open(`sms:${patientPhone.replace(/\s+/g, '')}?body=${encodeURIComponent(smsText)}`, '_blank');
     } catch(err) {
       console.log('SMS protocol opened');
     }
@@ -125,13 +158,23 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
       
       {/* Top Banner */}
       <div className="glass-panel" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(139, 92, 246, 0.15))' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.5rem' }}>
-          <HeartHandshake size={28} color="var(--accent-rose)" />
-          <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Caregiver & Family Companion Portal</h2>
-            <div style={{ fontSize: '0.82rem', color: 'var(--accent-rose)', fontWeight: 600 }}>
-              Caregiver: {currentUser?.name || 'David Jenkins'} ({currentUser?.email || 'caregiver@glucocare.ai'}) | Linked Patient: {patientData.patientName}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <HeartHandshake size={28} color="var(--accent-rose)" />
+            <div>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Caregiver & Family Companion Portal</h2>
+              <div style={{ fontSize: '0.82rem', color: 'var(--accent-rose)', fontWeight: 600 }}>
+                Caregiver: {currentUser?.name || 'David Jenkins'} ({currentUser?.email || 'caregiver@glucocare.ai'}) | Linked Patient: {patientData.patientName}
+              </div>
             </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem 0.9rem', borderRadius: '10px', fontSize: '0.8rem' }}>
+            <PhoneCall size={14} color="var(--accent-cyan)" />
+            <span style={{ fontWeight: 700 }}>Patient Phone:</span> {patientPhone}
+            <span style={{ margin: '0 0.3rem', color: 'var(--text-muted)' }}>|</span>
+            <Mail size={14} color="var(--accent-rose)" />
+            <span style={{ fontWeight: 700 }}>Patient Email:</span> {patientEmergencyEmail}
           </div>
         </div>
       </div>
@@ -154,15 +197,32 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.8rem' }}>
-                <button onClick={() => setShowSmsModal(true)} className="btn-outline" style={{ fontSize: '0.85rem' }}>
-                  <MessageSquare size={16} />
-                  <span>Send SMS Check-in</span>
+              <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
+                {/* Emergency Email Button */}
+                <button 
+                  onClick={handleSendEmailAlert} 
+                  className="btn-outline" 
+                  style={{ fontSize: '0.82rem', borderColor: 'var(--accent-rose)', color: 'var(--accent-rose)' }}
+                  title="Send urgent emergency email notification to patient & contact"
+                >
+                  <Mail size={15} />
+                  <span>Send Emergency Email</span>
+                </button>
+
+                {/* SMS Check-in */}
+                <button onClick={() => setShowSmsModal(true)} className="btn-outline" style={{ fontSize: '0.82rem' }}>
+                  <MessageSquare size={15} />
+                  <span>SMS Check-in</span>
                 </button>
                 
-                <a href={`tel:+15553492011`} className="btn-glow" style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', textDecoration: 'none', fontSize: '0.85rem' }}>
-                  <PhoneCall size={16} />
-                  <span>Call Patient</span>
+                {/* Direct Phone Call Button */}
+                <a 
+                  href={`tel:${patientPhone.replace(/\s+/g, '')}`} 
+                  className="btn-glow" 
+                  style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', textDecoration: 'none', fontSize: '0.82rem' }}
+                >
+                  <PhoneCall size={15} />
+                  <span>Call Patient ({patientPhone})</span>
                 </a>
               </div>
             </div>
@@ -240,7 +300,8 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
       {showSmsModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '450px', padding: '1.75rem' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem' }}>Send Instant SMS to {patientData.patientName}</h3>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.3rem' }}>Send SMS to {patientData.patientName}</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', marginBottom: '1rem' }}>Destination: {patientPhone}</p>
             
             {smsSent ? (
               <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--accent-emerald)' }}>

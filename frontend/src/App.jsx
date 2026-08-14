@@ -12,9 +12,8 @@ import { FitnessSleep } from './components/patient/FitnessSleep';
 import { RiskComplications } from './components/patient/RiskComplications';
 import { LabOCR } from './components/patient/LabOCR';
 
-// Doctor, Caregiver, Admin Components
+// Doctor and Admin Components
 import { DoctorPortal } from './components/doctor/DoctorPortal';
-import { CaregiverPortal } from './components/caregiver/CaregiverPortal';
 import { AdminPortal } from './components/admin/AdminPortal';
 
 // Common Components
@@ -29,7 +28,6 @@ const MainContentArea = () => {
 
   const renderTabContent = () => {
     if (role === 'doctor') return <DoctorPortal activeTab={activeTab} />;
-    if (role === 'caregiver') return <CaregiverPortal activeTab={activeTab} />;
     if (role === 'admin') return <AdminPortal activeTab={activeTab} />;
 
     // Patient Tabs

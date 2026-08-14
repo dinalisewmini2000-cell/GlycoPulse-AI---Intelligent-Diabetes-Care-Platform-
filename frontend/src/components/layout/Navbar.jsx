@@ -17,7 +17,6 @@ export const Navbar = () => {
   const roleConfigs = {
     patient: { label: 'Patient View', name: 'Dinali Bhagya', icon: UserCheck, color: '#10b981' },
     doctor: { label: 'Doctor Portal', name: 'Dr. Medical Practitioner', icon: Stethoscope, color: '#06b6d4' },
-    caregiver: { label: 'Caregiver Portal', name: 'Family Caregiver', icon: HeartHandshake, color: '#ec4899' },
     admin: { label: 'Admin Dashboard', name: 'System Administrator', icon: ShieldAlert, color: '#a855f7' }
   };
 

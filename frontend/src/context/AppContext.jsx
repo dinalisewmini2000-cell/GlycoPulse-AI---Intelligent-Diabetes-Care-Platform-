@@ -33,7 +33,6 @@ export const AppProvider = ({ children }) => {
     if (!raw || raw.toLowerCase() === 'member' || raw.toLowerCase() === 'patient user') {
       if (targetRole === 'admin') return 'System Administrator';
       if (targetRole === 'doctor') return 'Dr. Medical Practitioner';
-      if (targetRole === 'caregiver') return 'Family Caregiver';
       return 'Dinali Bhagya';
     }
     const clean = raw.replace(/^Dr\.\s*/i, '').trim();
@@ -57,6 +56,8 @@ export const AppProvider = ({ children }) => {
       id: 'usr-101',
       name: 'Dinali Bhagya',
       email: 'dinali@glucocare.ai',
+      phone: '+94 77 123 4567',
+      emergencyEmail: 'dinali@glucocare.ai',
       role: localStorage.getItem('glycopulse_role') || 'patient'
     };
   });
@@ -169,6 +170,8 @@ export const AppProvider = ({ children }) => {
       id: 'user-' + Date.now(),
       name: userData.name || 'New Member',
       email: userData.email,
+      phone: userData.phone || '+94 77 123 4567',
+      emergencyEmail: userData.emergencyEmail || userData.email,
       role: requestedRole,
       diabetesType: userData.diabetesType || 'Type 2'
     };
@@ -221,9 +224,6 @@ export const AppProvider = ({ children }) => {
     if (newRole === 'doctor') {
       name = 'Dr. Medical Practitioner';
       email = 'doctor@glycopulse.ai';
-    } else if (newRole === 'caregiver') {
-      name = 'Family Caregiver';
-      email = 'caregiver@glycopulse.ai';
     } else if (newRole === 'admin') {
       name = 'System Administrator';
       email = 'admin@glycopulse.ai';
@@ -240,7 +240,6 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('glycopulse_user', JSON.stringify(updatedUser));
 
     if (newRole === 'doctor') setActiveTab('doctor_patients');
-    else if (newRole === 'caregiver') setActiveTab('caregiver_feed');
     else if (newRole === 'admin') setActiveTab('admin_telemetry');
     else setActiveTab('glucose');
 

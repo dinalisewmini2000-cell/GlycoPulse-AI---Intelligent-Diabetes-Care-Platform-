@@ -825,7 +825,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
                   </div>
                 </div>
 
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '90px' }}>
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <FileText size={14} />
                     <span>Consultation Impressions</span>
@@ -834,18 +834,18 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
                     value={callNotes}
                     onChange={e => setCallNotes(e.target.value)}
                     placeholder="Record clinical observations, dietary adjustments, or medication dosage changes..."
-                    style={{ flex: 1, width: '100%', minHeight: '120px', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.82rem', resize: 'none' }}
+                    style={{ flex: 1, width: '100%', minHeight: '70px', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.82rem', resize: 'none' }}
                   />
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.2rem' }}>
                   <button 
                     onClick={() => {
                       setRxPatient(activeVideoCall.patientName);
                       setShowPrescriptionModal(true);
                     }}
                     className="btn-glow" 
-                    style={{ width: '100%', justifyContent: 'center', fontSize: '0.82rem' }}
+                    style={{ width: '100%', justifyContent: 'center', fontSize: '0.82rem', padding: '0.7rem' }}
                   >
                     <Pill size={15} />
                     <span>Issue E-Prescription</span>
@@ -854,7 +854,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
                   <button 
                     onClick={() => setActiveVideoCall(null)}
                     className="btn-outline" 
-                    style={{ width: '100%', justifyContent: 'center', fontSize: '0.82rem', borderColor: '#ef4444', color: '#ef4444' }}
+                    style={{ width: '100%', justifyContent: 'center', fontSize: '0.82rem', borderColor: '#ef4444', color: '#ef4444', padding: '0.65rem' }}
                   >
                     <PhoneOff size={15} />
                     <span>End & Save Consult</span>

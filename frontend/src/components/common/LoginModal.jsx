@@ -15,6 +15,8 @@ export const LoginModal = () => {
   // Form Fields
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('+94 77 123 4567');
+  const [emergencyEmail, setEmergencyEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [diabetesType, setDiabetesType] = useState('');
@@ -44,15 +46,6 @@ export const LoginModal = () => {
       defaultPassword: '',
       badge: 'Medical Practitioner'
     },
-    caregiver: {
-      title: 'Family Caregiver Portal',
-      subtitle: 'Monitor loved ones with live remote alerts and emergency SOS telemetry',
-      icon: HeartHandshake,
-      color: '#ec4899',
-      defaultEmail: '',
-      defaultPassword: '',
-      badge: 'Remote Telemetry'
-    },
     admin: {
       title: 'System Admin Console',
       subtitle: 'Manage platform user accounts, security audit trails & database metrics',
@@ -67,6 +60,8 @@ export const LoginModal = () => {
   const resetForm = () => {
     setName('');
     setEmail('');
+    setPhone('+94 77 123 4567');
+    setEmergencyEmail('');
     setPassword('');
     setConfirmPassword('');
     setDiabetesType('');
@@ -114,6 +109,8 @@ export const LoginModal = () => {
         await signupUser({
           name: name.trim(),
           email,
+          phone,
+          emergencyEmail: emergencyEmail || email,
           password,
           role: selectedRole,
           diabetesType,
@@ -231,40 +228,43 @@ export const LoginModal = () => {
         </div>
 
         {/* Role Selection Tabs */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: `repeat(${isSignUp ? 3 : 4}, 1fr)`, gap: '0.5rem',
-          background: '#090d1a', padding: '0.4rem', borderRadius: '16px',
-          border: '1px solid rgba(255,255,255,0.12)', marginBottom: '1.4rem'
-        }}>
-          {Object.keys(roleDetails)
-            .filter((rKey) => !isSignUp || rKey !== 'admin')
-            .map((rKey) => {
-              const r = roleDetails[rKey];
-              const IconComp = r.icon;
-              const isSelected = selectedRole === rKey;
-              return (
-                <button
-                  key={rKey}
-                  type="button"
-                  onClick={() => handleRoleSelect(rKey)}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  gap: '0.35rem', padding: '0.7rem 0.2rem', borderRadius: '12px',
-                  border: isSelected ? `2px solid ${r.color}` : '1px solid transparent',
-                  background: isSelected ? `${r.color}25` : '#131c35',
-                  color: isSelected ? '#ffffff' : '#94a3b8',
-                  boxShadow: isSelected ? `0 0 12px ${r.color}44` : 'none',
-                  cursor: 'pointer', transition: 'all 0.2s ease', fontWeight: 700, fontSize: '0.78rem'
-                }}
-              >
-                <IconComp size={20} color={isSelected ? r.color : '#94a3b8'} />
-                <span style={{ color: isSelected ? '#ffffff' : '#cbd5e1' }}>
-                  {rKey.charAt(0).toUpperCase() + rKey.slice(1)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {(() => {
+          const visibleRoles = Object.keys(roleDetails).filter((rKey) => !isSignUp || rKey !== 'admin');
+          return (
+            <div style={{
+              display: 'grid', gridTemplateColumns: `repeat(${visibleRoles.length}, 1fr)`, gap: '0.6rem',
+              background: '#090d1a', padding: '0.45rem', borderRadius: '16px',
+              border: '1px solid rgba(255,255,255,0.12)', marginBottom: '1.4rem'
+            }}>
+              {visibleRoles.map((rKey) => {
+                const r = roleDetails[rKey];
+                const IconComp = r.icon;
+                const isSelected = selectedRole === rKey;
+                return (
+                  <button
+                    key={rKey}
+                    type="button"
+                    onClick={() => handleRoleSelect(rKey)}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      gap: '0.4rem', padding: '0.75rem 0.5rem', borderRadius: '12px',
+                      border: isSelected ? `2px solid ${r.color}` : '1px solid transparent',
+                      background: isSelected ? `${r.color}25` : '#131c35',
+                      color: isSelected ? '#ffffff' : '#94a3b8',
+                      boxShadow: isSelected ? `0 0 12px ${r.color}44` : 'none',
+                      cursor: 'pointer', transition: 'all 0.2s ease', fontWeight: 700, fontSize: '0.82rem'
+                    }}
+                  >
+                    <IconComp size={20} color={isSelected ? r.color : '#94a3b8'} />
+                    <span style={{ color: isSelected ? '#ffffff' : '#cbd5e1' }}>
+                      {rKey.charAt(0).toUpperCase() + rKey.slice(1)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {/* Loading Indicator */}
         {loading && (
@@ -391,26 +391,64 @@ export const LoginModal = () => {
 
           {/* Role Specific Registration Info */}
           {isSignUp && selectedRole === 'patient' && (
-            <div>
-              <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
-                DIABETES DIAGNOSIS TYPE
-              </label>
-              <select
-                value={diabetesType}
-                onChange={(e) => setDiabetesType(e.target.value)}
-                style={{
-                  width: '100%', padding: '0.85rem 1rem', borderRadius: '12px',
-                  background: '#090d1a', border: '1.5px solid rgba(255,255,255,0.2)',
-                  color: diabetesType ? '#ffffff' : '#94a3b8', outline: 'none', fontSize: '0.95rem', fontWeight: 600
-                }}
-              >
-                <option value="" disabled>Select Diabetes Type</option>
-                <option value="Type 1">Type 1 Diabetes</option>
-                <option value="Type 2">Type 2 Diabetes</option>
-                <option value="Pre-diabetes">Pre-diabetes</option>
-                <option value="Gestational">Gestational Diabetes</option>
-              </select>
-            </div>
+            <>
+              <div>
+                <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
+                  DIABETES DIAGNOSIS TYPE
+                </label>
+                <select
+                  value={diabetesType}
+                  onChange={(e) => setDiabetesType(e.target.value)}
+                  style={{
+                    width: '100%', padding: '0.85rem 1rem', borderRadius: '12px',
+                    background: '#090d1a', border: '1.5px solid rgba(255,255,255,0.2)',
+                    color: diabetesType ? '#ffffff' : '#94a3b8', outline: 'none', fontSize: '0.95rem', fontWeight: 600
+                  }}
+                >
+                  <option value="" disabled>Select Diabetes Type</option>
+                  <option value="Type 1">Type 1 Diabetes</option>
+                  <option value="Type 2">Type 2 Diabetes</option>
+                  <option value="Pre-diabetes">Pre-diabetes</option>
+                  <option value="Gestational">Gestational Diabetes</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
+                  PATIENT PHONE NUMBER (FOR CAREGIVER SOS)
+                </label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="e.g. +94 77 123 4567"
+                  style={{
+                    width: '100%', padding: '0.85rem 1rem',
+                    borderRadius: '12px', background: '#090d1a',
+                    border: '1.5px solid rgba(255,255,255,0.2)', color: '#ffffff',
+                    outline: 'none', fontSize: '0.95rem', fontWeight: 600
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
+                  EMERGENCY CAREGIVER EMAIL
+                </label>
+                <input
+                  type="email"
+                  value={emergencyEmail}
+                  onChange={(e) => setEmergencyEmail(e.target.value)}
+                  placeholder="e.g. caregiver@gmail.com"
+                  style={{
+                    width: '100%', padding: '0.85rem 1rem',
+                    borderRadius: '12px', background: '#090d1a',
+                    border: '1.5px solid rgba(255,255,255,0.2)', color: '#ffffff',
+                    outline: 'none', fontSize: '0.95rem', fontWeight: 600
+                  }}
+                />
+              </div>
+            </>
           )}
 
           {isSignUp && selectedRole === 'doctor' && (

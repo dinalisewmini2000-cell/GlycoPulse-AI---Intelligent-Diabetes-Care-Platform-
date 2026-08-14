@@ -25,11 +25,6 @@ export const Sidebar = () => {
     { id: 'doctor_appointments', label: 'Appointments & Consults', icon: Stethoscope }
   ];
 
-  const caregiverTabs = [
-    { id: 'caregiver_feed', label: 'Patient Live Feed', icon: HeartPulse },
-    { id: 'caregiver_alerts', label: 'Emergency Alerts Log', icon: AlertCircle }
-  ];
-
   const adminTabs = [
     { id: 'admin_telemetry', label: 'System Telemetry', icon: Cpu },
     { id: 'admin_users', label: 'User & Clinic Directory', icon: Users }
@@ -37,7 +32,6 @@ export const Sidebar = () => {
 
   let currentTabs = patientTabs;
   if (role === 'doctor') currentTabs = doctorTabs;
-  if (role === 'caregiver') currentTabs = caregiverTabs;
   if (role === 'admin') currentTabs = adminTabs;
 
   return (

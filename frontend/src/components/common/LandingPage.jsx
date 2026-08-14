@@ -15,6 +15,8 @@ export const LandingPage = () => {
   // Form Fields
   const [name, setName] = useState('');
   const [email, setEmail] = useState('dinali@glucocare.ai');
+  const [phone, setPhone] = useState('+94 77 123 4567');
+  const [emergencyEmail, setEmergencyEmail] = useState('');
   const [password, setPassword] = useState('password123');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [securityKey, setSecurityKey] = useState('');
@@ -40,14 +42,6 @@ export const LandingPage = () => {
       color: '#06b6d4',
       defaultEmail: 'kasun.doc@glucocare.ai',
       defaultPassword: 'password123'
-    },
-    caregiver: {
-      title: 'Family Caregiver Portal',
-      subtitle: 'Monitor loved ones with live remote alerts and emergency SOS telemetry',
-      icon: Heart,
-      color: '#ec4899',
-      defaultEmail: '',
-      defaultPassword: ''
     },
     admin: {
       title: 'System Admin Console',
@@ -88,6 +82,8 @@ export const LandingPage = () => {
         await signupUser({
           name: name.trim(),
           email,
+          phone,
+          emergencyEmail: emergencyEmail || email,
           password,
           role: selectedRole,
           diabetesType,
@@ -237,38 +233,43 @@ export const LandingPage = () => {
           </div>
 
           {/* Role Selection Tabs */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem',
-            background: '#090d1a', padding: '0.4rem', borderRadius: '16px',
-            border: '1px solid rgba(255,255,255,0.12)', marginBottom: '1.4rem'
-          }}>
-            {Object.keys(roleDetails).map((rKey) => {
-              const r = roleDetails[rKey];
-              const IconComp = r.icon;
-              const isSelected = selectedRole === rKey;
-              return (
-                <button
-                  key={rKey}
-                  type="button"
-                  onClick={() => handleRoleSelect(rKey)}
-                  style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    gap: '0.35rem', padding: '0.65rem 0.2rem', borderRadius: '12px',
-                    border: isSelected ? `2px solid ${r.color}` : '1px solid transparent',
-                    background: isSelected ? `${r.color}25` : '#131c35',
-                    color: isSelected ? '#ffffff' : '#94a3b8',
-                    boxShadow: isSelected ? `0 0 12px ${r.color}44` : 'none',
-                    cursor: 'pointer', transition: 'all 0.2s ease', fontWeight: 700, fontSize: '0.78rem'
-                  }}
-                >
-                  <IconComp size={18} color={isSelected ? r.color : '#94a3b8'} />
-                  <span style={{ color: isSelected ? '#ffffff' : '#cbd5e1' }}>
-                    {rKey.charAt(0).toUpperCase() + rKey.slice(1)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          {(() => {
+            const visibleRoles = Object.keys(roleDetails).filter((rKey) => !isSignUp || rKey !== 'admin');
+            return (
+              <div style={{
+                display: 'grid', gridTemplateColumns: `repeat(${visibleRoles.length}, 1fr)`, gap: '0.6rem',
+                background: '#090d1a', padding: '0.45rem', borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.12)', marginBottom: '1.4rem'
+              }}>
+                {visibleRoles.map((rKey) => {
+                  const r = roleDetails[rKey];
+                  const IconComp = r.icon;
+                  const isSelected = selectedRole === rKey;
+                  return (
+                    <button
+                      key={rKey}
+                      type="button"
+                      onClick={() => handleRoleSelect(rKey)}
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        gap: '0.4rem', padding: '0.75rem 0.5rem', borderRadius: '12px',
+                        border: isSelected ? `2px solid ${r.color}` : '1px solid transparent',
+                        background: isSelected ? `${r.color}25` : '#131c35',
+                        color: isSelected ? '#ffffff' : '#94a3b8',
+                        boxShadow: isSelected ? `0 0 12px ${r.color}44` : 'none',
+                        cursor: 'pointer', transition: 'all 0.2s ease', fontWeight: 700, fontSize: '0.82rem'
+                      }}
+                    >
+                      <IconComp size={20} color={isSelected ? r.color : '#94a3b8'} />
+                      <span style={{ color: isSelected ? '#ffffff' : '#cbd5e1' }}>
+                        {rKey.charAt(0).toUpperCase() + rKey.slice(1)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* Loading Banner */}
           {loading && (
