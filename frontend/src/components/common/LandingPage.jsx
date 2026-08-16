@@ -15,8 +15,6 @@ export const LandingPage = () => {
   // Form Fields
   const [name, setName] = useState('');
   const [email, setEmail] = useState('kasun@glucocare.ai');
-  const [phone, setPhone] = useState('+94 77 123 4567');
-  const [emergencyEmail, setEmergencyEmail] = useState('');
   const [password, setPassword] = useState('password123');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [securityKey, setSecurityKey] = useState('');
@@ -121,8 +119,6 @@ export const LandingPage = () => {
       startConnectingSequence(() => signupUser({
         name: name.trim(),
         email,
-        phone,
-        emergencyEmail: emergencyEmail || email,
         password,
         role: selectedRole,
         diabetesType,

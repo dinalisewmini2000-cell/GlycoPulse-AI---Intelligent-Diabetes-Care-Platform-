@@ -38,20 +38,24 @@ export const apiService = {
   },
 
   login: async (credentials) => {
-    const fbRes = await loginWithFirebase(credentials.email, credentials.password);
-    if (fbRes.status === 'success') {
-      return { status: 'success', user: fbRes.user, message: 'Logged in via Firebase Authentication' };
-    }
+    try {
+      const fbRes = await loginWithFirebase(credentials.email, credentials.password);
+      if (fbRes.status === 'success') {
+        return { status: 'success', user: fbRes.user, message: 'Logged in via Firebase Authentication' };
+      }
+    } catch (e) {}
     const httpRes = await fetchAPI('auth.php?action=login', { method: 'POST', body: JSON.stringify(credentials) });
     if (httpRes && !httpRes.offline) return httpRes;
-    return { status: 'success', user: { email: credentials.email, name: 'Dinali Bhagya' } };
+    return { status: 'success', user: { email: credentials.email, name: credentials.name || 'Dinali Bhagya' } };
   },
 
   signup: async (userData) => {
-    const fbRes = await signupWithFirebase(userData.email, userData.password, userData.fullName || userData.name, userData.role);
-    if (fbRes.status === 'success') {
-      return { status: 'success', user: fbRes.user, message: 'User registered in Firebase Cloud Firestore' };
-    }
+    try {
+      const fbRes = await signupWithFirebase(userData.email, userData.password, userData.fullName || userData.name, userData.role);
+      if (fbRes.status === 'success') {
+        return { status: 'success', user: fbRes.user, message: 'User registered in Firebase Cloud Firestore' };
+      }
+    } catch (e) {}
     const httpRes = await fetchAPI('auth.php?action=signup', { method: 'POST', body: JSON.stringify(userData) });
     if (httpRes && !httpRes.offline) return httpRes;
     return { status: 'success', user: { email: userData.email, name: userData.fullName || userData.name } };

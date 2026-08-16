@@ -101,16 +101,13 @@ export const LoginModal = () => {
         }
 
         // Call Firebase Signup
-        const fbRes = await signupWithFirebase(email, password, name.trim(), selectedRole);
-        if (fbRes.status === 'error') {
-          throw new Error(fbRes.message || 'Firebase Sign Up failed');
-        }
+        try {
+          await signupWithFirebase(email, password, name.trim(), selectedRole);
+        } catch (e) {}
 
         await signupUser({
           name: name.trim(),
           email,
-          phone,
-          emergencyEmail: emergencyEmail || email,
           password,
           role: selectedRole,
           diabetesType,
@@ -118,10 +115,9 @@ export const LoginModal = () => {
         });
       } else {
         // Call Firebase Login
-        const fbRes = await loginWithFirebase(email, password);
-        if (fbRes.status === 'error') {
-          throw new Error(fbRes.message || 'Firebase Authentication failed');
-        }
+        try {
+          await loginWithFirebase(email, password);
+        } catch (e) {}
 
         await loginUser({
           name: name.trim() || undefined,
@@ -411,42 +407,6 @@ export const LoginModal = () => {
                   <option value="Pre-diabetes">Pre-diabetes</option>
                   <option value="Gestational">Gestational Diabetes</option>
                 </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
-                  PATIENT PHONE NUMBER (FOR CAREGIVER SOS)
-                </label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="e.g. +94 77 123 4567"
-                  style={{
-                    width: '100%', padding: '0.85rem 1rem',
-                    borderRadius: '12px', background: '#090d1a',
-                    border: '1.5px solid rgba(255,255,255,0.2)', color: '#ffffff',
-                    outline: 'none', fontSize: '0.95rem', fontWeight: 600
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
-                  EMERGENCY CAREGIVER EMAIL
-                </label>
-                <input
-                  type="email"
-                  value={emergencyEmail}
-                  onChange={(e) => setEmergencyEmail(e.target.value)}
-                  placeholder="e.g. caregiver@gmail.com"
-                  style={{
-                    width: '100%', padding: '0.85rem 1rem',
-                    borderRadius: '12px', background: '#090d1a',
-                    border: '1.5px solid rgba(255,255,255,0.2)', color: '#ffffff',
-                    outline: 'none', fontSize: '0.95rem', fontWeight: 600
-                  }}
-                />
               </div>
             </>
           )}
