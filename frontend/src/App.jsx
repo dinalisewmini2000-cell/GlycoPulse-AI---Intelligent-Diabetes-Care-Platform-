@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { LandingPage } from './components/common/LandingPage';
+import { InitialSplashScreen } from './components/common/InitialSplashScreen';
 
 // Patient Components
 import { GlucoseDashboard } from './components/patient/GlucoseDashboard';
@@ -52,7 +53,11 @@ const MainContentArea = () => {
 };
 
 const AppShell = () => {
-  const { isAuthenticated } = useApp();
+  const { isInitialLoading, setIsInitialLoading, isAuthenticated } = useApp();
+
+  if (isInitialLoading) {
+    return <InitialSplashScreen onComplete={() => setIsInitialLoading(false)} />;
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-primary)' }}>

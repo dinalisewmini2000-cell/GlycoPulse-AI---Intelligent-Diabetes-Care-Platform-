@@ -19,11 +19,14 @@ export const AppProvider = ({ children }) => {
   // Global Toast Alert Banner
   const [toastAlert, setToastAlert] = useState(null);
 
+  // Initial 5-second Splash State
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const auth = localStorage.getItem('glycopulse_auth');
     if (auth !== null) return auth === 'true';
-    return true; // Default session active on initial load
+    return false; // Show Landing & Login Gateway on initial load
   });
   const [role, setRole] = useState(() => localStorage.getItem('glycopulse_role') || 'patient');
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -478,6 +481,8 @@ export const AppProvider = ({ children }) => {
       value={{
         theme,
         toggleTheme,
+        isInitialLoading,
+        setIsInitialLoading,
         isBackendConnected,
         dbEngineName,
         checkBackend,

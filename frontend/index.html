@@ -1,14 +1,131 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark" style="background-color: #0b0f19; color: #f1f5f9; color-scheme: dark;">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="GlycoPulse AI - Intelligent AI Diabetes Care Platform with Blood Glucose Forecasting, Food Vision Analysis, Lab OCR, Complication Monitoring, and Remote Clinical Portals." />
     <title>GlycoPulse AI – Intelligent Diabetes Care Platform</title>
+
+    <!-- Google Fonts Preconnect & Load -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Anti-FOUC Theme Script (executes before HTML render) -->
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('glycopulse_theme') || 'dark';
+          document.documentElement.setAttribute('data-theme', t);
+          if (t === 'light') {
+            document.documentElement.style.backgroundColor = '#f8fafc';
+            document.documentElement.style.color = '#0f172a';
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <!-- Instant Inline Critical CSS -->
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #0b0f19;
+        color: #f1f5f9;
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      [data-theme="light"], [data-theme="light"] body {
+        background-color: #f8fafc !important;
+        color: #0f172a !important;
+      }
+      #root {
+        min-height: 100vh;
+        background-color: inherit;
+        color: inherit;
+      }
+      .initial-splash {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        width: 100%;
+        background: radial-gradient(circle at center, #131b2e 0%, #0b0f19 70%);
+        color: #f1f5f9;
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      }
+      [data-theme="light"] .initial-splash {
+        background: radial-gradient(circle at center, #ffffff 0%, #f8fafc 70%);
+        color: #0f172a;
+      }
+      .splash-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2.5rem 3rem;
+        border-radius: 24px;
+        background: rgba(19, 27, 46, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      }
+      [data-theme="light"] .splash-card {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+      }
+      .splash-logo {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #06b6d4, #14b8a6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
+        margin-bottom: 1.2rem;
+      }
+      .splash-spinner {
+        width: 38px;
+        height: 38px;
+        border: 3px solid rgba(6, 182, 212, 0.2);
+        border-top-color: #06b6d4;
+        border-radius: 50%;
+        animation: splash-spin 0.75s linear infinite;
+        margin-top: 1rem;
+      }
+      @keyframes splash-spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="initial-splash">
+        <div class="splash-card">
+          <div class="splash-logo">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+          </div>
+          <div style="font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; background: linear-gradient(135deg, #38bdf8 0%, #14b8a6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            GlycoPulse AI
+          </div>
+          <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.35rem; font-weight: 500;">
+            Initializing Intelligent Clinical Platform...
+          </div>
+          <div class="splash-spinner"></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
