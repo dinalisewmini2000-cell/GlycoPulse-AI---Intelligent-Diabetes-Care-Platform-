@@ -389,7 +389,7 @@ export const LandingPage = () => {
 
           {/* Role Selection Tabs */}
           {(() => {
-            const visibleRoles = Object.keys(roleDetails).filter((rKey) => !isSignUp || rKey !== 'admin');
+            const visibleRoles = Object.keys(roleDetails);
             return (
               <div style={{
                 display: 'grid', gridTemplateColumns: `repeat(${visibleRoles.length}, 1fr)`, gap: '0.6rem',
