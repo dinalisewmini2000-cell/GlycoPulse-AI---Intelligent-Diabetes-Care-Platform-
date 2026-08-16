@@ -172,7 +172,7 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
       </div>
 
       {/* Sub-View 1: System Telemetry */}
-      {(activeTab === 'admin_telemetry' || activeTab === 'admin') && (
+      {(activeTab !== 'admin_users') && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
           {/* Top Metrics */}

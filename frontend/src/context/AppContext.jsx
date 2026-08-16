@@ -124,11 +124,10 @@ export const AppProvider = ({ children }) => {
 
   const loginUser = async (credentials) => {
     const res = await apiService.login(credentials);
-    const requestedRole = credentials.role || 'patient';
+    const requestedRole = credentials.role || (credentials.email?.toLowerCase().includes('admin') ? 'admin' : 'patient');
     let defaultName = 'Dinali Bhagya';
     if (requestedRole === 'admin') defaultName = 'System Administrator';
     else if (requestedRole === 'doctor') defaultName = 'Dr. Medical Practitioner';
-    else if (requestedRole === 'caregiver') defaultName = 'Family Caregiver';
 
     let userObj = {
       id: 'usr-' + Date.now(),
@@ -138,14 +137,14 @@ export const AppProvider = ({ children }) => {
     };
 
     if (res && res.status === 'success' && res.user) {
-      userObj = res.user;
+      userObj = { ...userObj, ...res.user };
     }
 
     if (credentials.name && credentials.name.trim()) {
       userObj.name = credentials.name.trim();
     }
     
-    const activeRole = userObj.role || requestedRole;
+    const activeRole = requestedRole || userObj.role || 'patient';
     userObj.role = activeRole;
     userObj.name = formatNameByRole(userObj.name, activeRole);
 
@@ -161,7 +160,6 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('glycopulse_role', activeRole);
 
     if (activeRole === 'doctor') setActiveTab('doctor_patients');
-    else if (activeRole === 'caregiver') setActiveTab('caregiver_feed');
     else if (activeRole === 'admin') setActiveTab('admin_telemetry');
     else setActiveTab('glucose');
   };
@@ -173,21 +171,19 @@ export const AppProvider = ({ children }) => {
       id: 'user-' + Date.now(),
       name: userData.name || 'New Member',
       email: userData.email,
-      phone: userData.phone || '+94 77 123 4567',
-      emergencyEmail: userData.emergencyEmail || userData.email,
       role: requestedRole,
       diabetesType: userData.diabetesType || 'Type 2'
     };
 
     if (res && res.status === 'success' && res.user) {
-      userObj = res.user;
+      userObj = { ...userObj, ...res.user };
     }
 
     if (userData.name && userData.name.trim()) {
       userObj.name = userData.name.trim();
     }
 
-    const activeRole = userObj.role || requestedRole;
+    const activeRole = requestedRole || userObj.role || 'patient';
     userObj.role = activeRole;
     userObj.name = formatNameByRole(userObj.name, activeRole);
 
@@ -203,7 +199,6 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('glycopulse_role', activeRole);
 
     if (activeRole === 'doctor') setActiveTab('doctor_patients');
-    else if (activeRole === 'caregiver') setActiveTab('caregiver_feed');
     else if (activeRole === 'admin') setActiveTab('admin_telemetry');
     else setActiveTab('glucose');
   };
