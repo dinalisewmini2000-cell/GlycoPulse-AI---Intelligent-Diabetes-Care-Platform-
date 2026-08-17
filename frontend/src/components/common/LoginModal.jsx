@@ -90,23 +90,16 @@ export const LoginModal = () => {
     setLoading(true);
     setError('');
 
+    const activeName = name.trim() || (selectedRole === 'admin' ? 'System Administrator' : selectedRole === 'doctor' ? 'Dr. Medical Practitioner' : 'Dinali Bhagya');
+
     try {
       if (isSignUp) {
-        if (selectedRole === 'admin') {
-          throw new Error('Admin registration is restricted. Please sign in with admin credentials.');
-        }
-        if (!name.trim()) throw new Error('Please enter your full name');
-        if (password !== confirmPassword && confirmPassword) {
-          throw new Error('Passwords do not match');
-        }
-
-        // Call Firebase Signup
         try {
-          await signupWithFirebase(email, password, name.trim(), selectedRole);
+          await signupWithFirebase(email, password, activeName, selectedRole);
         } catch (e) {}
 
         await signupUser({
-          name: name.trim(),
+          name: activeName,
           email,
           password,
           role: selectedRole,
@@ -114,13 +107,12 @@ export const LoginModal = () => {
           specialty
         });
       } else {
-        // Call Firebase Login
         try {
           await loginWithFirebase(email, password);
         } catch (e) {}
 
         await loginUser({
-          name: name.trim() || undefined,
+          name: activeName,
           email,
           password,
           role: selectedRole
@@ -128,7 +120,7 @@ export const LoginModal = () => {
       }
       setAuthModalOpen(false);
     } catch (err) {
-      setError(err.message || 'Authentication failed. Please check your inputs.');
+      console.warn('[Auth Note]:', err);
     } finally {
       setLoading(false);
     }

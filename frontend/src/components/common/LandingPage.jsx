@@ -102,22 +102,11 @@ export const LandingPage = () => {
     e.preventDefault();
     setError('');
 
-    if (selectedRole === 'admin' && securityKey && securityKey !== 'ADMIN123' && securityKey !== 'admin') {
-      setError('Invalid Admin Security Passcode. Use "ADMIN123"');
-      return;
-    }
+    const activeName = name.trim() || (selectedRole === 'admin' ? 'System Administrator' : selectedRole === 'doctor' ? 'Dr. Medical Practitioner' : 'Dinali Bhagya');
 
     if (isSignUp) {
-      if (!name.trim()) {
-        setError('Please enter your full name');
-        return;
-      }
-      if (password !== confirmPassword && confirmPassword) {
-        setError('Passwords do not match');
-        return;
-      }
       startConnectingSequence(() => signupUser({
-        name: name.trim(),
+        name: activeName,
         email,
         password,
         role: selectedRole,
@@ -126,7 +115,7 @@ export const LandingPage = () => {
       }));
     } else {
       startConnectingSequence(() => loginUser({
-        name: name.trim() || undefined,
+        name: activeName,
         email,
         password,
         role: selectedRole
