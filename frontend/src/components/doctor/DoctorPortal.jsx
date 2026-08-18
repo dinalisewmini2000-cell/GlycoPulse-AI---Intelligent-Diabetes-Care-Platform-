@@ -220,12 +220,12 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       
       {/* Top Banner */}
-      <div className="glass-panel" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(59, 130, 246, 0.15))', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-          <Stethoscope size={28} color="var(--accent-cyan)" />
+          <Stethoscope size={26} color="var(--accent-cyan)" />
           <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Physician Tele-Health & Clinical Command Center</h2>
-            <div style={{ fontSize: '0.82rem', color: 'var(--accent-cyan)', fontWeight: 600 }}>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)' }}>Physician Tele-Health & Clinical Command Center</h2>
+            <div style={{ fontSize: '0.8rem', color: 'var(--accent-cyan-light)', fontWeight: 700 }}>
               {currentUser?.name || 'Dr. Medical Practitioner'} — {currentUser?.specialty || 'Endocrinology & Diabetology'} ({currentUser?.email || 'doctor@glycopulse.ai'})
             </div>
           </div>

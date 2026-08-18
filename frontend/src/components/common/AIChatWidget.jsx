@@ -92,7 +92,7 @@ export const AIChatWidget = () => {
 
     // 4. Hypoglycemia / Low Blood Sugar
     if (q.includes('low') || q.includes('hypo') || q.includes('shaky') || q.includes('sweat') || q.includes('dizzy')) {
-      return `🚨 For low blood sugar (< 70 mg/dL), follow the 15-15 Rule:\n1. Consume 15g fast-acting carbs (e.g., 4 oz fruit juice, 3-4 glucose tablets, or 1 tbsp honey).\n2. Wait 15 minutes and re-check your blood glucose.\n3. Repeat if still < 70 mg/dL.\n\nIf severe hypo symptoms persist, click the red 'SOS EMERGENCY' button at the top of the screen!`;
+      return `🚨 For low blood sugar (< 70 mg/dL), follow the 15-15 Rule:\n1. Consume 15g fast-acting carbs (e.g., 4 oz fruit juice, 3-4 glucose tablets, or 1 tbsp honey).\n2. Wait 15 minutes and re-check your blood glucose.\n3. Repeat if still < 70 mg/dL.\n\nIf severe hypo symptoms persist, contact emergency services immediately!`;
     }
 
     // 5. Hyperglycemia / High Blood Sugar
@@ -146,7 +146,7 @@ export const AIChatWidget = () => {
     setTimeout(() => {
       const reply = generateAiReply(query);
       setMessages(prev => [...prev, { sender: 'ai', text: reply }]);
-    }, 450);
+    }, 350);
   };
 
   return (
@@ -156,26 +156,29 @@ export const AIChatWidget = () => {
           onClick={() => setIsOpen(true)}
           className="btn-glow" 
           style={{ 
-            borderRadius: '50%', width: '60px', height: '60px', padding: 0, 
-            justifyContent: 'center', boxShadow: '0 8px 25px rgba(6, 182, 212, 0.5)' 
+            borderRadius: '50%', width: '56px', height: '56px', padding: 0, 
+            justifyContent: 'center', boxShadow: 'var(--shadow-lg)'
           }}
+          title="Open AI Assistant"
         >
-          <MessageSquare size={26} />
+          <MessageSquare size={24} />
         </button>
       ) : (
-        <div className="glass-panel" style={{ width: '390px', height: '540px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.5)' }}>
+        <div className="glass-panel" style={{ width: '380px', height: '520px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
           
           {/* Header */}
-          <div style={{ background: 'linear-gradient(135deg, #06b6d4, #10b981)', padding: '1rem', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <Bot size={22} />
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Bot size={18} color="#ffffff" />
+              </div>
               <div>
-                <div style={{ fontWeight: 800, fontSize: '1rem' }}>24/7 AI Health Assistant</div>
-                <div style={{ fontSize: '0.72rem', opacity: 0.9 }}>GlycoPulse Clinical Coach • Active</div>
+                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)' }}>AI Health Assistant</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)', fontWeight: 600 }}>Active • 24/7 Clinical Support</div>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}>
-              <X size={20} />
+            <button onClick={() => setIsOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <X size={18} />
             </button>
           </div>
 
@@ -187,7 +190,7 @@ export const AIChatWidget = () => {
                   maxWidth: '85%', padding: '0.75rem 1rem', borderRadius: '12px', 
                   fontSize: '0.85rem', lineHeight: '1.45', whiteSpace: 'pre-line',
                   background: m.sender === 'user' ? 'var(--accent-cyan)' : 'var(--bg-secondary)',
-                  color: m.sender === 'user' ? '#fff' : 'var(--text-main)',
+                  color: m.sender === 'user' ? '#ffffff' : 'var(--text-main)',
                   border: m.sender === 'ai' ? '1px solid var(--border-color)' : 'none'
                 }}>
                   {m.text}
@@ -203,7 +206,7 @@ export const AIChatWidget = () => {
               <button 
                 key={idx} 
                 onClick={() => handleSend(p)}
-                style={{ whiteSpace: 'nowrap', fontSize: '0.72rem', padding: '0.35rem 0.65rem', borderRadius: '12px', background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', border: '1px solid rgba(6, 182, 212, 0.3)', cursor: 'pointer', fontWeight: 600 }}
+                style={{ whiteSpace: 'nowrap', fontSize: '0.72rem', padding: '0.35rem 0.65rem', borderRadius: '10px', background: 'var(--bg-primary)', color: 'var(--accent-cyan-light)', border: '1px solid var(--border-color)', cursor: 'pointer', fontWeight: 600 }}
               >
                 {p}
               </button>
@@ -219,7 +222,7 @@ export const AIChatWidget = () => {
               placeholder="Ask about glucose, meals, or insulin..." 
               style={{ flex: 1, padding: '0.6rem 0.9rem', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.85rem' }}
             />
-            <button type="submit" className="btn-glow" style={{ padding: '0.6rem 0.9rem' }}>
+            <button type="submit" className="btn-primary" style={{ padding: '0.6rem 0.9rem' }}>
               <Send size={16} />
             </button>
           </form>

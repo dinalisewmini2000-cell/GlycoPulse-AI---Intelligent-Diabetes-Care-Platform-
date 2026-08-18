@@ -159,12 +159,12 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       
       {/* Header */}
-      <div className="glass-panel" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.15))' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.5rem' }}>
-          <Cpu size={28} color="var(--accent-purple)" />
+      <div className="glass-panel" style={{ padding: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.4rem' }}>
+          <Cpu size={26} color="var(--accent-purple)" />
           <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Platform Administration & AI Telemetry Dashboard</h2>
-            <div style={{ fontSize: '0.82rem', color: 'var(--accent-purple)', fontWeight: 600 }}>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)' }}>Platform Administration & AI Telemetry Dashboard</h2>
+            <div style={{ fontSize: '0.8rem', color: 'var(--accent-purple)', fontWeight: 700 }}>
               Logged in: {currentUser?.name || 'System Administrator'} ({currentUser?.email || 'admin@glucocare.ai'}) — Super Admin Access
             </div>
           </div>

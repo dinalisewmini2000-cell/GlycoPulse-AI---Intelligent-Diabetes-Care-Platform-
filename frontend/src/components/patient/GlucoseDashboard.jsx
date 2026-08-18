@@ -83,21 +83,21 @@ export const GlucoseDashboard = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       
       {/* Top Banner & Live Ticker */}
-      <div className="glass-panel" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(16, 185, 129, 0.15))' }}>
+      <div className="glass-panel" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
               <span className="pulse-indicator"></span>
-              <span style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontWeight: 800, letterSpacing: '1px' }}>
-                LIVE CONTINUOUS GLUCOSE TELEMETRY STREAM (DEXCOM G7)
+              <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan-light)', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+                CONTINUOUS GLUCOSE MONITORING (DEXCOM G7)
               </span>
             </div>
             
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.8rem', marginTop: '0.4rem' }}>
-              <span style={{ fontSize: '3.2rem', fontWeight: 900, color: latestGlucose === '--' ? 'var(--accent-cyan)' : latestGlucose < 70 ? 'var(--accent-rose)' : latestGlucose > 180 ? 'var(--accent-amber)' : 'var(--accent-cyan)' }}>
+              <span style={{ fontSize: '3.0rem', fontWeight: 800, lineHeight: 1, color: latestGlucose === '--' ? 'var(--text-main)' : latestGlucose < 70 ? 'var(--accent-rose)' : latestGlucose > 180 ? 'var(--accent-amber)' : 'var(--accent-cyan-light)' }}>
                 {latestGlucose}
               </span>
-              <span style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+              <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>
                 mg/dL {displayTrendArrow}
               </span>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
@@ -105,13 +105,13 @@ export const GlucoseDashboard = () => {
               </span>
             </div>
             
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-              {lastCgmSync} | Patient: {currentUser?.name || 'Sarah Jenkins'} ({currentUser?.diabetesType || 'Type 1'})
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
+              {lastCgmSync} | Patient: {currentUser?.name || 'Dinali Bhagya'} ({currentUser?.diabetesType || 'Type 1'})
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '0.8rem' }}>
-            <button onClick={handleOpenModal} className="btn-glow" style={{ padding: '0.85rem 1.4rem', fontSize: '0.92rem' }}>
+            <button onClick={handleOpenModal} className="btn-glow" style={{ padding: '0.75rem 1.3rem' }}>
               <PlusCircle size={18} />
               <span>Log Glucose & Insulin</span>
             </button>
@@ -125,37 +125,37 @@ export const GlucoseDashboard = () => {
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-cyan)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
             <Syringe size={18} color="var(--accent-cyan)" />
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>INSULIN ON BOARD (IOB)</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.5px' }}>INSULIN ON BOARD (IOB)</span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>{iobUnits} Units</div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pharmacodynamic 3h Decay Active</span>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>{iobUnits} Units</div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pharmacodynamic 3h Decay</span>
         </div>
 
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-amber)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
             <Utensils size={18} color="var(--accent-amber)" />
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>CARBS ON BOARD (COB)</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.5px' }}>CARBS ON BOARD (COB)</span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-amber)' }}>{cobGrams} g</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-amber)' }}>{cobGrams} g</div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Active Gastric Digestion</span>
         </div>
 
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-emerald)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
             <Award size={18} color="var(--accent-emerald)" />
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>TIME IN RANGE (TIR)</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.5px' }}>TIME IN RANGE (TIR)</span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>{tirPercent}%</div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--accent-emerald)' }}>Target ≥70% Met (70-180 mg/dL)</span>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>{tirPercent}%</div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--accent-emerald)', fontWeight: 600 }}>Target &ge;70% Met (70-180 mg/dL)</span>
         </div>
 
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-purple)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
             <Activity size={18} color="var(--accent-purple)" />
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>GMI / ESTIMATED HbA1c</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.5px' }}>GMI / ESTIMATED HbA1c</span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-purple)' }}>{gmiValue}%</div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Variability CV: {cvPercent}% (&lt;36% Target)</span>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-purple)' }}>{gmiValue}%</div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Variability CV: {cvPercent}%</span>
         </div>
 
       </div>
@@ -164,12 +164,12 @@ export const GlucoseDashboard = () => {
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Clinical Ambulatory Glucose Profile (AGP)</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Standard international reporting format for continuous glucose telemetry</p>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>Ambulatory Glucose Profile (AGP)</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Clinical reporting format for continuous glucose telemetry</p>
           </div>
 
           {/* Timeframe Selector */}
-          <div style={{ display: 'flex', gap: '0.4rem', background: 'var(--bg-secondary)', padding: '0.3rem', borderRadius: '8px' }}>
+          <div style={{ display: 'flex', gap: '0.3rem', background: 'var(--bg-secondary)', padding: '0.3rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
             {['24h', '7d', '14d', '90d'].map(tf => (
               <button
                 key={tf}
@@ -178,7 +178,8 @@ export const GlucoseDashboard = () => {
                   padding: '0.4rem 0.8rem', borderRadius: '6px', border: 'none',
                   background: timeframe === tf ? 'var(--accent-cyan)' : 'transparent',
                   color: timeframe === tf ? '#fff' : 'var(--text-muted)',
-                  fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer'
+                  fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 {tf.toUpperCase()}
@@ -193,18 +194,18 @@ export const GlucoseDashboard = () => {
             <AreaChart data={cgm24hData} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="cgmGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0}/>
+                  <stop offset="5%" stopColor="#0284c7" stopOpacity={0.35}/>
+                  <stop offset="95%" stopColor="#0284c7" stopOpacity={0.0}/>
                 </linearGradient>
               </defs>
               <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
               <YAxis domain={[40, 240]} stroke="var(--text-muted)" fontSize={12} tickLine={false} />
               <Tooltip 
-                contentStyle={{ background: 'rgba(10, 16, 32, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff' }} 
+                contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '10px', color: 'var(--text-main)' }} 
               />
               <ReferenceLine y={180} label={{ value: 'High (180)', fill: '#f59e0b', fontSize: 11 }} stroke="#f59e0b" strokeDasharray="3 3" />
               <ReferenceLine y={70} label={{ value: 'Low (70)', fill: '#f43f5e', fontSize: 11 }} stroke="#f43f5e" strokeDasharray="3 3" />
-              <Area type="monotone" dataKey="bg" stroke="#06b6d4" strokeWidth={3} fillOpacity={1} fill="url(#cgmGradient)" />
+              <Area type="monotone" dataKey="bg" stroke="var(--accent-cyan)" strokeWidth={3} fillOpacity={1} fill="url(#cgmGradient)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -217,7 +218,7 @@ export const GlucoseDashboard = () => {
             <span style={{ color: 'var(--accent-amber)' }}>TAR &gt;180: {tarPercent}%</span>
           </div>
 
-          <div style={{ width: '100%', height: '12px', borderRadius: '6px', background: '#1e293b', display: 'flex', overflow: 'hidden' }}>
+          <div style={{ width: '100%', height: '10px', borderRadius: '6px', background: 'var(--bg-secondary)', display: 'flex', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
             <div style={{ width: `${tbrPercent}%`, background: 'var(--accent-rose)' }} title="Time Below Range"></div>
             <div style={{ width: `${tirPercent}%`, background: 'var(--accent-emerald)' }} title="Time In Range"></div>
             <div style={{ width: `${tarPercent}%`, background: 'var(--accent-amber)' }} title="Time Above Range"></div>
@@ -227,7 +228,7 @@ export const GlucoseDashboard = () => {
 
       {/* Glucose Log Table */}
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>Logged Readings & Event Timeline</h3>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-main)' }}>Logged Readings & Event Timeline</h3>
         
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
@@ -248,9 +249,9 @@ export const GlucoseDashboard = () => {
                 </tr>
               ) : (
                 glucoseLogs.map(l => (
-                  <tr key={l.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <tr key={l.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{l.timestamp}</td>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: l.value < 70 ? 'var(--accent-rose)' : l.value > 180 ? 'var(--accent-amber)' : 'var(--accent-cyan)' }}>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: l.value < 70 ? 'var(--accent-rose)' : l.value > 180 ? 'var(--accent-amber)' : 'var(--accent-cyan-light)' }}>
                       {l.value} mg/dL
                     </td>
                     <td style={{ padding: '0.75rem 1rem' }}>
@@ -267,10 +268,10 @@ export const GlucoseDashboard = () => {
 
       {/* Multi-Input Quick Log Modal */}
       {showLogModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '1.75rem' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(11, 17, 32, 0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '1.75rem', background: 'var(--bg-secondary)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Log Glucose, Insulin & Meals</h3>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)' }}>Log Glucose & Insulin</h3>
               <button onClick={() => setShowLogModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
@@ -278,14 +279,14 @@ export const GlucoseDashboard = () => {
 
             <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
               <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
+                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
                   BLOOD GLUCOSE (mg/dL)
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <button 
                     type="button" 
                     onClick={() => setLogValue(prev => Math.max(30, (Number(prev) || 118) - 5))}
-                    style={{ padding: '0.65rem 1.1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontSize: '1.3rem', fontWeight: 800, cursor: 'pointer' }}
+                    style={{ padding: '0.65rem 1.1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-main)', fontSize: '1.3rem', fontWeight: 800, cursor: 'pointer' }}
                   >
                     -
                   </button>
@@ -296,12 +297,12 @@ export const GlucoseDashboard = () => {
                     required
                     min={30}
                     max={500}
-                    style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '1.15rem', fontWeight: 800, textAlign: 'center' }}
+                    style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '1.15rem', fontWeight: 800, textAlign: 'center' }}
                   />
                   <button 
                     type="button" 
                     onClick={() => setLogValue(prev => Math.min(500, (Number(prev) || 118) + 5))}
-                    style={{ padding: '0.65rem 1.1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontSize: '1.3rem', fontWeight: 800, cursor: 'pointer' }}
+                    style={{ padding: '0.65rem 1.1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-main)', fontSize: '1.3rem', fontWeight: 800, cursor: 'pointer' }}
                   >
                     +
                   </button>
@@ -310,14 +311,14 @@ export const GlucoseDashboard = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
+                  <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
                     RAPID INSULIN (Units)
                   </label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', width: '100%' }}>
                     <button 
                       type="button" 
                       onClick={() => setLogInsulinBolus(prev => Math.max(0, (Number(prev) || 0) - 0.5).toFixed(1))}
-                      style={{ padding: '0.5rem 0.6rem', minWidth: '32px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
+                      style={{ padding: '0.5rem 0.6rem', minWidth: '32px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
                     >
                       -
                     </button>
@@ -327,12 +328,12 @@ export const GlucoseDashboard = () => {
                       placeholder="0.0"
                       value={logInsulinBolus} 
                       onChange={e => setLogInsulinBolus(e.target.value)}
-                      style={{ flex: 1, minWidth: 0, width: '100%', padding: '0.6rem 0.4rem', borderRadius: '6px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
+                      style={{ flex: 1, minWidth: 0, width: '100%', padding: '0.6rem 0.4rem', borderRadius: '6px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
                     />
                     <button 
                       type="button" 
                       onClick={() => setLogInsulinBolus(prev => (Math.max(0, (Number(prev) || 0) + 0.5)).toFixed(1))}
-                      style={{ padding: '0.5rem 0.6rem', minWidth: '32px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
+                      style={{ padding: '0.5rem 0.6rem', minWidth: '32px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
                     >
                       +
                     </button>
@@ -340,14 +341,14 @@ export const GlucoseDashboard = () => {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
+                  <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
                     CARBS (Grams)
                   </label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', width: '100%' }}>
                     <button 
                       type="button" 
                       onClick={() => setLogCarbs(prev => Math.max(0, (Number(prev) || 0) - 5))}
-                      style={{ padding: '0.5rem 0.6rem', minWidth: '32px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
+                      style={{ padding: '0.5rem 0.6rem', minWidth: '32px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
                     >
                       -
                     </button>
@@ -356,12 +357,12 @@ export const GlucoseDashboard = () => {
                       placeholder="0"
                       value={logCarbs} 
                       onChange={e => setLogCarbs(e.target.value)}
-                      style={{ flex: 1, minWidth: 0, width: '100%', padding: '0.6rem 0.4rem', borderRadius: '6px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
+                      style={{ flex: 1, minWidth: 0, width: '100%', padding: '0.6rem 0.4rem', borderRadius: '6px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', textAlign: 'center', fontWeight: 700 }}
                     />
                     <button 
                       type="button" 
                       onClick={() => setLogCarbs(prev => (Number(prev) || 0) + 5)}
-                      style={{ padding: '0.5rem 0.6rem', minWidth: '32px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
+                      style={{ padding: '0.5rem 0.6rem', minWidth: '32px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
                     >
                       +
                     </button>
@@ -370,24 +371,24 @@ export const GlucoseDashboard = () => {
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
+                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
                   MEAL CONTEXT / EVENT TAG
                 </label>
                 <select 
                   value={logType}
                   onChange={e => setLogType(e.target.value)}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontWeight: 600 }}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontWeight: 600 }}
                 >
-                  <option value="Fasting" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Fasting (Morning Wake Up)</option>
-                  <option value="Before Meal" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Before Meal (Pre-prandial)</option>
-                  <option value="After Meal" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>After Meal (Post-prandial)</option>
-                  <option value="Post Exercise" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Post Exercise / Walking</option>
-                  <option value="Bedtime" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Bedtime Target Check</option>
+                  <option value="Fasting">Fasting (Morning Wake Up)</option>
+                  <option value="Before Meal">Before Meal (Pre-prandial)</option>
+                  <option value="After Meal">After Meal (Post-prandial)</option>
+                  <option value="Post Exercise">Post Exercise / Walking</option>
+                  <option value="Bedtime">Bedtime Target Check</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
+                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
                   CLINICAL NOTES
                 </label>
                 <input 
@@ -395,13 +396,13 @@ export const GlucoseDashboard = () => {
                   placeholder="e.g. Had salmon salad, 30m walk"
                   value={logNotes} 
                   onChange={e => setLogNotes(e.target.value)}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                 />
               </div>
 
               <div style={{ display: 'flex', gap: '0.8rem', marginTop: '0.5rem' }}>
                 <button type="submit" className="btn-glow" style={{ flex: 1, justifyContent: 'center' }}>
-                  Save Reading & Update IOB/COB
+                  Save Reading
                 </button>
                 <button type="button" onClick={() => setShowLogModal(false)} className="btn-outline">
                   Cancel

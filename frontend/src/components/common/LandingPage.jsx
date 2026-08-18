@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
-  Activity, Sparkles, Brain, Radio, Utensils, 
-  FileSpreadsheet, UserCheck, Stethoscope, 
-  ShieldAlert, Mail, User, UserPlus, LogIn, Key, AlertCircle, Heart, Lock, ArrowRight, CheckCircle2, Zap
+  Activity, UserCheck, Stethoscope, ShieldAlert, Mail, User, UserPlus, LogIn, Key, AlertCircle, ArrowRight
 } from 'lucide-react';
 
 export const LandingPage = () => {
@@ -23,31 +21,28 @@ export const LandingPage = () => {
 
   const [connecting, setConnecting] = useState(false);
   const [connectingProgress, setConnectingProgress] = useState(0);
-  const [connectingStatus, setConnectingStatus] = useState('Initializing telemetry link...');
+  const [connectingStatus, setConnectingStatus] = useState('Initializing authentication...');
   const [error, setError] = useState('');
 
   const roleDetails = {
     patient: {
-      title: 'Diabetes Patient Portal',
-      subtitle: 'Live blood glucose telemetry, AI predictions & meal vision scanner',
+      title: 'Patient Portal',
+      subtitle: 'Track blood glucose readings, log meal carbs, view TIR & AI trajectories',
       icon: UserCheck,
-      color: '#10b981',
       defaultEmail: 'kasun@glucocare.ai',
       defaultPassword: 'password123'
     },
     doctor: {
-      title: 'Clinical Doctor Portal',
-      subtitle: 'Patient telemetry roster, clinical prescriptions & risk alerts',
+      title: 'Doctor Portal',
+      subtitle: 'Review patient telemetry roster, manage appointments & issue e-prescriptions',
       icon: Stethoscope,
-      color: '#06b6d4',
       defaultEmail: 'kasun.doc@glucocare.ai',
       defaultPassword: 'password123'
     },
     admin: {
       title: 'System Admin Console',
-      subtitle: 'User permissions, SQL engine status & platform audit logs',
+      subtitle: 'Manage user access permissions, monitor database connections & system logs',
       icon: ShieldAlert,
-      color: '#a855f7',
       defaultEmail: 'admin@glucocare.ai',
       defaultPassword: 'admin123'
     }
@@ -55,18 +50,14 @@ export const LandingPage = () => {
 
   const startConnectingSequence = async (authAction) => {
     setConnecting(true);
-    setConnectingProgress(15);
-    setConnectingStatus('Connecting to GlycoPulse Cloud Telemetry Engine...');
+    setConnectingProgress(25);
+    setConnectingStatus('Connecting to GlycoPulse backend service...');
     
-    await new Promise(r => setTimeout(r, 250));
-    setConnectingProgress(50);
-    setConnectingStatus('Verifying SQL Database & Auth Credentials...');
+    await new Promise(r => setTimeout(r, 200));
+    setConnectingProgress(65);
+    setConnectingStatus('Verifying credentials & session state...');
 
-    await new Promise(r => setTimeout(r, 350));
-    setConnectingProgress(85);
-    setConnectingStatus('Synchronizing Dexcom G7 & AI Vision Models...');
-
-    await new Promise(r => setTimeout(r, 250));
+    await new Promise(r => setTimeout(r, 200));
     setConnectingProgress(100);
     
     try {
@@ -126,183 +117,135 @@ export const LandingPage = () => {
   const currentRole = roleDetails[selectedRole];
 
   return (
-    <div style={{ width: '100%', minHeight: 'calc(100vh - 70px)', background: 'var(--bg-primary)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div style={{ width: '100%', minHeight: 'calc(100vh - 60px)', background: 'var(--bg-primary)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column' }}>
       
-      {/* FULL SCREEN CONNECTING OVERLAY WITH GLYCOPULSE LOGO */}
+      {/* CONNECTING OVERLAY */}
       {connecting && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          zIndex: 9999, background: 'rgba(11, 15, 25, 0.95)', backdropFilter: 'blur(20px)',
+          zIndex: 9999, background: 'rgba(15, 23, 42, 0.85)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           color: '#ffffff', padding: '2rem'
         }}>
-          <div style={{
-            position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: '2rem'
-          }}>
-            {/* Glowing Pulse Rings */}
-            <div style={{
-              position: 'absolute', width: '120px', height: '120px', borderRadius: '50%',
-              border: `2px solid ${currentRole.color}`, animation: 'sos-pulse 1.5s infinite', opacity: 0.5
-            }}></div>
-            <div style={{
-              width: '80px', height: '80px', borderRadius: '24px',
-              background: `linear-gradient(135deg, ${currentRole.color}, #3b82f6)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: `0 0 40px ${currentRole.color}aa`
-            }}>
-              <Activity size={44} color="#ffffff" className="spin-slow" />
-            </div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+            GlycoPulse AI
           </div>
-
-          <div style={{ fontSize: '1.8rem', fontWeight: 900, letterSpacing: '-0.5px', marginBottom: '0.4rem' }}>
-            Glyco<span style={{ color: currentRole.color }}>Pulse AI</span>
-          </div>
-
-          <div style={{ fontSize: '1rem', color: '#94a3b8', fontWeight: 600, marginBottom: '2rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.2rem', textAlign: 'center' }}>
             {connectingStatus}
           </div>
-
-          {/* Connection Progress Bar */}
-          <div style={{ width: '100%', maxWidth: '380px', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
-            <div style={{
-              height: '100%', width: `${connectingProgress}%`,
-              background: `linear-gradient(90deg, ${currentRole.color}, #38bdf8)`,
-              borderRadius: '10px', transition: 'width 0.3s ease'
-            }}></div>
-          </div>
-          <div style={{ marginTop: '0.6rem', fontSize: '0.82rem', color: '#64748b', fontWeight: 700 }}>
-            {connectingProgress}% Connected
+          <div style={{ width: '100%', maxWidth: '300px', height: '6px', background: 'var(--bg-secondary)', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+            <div style={{ height: '100%', width: `${connectingProgress}%`, background: 'var(--primary-color)', transition: 'width 0.2s ease' }}></div>
           </div>
         </div>
       )}
 
-      {/* Main Split-Screen Section */}
-      <div style={{ maxWidth: '1450px', width: '100%', margin: '0 auto', padding: '2.5rem 1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2.5rem', alignItems: 'center' }}>
+      {/* Main Content Layout */}
+      <div style={{ maxWidth: '1200px', width: '100%', margin: '0 auto', padding: '2.5rem 1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '2rem', alignItems: 'start' }}>
         
-        {/* LEFT COLUMN: Brand Showcase & 1-Click Quick Demo Gateway */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.6rem' }}>
+        {/* LEFT COLUMN: Project Introduction & Role Entry */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-            <div style={{
-              width: '48px', height: '48px', borderRadius: '14px',
-              background: 'linear-gradient(135deg, #06b6d4, #10b981)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 20px rgba(6, 182, 212, 0.4)'
-            }}>
-              <Activity size={28} color="#ffffff" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Activity size={22} color="#ffffff" />
             </div>
-            <div>
-              <div style={{ fontSize: '1.8rem', fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1.1 }}>
-                Glyco<span className="gradient-text-cyan">Pulse AI</span>
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontWeight: 700, letterSpacing: '1px' }}>
-                CLINICAL DIABETES PLATFORM
-              </div>
-            </div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>
+              GlycoPulse AI
+            </h1>
           </div>
 
-          <h1 style={{ fontSize: '2.6rem', fontWeight: 900, lineHeight: 1.15, background: 'linear-gradient(135deg, #ffffff 0%, #06b6d4 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            AI Continuous Glucose Telemetry & Multi-Role Care
-          </h1>
-
-          <p style={{ fontSize: '1.02rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-            Welcome to GlycoPulse AI. Connect real-time wearable sensor streams (Dexcom G7, FreeStyle Libre), AI meal recognition, lab report OCR, and 4-hour predictive trajectory modeling. Select a portal below or log in to enter.
-          </p>
-
-          {/* 1-CLICK QUICK ACCESS DEMO PORTALS */}
           <div>
-            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Zap size={15} color="var(--accent-amber)" />
-              <span>Instant 1-Click Portal Demo Access</span>
-            </div>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 700, lineHeight: 1.3, color: 'var(--text-main)', marginBottom: '0.6rem' }}>
+              Diabetes Management & Telemetry System
+            </h2>
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              GlycoPulse AI provides continuous blood glucose telemetry monitoring, meal nutrition logging, lab report analysis, and clinical consultation management for patients and medical practitioners.
+            </p>
+          </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+          {/* Quick Role Selection */}
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.2rem' }}>
+            <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.8rem' }}>
+              Select Portal Access
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               
-              {/* Patient Demo Card */}
+              {/* Patient Demo */}
               <div 
                 onClick={() => handleQuickDemoLogin('patient')}
-                className="glass-panel" 
+                className="glass-card" 
                 style={{
-                  padding: '1.1rem 1.3rem', cursor: 'pointer',
-                  borderLeft: '4px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  transition: 'all 0.25s ease'
+                  padding: '0.9rem 1.1rem', cursor: 'pointer',
+                  borderLeft: '3px solid var(--accent-emerald)', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <UserCheck size={22} color="#10b981" />
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <UserCheck size={20} color="var(--accent-emerald)" />
                   <div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                      Patient Portal (Dinali Bhagya)
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                      Patient Portal
                     </div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                      Live CGM telemetry stream, HbA1c forecast & Food AI
+                      View glucose logs, food recognition, & health assistant
                     </div>
                   </div>
                 </div>
-                <button className="btn-glow" style={{ padding: '0.45rem 0.9rem', fontSize: '0.78rem', background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                <button className="btn-outline" style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}>
                   <span>Enter</span>
-                  <ArrowRight size={14} />
+                  <ArrowRight size={13} />
                 </button>
               </div>
 
-              {/* Doctor Demo Card */}
+              {/* Doctor Demo */}
               <div 
                 onClick={() => handleQuickDemoLogin('doctor')}
-                className="glass-panel" 
+                className="glass-card" 
                 style={{
-                  padding: '1.1rem 1.3rem', cursor: 'pointer',
-                  borderLeft: '4px solid #06b6d4', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  transition: 'all 0.25s ease'
+                  padding: '0.9rem 1.1rem', cursor: 'pointer',
+                  borderLeft: '3px solid var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(6, 182, 212, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Stethoscope size={22} color="#06b6d4" />
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <Stethoscope size={20} color="var(--primary-color)" />
                   <div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                      Doctor Console (Dr. Practitioner)
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                      Doctor Portal
                     </div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                      Clinical patient roster, e-prescriptions & AI risk triage
+                      Monitor patient roster, appointments & e-prescriptions
                     </div>
                   </div>
                 </div>
-                <button className="btn-glow" style={{ padding: '0.45rem 0.9rem', fontSize: '0.78rem', background: 'linear-gradient(135deg, #06b6d4, #0284c7)' }}>
+                <button className="btn-outline" style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}>
                   <span>Enter</span>
-                  <ArrowRight size={14} />
+                  <ArrowRight size={13} />
                 </button>
               </div>
 
-              {/* Admin Demo Card */}
+              {/* Admin Demo */}
               <div 
                 onClick={() => handleQuickDemoLogin('admin')}
-                className="glass-panel" 
+                className="glass-card" 
                 style={{
-                  padding: '1.1rem 1.3rem', cursor: 'pointer',
-                  borderLeft: '4px solid #a855f7', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  transition: 'all 0.25s ease'
+                  padding: '0.9rem 1.1rem', cursor: 'pointer',
+                  borderLeft: '3px solid var(--accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(168, 85, 247, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <ShieldAlert size={22} color="#a855f7" />
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <ShieldAlert size={20} color="var(--accent-purple)" />
                   <div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                      Admin Console (System Admin)
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                      Admin Console
                     </div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                      SQL DB status engine, security audit trails & user privileges
+                      System telemetry, user accounts & database state
                     </div>
                   </div>
                 </div>
-                <button className="btn-glow" style={{ padding: '0.45rem 0.9rem', fontSize: '0.78rem', background: 'linear-gradient(135deg, #a855f7, #7e22ce)' }}>
+                <button className="btn-outline" style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}>
                   <span>Enter</span>
-                  <ArrowRight size={14} />
+                  <ArrowRight size={13} />
                 </button>
               </div>
 
@@ -311,233 +254,169 @@ export const LandingPage = () => {
 
         </div>
 
-        {/* RIGHT COLUMN: High-Contrast Embedded Authentication Form */}
-        <div style={{
-          padding: '2.2rem', borderRadius: '24px',
-          background: 'linear-gradient(145deg, #0b1329 0%, #172547 100%)',
-          border: `2px solid ${currentRole.color}66`,
-          boxShadow: `0 25px 60px -10px ${currentRole.color}44, 0 0 30px rgba(0,0,0,0.8)`,
-          color: '#ffffff'
-        }}>
+        {/* RIGHT COLUMN: Authentication Form */}
+        <div className="glass-panel" style={{ padding: '1.75rem', borderRadius: '8px' }}>
           
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '1.4rem' }}>
-            <div style={{
-              width: '56px', height: '56px', borderRadius: '18px',
-              background: `linear-gradient(135deg, ${currentRole.color}, #2563eb)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 0.7rem auto', boxShadow: `0 0 25px ${currentRole.color}88`
-            }}>
-              <Activity size={30} color="#ffffff" />
-            </div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '0.2rem', color: '#ffffff' }}>
-              Glyco<span style={{ color: currentRole.color }}>Pulse AI</span> Login
-            </h2>
-            <p style={{ fontSize: '0.88rem', color: '#cbd5e1', fontWeight: 600 }}>
-              {isSignUp ? `Create your ${currentRole.title} account` : `Sign in to ${currentRole.title}`}
+          <div style={{ marginBottom: '1.2rem' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.2rem' }}>
+              {isSignUp ? `Sign Up for ${currentRole.title}` : `Sign In to ${currentRole.title}`}
+            </h3>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              Select your role below to authenticate into the system.
             </p>
           </div>
 
-          {/* Mode Switcher: Sign In vs Sign Up */}
+          {/* Sign In vs Sign Up Tabs */}
           <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem',
-            background: '#090d1a', padding: '0.35rem', borderRadius: '14px',
-            border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.4rem'
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem',
+            background: 'var(--bg-primary)', padding: '0.25rem', borderRadius: '6px',
+            border: '1px solid var(--border-color)', marginBottom: '1rem'
           }}>
             <button
               type="button"
               onClick={() => setIsSignUp(false)}
               style={{
-                padding: '0.65rem', borderRadius: '10px', border: 'none',
-                background: !isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
-                color: '#ffffff', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                boxShadow: !isSignUp ? `0 4px 15px ${currentRole.color}55` : 'none',
-                transition: 'all 0.2s ease'
+                padding: '0.45rem', borderRadius: '4px', border: 'none',
+                background: !isSignUp ? 'var(--primary-color)' : 'transparent',
+                color: !isSignUp ? '#ffffff' : 'var(--text-muted)', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem'
               }}
             >
-              <LogIn size={18} />
+              <LogIn size={14} />
               <span>Sign In</span>
             </button>
             <button
               type="button"
               onClick={() => { setIsSignUp(true); setName(''); setConfirmPassword(''); }}
               style={{
-                padding: '0.65rem', borderRadius: '10px', border: 'none',
-                background: isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
-                color: '#ffffff', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                boxShadow: isSignUp ? `0 4px 15px ${currentRole.color}55` : 'none',
-                transition: 'all 0.2s ease'
+                padding: '0.45rem', borderRadius: '4px', border: 'none',
+                background: isSignUp ? 'var(--primary-color)' : 'transparent',
+                color: isSignUp ? '#ffffff' : 'var(--text-muted)', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem'
               }}
             >
-              <UserPlus size={18} />
+              <UserPlus size={14} />
               <span>Sign Up</span>
             </button>
           </div>
 
           {/* Role Selection Tabs */}
-          {(() => {
-            const visibleRoles = Object.keys(roleDetails);
-            return (
-              <div style={{
-                display: 'grid', gridTemplateColumns: `repeat(${visibleRoles.length}, 1fr)`, gap: '0.6rem',
-                background: '#090d1a', padding: '0.45rem', borderRadius: '16px',
-                border: '1px solid rgba(255,255,255,0.12)', marginBottom: '1.4rem'
-              }}>
-                {visibleRoles.map((rKey) => {
-                  const r = roleDetails[rKey];
-                  const IconComp = r.icon;
-                  const isSelected = selectedRole === rKey;
-                  return (
-                    <button
-                      key={rKey}
-                      type="button"
-                      onClick={() => handleRoleSelect(rKey)}
-                      style={{
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        gap: '0.4rem', padding: '0.75rem 0.5rem', borderRadius: '12px',
-                        border: isSelected ? `2px solid ${r.color}` : '1px solid transparent',
-                        background: isSelected ? `${r.color}25` : '#131c35',
-                        color: isSelected ? '#ffffff' : '#94a3b8',
-                        boxShadow: isSelected ? `0 0 12px ${r.color}44` : 'none',
-                        cursor: 'pointer', transition: 'all 0.2s ease', fontWeight: 700, fontSize: '0.82rem'
-                      }}
-                    >
-                      <IconComp size={20} color={isSelected ? r.color : '#94a3b8'} />
-                      <span style={{ color: isSelected ? '#ffffff' : '#cbd5e1' }}>
-                        {rKey.charAt(0).toUpperCase() + rKey.slice(1)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })()}
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem',
+            marginBottom: '1.2rem'
+          }}>
+            {Object.keys(roleDetails).map((rKey) => {
+              const r = roleDetails[rKey];
+              const IconComp = r.icon;
+              const isSelected = selectedRole === rKey;
+              return (
+                <button
+                  key={rKey}
+                  type="button"
+                  onClick={() => handleRoleSelect(rKey)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: '0.35rem', padding: '0.5rem 0.3rem', borderRadius: '6px',
+                    border: isSelected ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
+                    background: isSelected ? 'var(--primary-light)' : 'var(--bg-secondary)',
+                    color: isSelected ? 'var(--primary-color)' : 'var(--text-muted)',
+                    cursor: 'pointer', fontWeight: 600, fontSize: '0.78rem'
+                  }}
+                >
+                  <IconComp size={15} />
+                  <span>{rKey.charAt(0).toUpperCase() + rKey.slice(1)}</span>
+                </button>
+              );
+            })}
+          </div>
 
           {/* Form Error Alert */}
           {error && (
             <div style={{
-              background: 'rgba(239, 68, 68, 0.25)', border: '1px solid rgba(239, 68, 68, 0.6)',
-              padding: '0.85rem 1rem', borderRadius: '12px', color: '#fca5a5',
-              fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem'
+              background: '#fee2e2', border: '1px solid #fecaca',
+              padding: '0.65rem 0.85rem', borderRadius: '6px', color: '#b91c1c',
+              fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '1rem'
             }}>
-              <AlertCircle size={20} />
+              <AlertCircle size={16} />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Interactive Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
+          {/* Form */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             
             {/* Full Name */}
             <div>
-              <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.35rem' }}>
-                YOUR FULL NAME {isSignUp ? '(REQUIRED)' : '(OPTIONAL)'}
+              <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                Full Name {isSignUp ? '(Required)' : '(Optional)'}
               </label>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <User size={18} style={{ position: 'absolute', left: '1rem', color: currentRole.color }} />
-                <input
-                  type="text"
-                  required={isSignUp}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Dinali Bhagya or Dr. Kasun"
-                  style={{
-                    width: '100%', padding: '0.8rem 1rem 0.8rem 2.8rem',
-                    borderRadius: '12px', background: '#090d1a',
-                    border: '1.5px solid rgba(255,255,255,0.2)', color: '#ffffff',
-                    outline: 'none', fontSize: '0.92rem', fontWeight: 600
-                  }}
-                />
-              </div>
+              <input
+                type="text"
+                required={isSignUp}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Dinali Bhagya"
+                style={{ width: '100%' }}
+              />
             </div>
 
             {/* Email */}
             <div>
-              <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.35rem' }}>
-                {selectedRole.toUpperCase()} EMAIL ADDRESS
+              <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                Email Address
               </label>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <Mail size={18} style={{ position: 'absolute', left: '1rem', color: currentRole.color }} />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@glucocare.ai"
-                  style={{
-                    width: '100%', padding: '0.8rem 1rem 0.8rem 2.8rem',
-                    borderRadius: '12px', background: '#090d1a',
-                    border: '1.5px solid rgba(255,255,255,0.2)', color: '#ffffff',
-                    outline: 'none', fontSize: '0.92rem', fontWeight: 600
-                  }}
-                />
-              </div>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@glucocare.ai"
+                style={{ width: '100%' }}
+              />
             </div>
 
             {/* Password */}
             <div>
-              <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.35rem' }}>
-                PASSWORD
+              <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                Password
               </label>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <Lock size={18} style={{ position: 'absolute', left: '1rem', color: currentRole.color }} />
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  style={{
-                    width: '100%', padding: '0.8rem 1rem 0.8rem 2.8rem',
-                    borderRadius: '12px', background: '#090d1a',
-                    border: '1.5px solid rgba(255,255,255,0.2)', color: '#ffffff',
-                    outline: 'none', fontSize: '0.92rem', fontWeight: 600
-                  }}
-                />
-              </div>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                style={{ width: '100%' }}
+              />
             </div>
 
             {/* Confirm Password for Sign Up */}
             {isSignUp && (
               <div>
-                <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.35rem' }}>
-                  CONFIRM PASSWORD
+                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                  Confirm Password
                 </label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Lock size={18} style={{ position: 'absolute', left: '1rem', color: currentRole.color }} />
-                  <input
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••••••"
-                    style={{
-                      width: '100%', padding: '0.8rem 1rem 0.8rem 2.8rem',
-                      borderRadius: '12px', background: '#090d1a',
-                      border: '1.5px solid rgba(255,255,255,0.2)', color: '#ffffff',
-                      outline: 'none', fontSize: '0.92rem', fontWeight: 600
-                    }}
-                  />
-                </div>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  style={{ width: '100%' }}
+                />
               </div>
             )}
 
             {/* Patient Specific Diagnosis */}
             {isSignUp && selectedRole === 'patient' && (
               <div>
-                <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.35rem' }}>
-                  DIABETES DIAGNOSIS TYPE
+                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                  Diabetes Diagnosis Type
                 </label>
                 <select
                   value={diabetesType}
                   onChange={(e) => setDiabetesType(e.target.value)}
-                  style={{
-                    width: '100%', padding: '0.8rem 1rem', borderRadius: '12px',
-                    background: '#090d1a', border: '1.5px solid rgba(255,255,255,0.2)',
-                    color: '#ffffff', outline: 'none', fontSize: '0.92rem', fontWeight: 600
-                  }}
+                  style={{ width: '100%' }}
                 >
                   <option value="Type 1">Type 1 Diabetes</option>
                   <option value="Type 2">Type 2 Diabetes</option>
@@ -550,24 +429,16 @@ export const LandingPage = () => {
             {/* Admin Security Passcode */}
             {selectedRole === 'admin' && (
               <div>
-                <label style={{ fontSize: '0.8rem', color: currentRole.color, fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.35rem' }}>
-                  ADMIN SECURITY PASSCODE (Default: ADMIN123)
+                <label style={{ fontSize: '0.78rem', color: 'var(--accent-purple)', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                  Admin Passcode (Default: ADMIN123)
                 </label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Key size={18} style={{ position: 'absolute', left: '1rem', color: currentRole.color }} />
-                  <input
-                    type="password"
-                    value={securityKey}
-                    onChange={(e) => setSecurityKey(e.target.value)}
-                    placeholder="Enter ADMIN123"
-                    style={{
-                      width: '100%', padding: '0.8rem 1rem 0.8rem 2.8rem',
-                      borderRadius: '12px', background: '#090d1a',
-                      border: `1.5px solid ${currentRole.color}`, color: '#ffffff',
-                      outline: 'none', fontSize: '0.92rem', fontWeight: 600
-                    }}
-                  />
-                </div>
+                <input
+                  type="password"
+                  value={securityKey}
+                  onChange={(e) => setSecurityKey(e.target.value)}
+                  placeholder="Enter ADMIN123"
+                  style={{ width: '100%' }}
+                />
               </div>
             )}
 
@@ -575,20 +446,17 @@ export const LandingPage = () => {
             <button
               type="submit"
               disabled={connecting}
+              className="btn-primary"
               style={{
-                marginTop: '0.5rem', padding: '0.9rem', borderRadius: '14px',
-                border: 'none', background: `linear-gradient(135deg, ${currentRole.color}, #2563eb)`,
-                color: '#ffffff', fontWeight: 900, fontSize: '0.95rem', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
-                boxShadow: `0 8px 25px ${currentRole.color}66`, transition: 'all 0.2s ease',
-                letterSpacing: '0.5px', textTransform: 'uppercase'
+                marginTop: '0.3rem', padding: '0.65rem', borderRadius: '6px',
+                justifyContent: 'center', fontSize: '0.875rem', fontWeight: 700, width: '100%'
               }}
             >
-              {isSignUp ? <UserPlus size={20} /> : <LogIn size={20} />}
+              {isSignUp ? <UserPlus size={16} /> : <LogIn size={16} />}
               <span>
                 {isSignUp 
                   ? `Create ${selectedRole.toUpperCase()} Account` 
-                  : `Connect to ${selectedRole.toUpperCase()} Portal`}
+                  : `Sign In to ${selectedRole.toUpperCase()} Portal`}
               </span>
             </button>
 
@@ -599,8 +467,8 @@ export const LandingPage = () => {
       </div>
 
       {/* Footer */}
-      <footer style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', borderTop: '1px solid var(--border-color)', marginTop: 'auto' }}>
-        <div>GlycoPulse AI - Clinical Diabetes Care Platform &copy; {new Date().getFullYear()}. All Rights Reserved.</div>
+      <footer style={{ padding: '1.2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', borderTop: '1px solid var(--border-color)', marginTop: 'auto' }}>
+        <div>GlycoPulse AI — Diabetes Management Platform &copy; {new Date().getFullYear()}</div>
       </footer>
 
     </div>

@@ -42,20 +42,20 @@ export const AIPredictions = () => {
       hypoRiskLevel = 'HIGH RISK';
       hypoBadgeText = `Impending Hypo Dip (${minPredicted} mg/dL)`;
       hypoBadgeClass = 'badge-danger';
-      hypoColor = '#ef4444';
-      hypoBorder = '4px solid #ef4444';
+      hypoColor = 'var(--accent-rose)';
+      hypoBorder = '4px solid var(--accent-rose)';
     } else if (minPredicted < 90 || baseGlucose < 90) {
       hypoRiskLevel = 'MODERATE RISK';
       hypoBadgeText = `Borderline Dip Expected (${minPredicted} mg/dL)`;
       hypoBadgeClass = 'badge-warning';
-      hypoColor = '#f59e0b';
-      hypoBorder = '4px solid #f59e0b';
+      hypoColor = 'var(--accent-amber)';
+      hypoBorder = '4px solid var(--accent-amber)';
     } else {
       hypoRiskLevel = 'LOW RISK';
       hypoBadgeText = 'Zero Hypo Dip Expected';
       hypoBadgeClass = 'badge-success';
-      hypoColor = '#10b981';
-      hypoBorder = '4px solid #10b981';
+      hypoColor = 'var(--accent-emerald)';
+      hypoBorder = '4px solid var(--accent-emerald)';
     }
   }
 
@@ -71,20 +71,20 @@ export const AIPredictions = () => {
       hyperRiskLevel = 'HIGH RISK';
       hyperBadgeText = `Post-Prandial Spike Expected (${maxPredicted} mg/dL)`;
       hyperBadgeClass = 'badge-danger';
-      hyperColor = '#ef4444';
-      hyperBorder = '4px solid #ef4444';
+      hyperColor = 'var(--accent-rose)';
+      hyperBorder = '4px solid var(--accent-rose)';
     } else if (maxPredicted > 140 || baseGlucose > 140) {
       hyperRiskLevel = 'MODERATE RISK';
       hyperBadgeText = `Elevated Glucose Peak (${maxPredicted} mg/dL)`;
       hyperBadgeClass = 'badge-warning';
-      hyperColor = '#f59e0b';
-      hyperBorder = '4px solid #f59e0b';
+      hyperColor = 'var(--accent-amber)';
+      hyperBorder = '4px solid var(--accent-amber)';
     } else {
       hyperRiskLevel = 'LOW RISK';
       hyperBadgeText = 'Peak Under 140 mg/dL Target';
       hyperBadgeClass = 'badge-success';
-      hyperColor = '#10b981';
-      hyperBorder = '4px solid #10b981';
+      hyperColor = 'var(--accent-emerald)';
+      hyperBorder = '4px solid var(--accent-emerald)';
     }
   }
 
@@ -109,12 +109,12 @@ export const AIPredictions = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       
       {/* Header Banner */}
-      <div className="glass-panel" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(168, 85, 247, 0.15))' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.5rem' }}>
-          <Brain size={28} color="var(--accent-cyan)" />
+      <div className="glass-panel" style={{ padding: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.4rem' }}>
+          <Brain size={26} color="var(--accent-cyan)" />
           <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>4-Hour AI Predictive Glucose Engine</h2>
-            <div style={{ fontSize: '0.82rem', color: 'var(--accent-cyan)', fontWeight: 600 }}>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)' }}>4-Hour AI Predictive Glucose Engine</h2>
+            <div style={{ fontSize: '0.78rem', color: 'var(--accent-cyan-light)', fontWeight: 700 }}>
               Deep Neural Network v3.4 | Active IOB: {iobUnits}U | COB: {cobGrams}g
             </div>
           </div>
@@ -129,7 +129,7 @@ export const AIPredictions = () => {
         
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: hasLogs ? '4px solid var(--accent-cyan)' : '4px solid var(--border-color)' }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>PREDICTED 2-HOUR SUGAR</span>
-          <div style={{ fontSize: '2.2rem', fontWeight: 900, color: hasLogs ? 'var(--accent-cyan)' : 'var(--text-muted)', margin: '0.3rem 0' }}>
+          <div style={{ fontSize: '2.0rem', fontWeight: 800, color: hasLogs ? 'var(--accent-cyan-light)' : 'var(--text-muted)', margin: '0.3rem 0' }}>
             {hasLogs ? `${predicted2h} mg/dL` : '-- mg/dL'}
           </div>
           <div className={`badge ${hasLogs ? 'badge-success' : 'badge-info'}`}>
@@ -139,7 +139,7 @@ export const AIPredictions = () => {
 
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: hypoBorder }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>HYPOGLYCEMIA RISK</span>
-          <div style={{ fontSize: '2.2rem', fontWeight: 900, color: hypoColor, margin: '0.3rem 0' }}>
+          <div style={{ fontSize: '2.0rem', fontWeight: 800, color: hypoColor, margin: '0.3rem 0' }}>
             {hypoRiskLevel}
           </div>
           <div className={`badge ${hypoBadgeClass}`}>
@@ -149,7 +149,7 @@ export const AIPredictions = () => {
 
         <div className="glass-panel" style={{ padding: '1.25rem', borderLeft: hyperBorder }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>HYPERGLYCEMIA RISK</span>
-          <div style={{ fontSize: '2.2rem', fontWeight: 900, color: hyperColor, margin: '0.3rem 0' }}>
+          <div style={{ fontSize: '2.0rem', fontWeight: 800, color: hyperColor, margin: '0.3rem 0' }}>
             {hyperRiskLevel}
           </div>
           <div className={`badge ${hyperBadgeClass}`}>
@@ -163,7 +163,7 @@ export const AIPredictions = () => {
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>4-Hour Projected Trajectory Curve (+240 Minutes)</h3>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>4-Hour Projected Trajectory Curve (+240 Minutes)</h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Simulated trajectory based on current gastric absorption and insulin decay</p>
           </div>
 
@@ -174,9 +174,9 @@ export const AIPredictions = () => {
         </div>
 
         {!hasLogs ? (
-          <div style={{ padding: '3rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '12px', color: 'var(--text-muted)' }}>
-            <Brain size={36} color="var(--accent-cyan)" style={{ margin: '0 auto 0.8rem auto', opacity: 0.7 }} />
-            <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.3rem', color: 'var(--text-main)' }}>Awaiting Glucose Telemetry Stream</h4>
+          <div style={{ padding: '3rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '12px', color: 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+            <Brain size={36} color="var(--accent-cyan)" style={{ margin: '0 auto 0.8rem auto', opacity: 0.8 }} />
+            <h4 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '0.3rem', color: 'var(--text-main)' }}>Awaiting Glucose Telemetry Stream</h4>
             <p style={{ fontSize: '0.85rem', maxWidth: '420px', margin: '0 auto' }}>
               Log your blood sugar reading under <strong>"Blood Glucose & CGM"</strong> to calculate your live 4-Hour AI predictive trajectory curve.
             </p>
@@ -187,29 +187,29 @@ export const AIPredictions = () => {
               <LineChart data={forecast4hData} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
                 <XAxis dataKey="minute" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
                 <YAxis domain={['auto', 'auto']} stroke="var(--text-muted)" fontSize={12} tickLine={false} />
-                <Tooltip contentStyle={{ background: 'rgba(10, 16, 32, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff' }} />
+                <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '10px', color: 'var(--text-main)' }} />
                 <ReferenceLine y={180} label={{ value: 'High Threshold (180)', fill: '#f59e0b', fontSize: 11 }} stroke="#f59e0b" strokeDasharray="3 3" />
-                <ReferenceLine y={70} label={{ value: 'Low Threshold (70)', fill: '#ef4444', fontSize: 11 }} stroke="#ef4444" strokeDasharray="3 3" />
-                <Line type="monotone" dataKey="predictedBg" stroke="#06b6d4" strokeWidth={3} dot={{ r: 5, fill: '#06b6d4' }} activeDot={{ r: 8 }} />
+                <ReferenceLine y={70} label={{ value: 'Low Threshold (70)', fill: '#f43f5e', fontSize: 11 }} stroke="#f43f5e" strokeDasharray="3 3" />
+                <Line type="monotone" dataKey="predictedBg" stroke="var(--accent-cyan)" strokeWidth={3} dot={{ r: 5, fill: 'var(--accent-cyan)' }} activeDot={{ r: 8 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         )}
       </div>
 
-      {/* AI Clinical Micro-Recommendations */}
+      {/* AI Clinical Recommendations */}
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem', color: 'var(--accent-cyan)' }}>
           <Sparkles size={20} />
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>AI Clinical Micro-Recommendations</h3>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>AI Micro-Recommendations</h3>
         </div>
 
         <p style={{ fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: 1.5, marginBottom: '1rem' }}>
           "{dynamicExplanation}"
         </p>
 
-        <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '10px', borderLeft: hasLogs ? (hypoRiskLevel === 'HIGH RISK' || hyperRiskLevel === 'HIGH RISK' ? '4px solid #ef4444' : '4px solid var(--accent-emerald)') : '4px solid var(--border-color)', fontSize: '0.88rem' }}>
-          <div style={{ fontWeight: 700, color: hasLogs ? (hypoRiskLevel === 'HIGH RISK' || hyperRiskLevel === 'HIGH RISK' ? '#ef4444' : 'var(--accent-emerald)') : 'var(--text-muted)', marginBottom: '0.2rem' }}>
+        <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '10px', borderLeft: hasLogs ? (hypoRiskLevel === 'HIGH RISK' || hyperRiskLevel === 'HIGH RISK' ? '4px solid var(--accent-rose)' : '4px solid var(--accent-emerald)') : '4px solid var(--border-color)', fontSize: '0.88rem', border: '1px solid var(--border-color)', borderLeftWidth: '4px' }}>
+          <div style={{ fontWeight: 800, color: hasLogs ? (hypoRiskLevel === 'HIGH RISK' || hyperRiskLevel === 'HIGH RISK' ? 'var(--accent-rose)' : 'var(--accent-emerald)') : 'var(--text-muted)', marginBottom: '0.2rem' }}>
             ACTIONABLE INTERVENTION
           </div>
           <p style={{ color: 'var(--text-main)', margin: 0 }}>
