@@ -28,7 +28,7 @@ export const AppProvider = ({ children }) => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.name) return parsed;
+        if (parsed && parsed.email) return parsed;
       } catch (err) {}
     }
     return {
@@ -39,15 +39,23 @@ export const AppProvider = ({ children }) => {
     };
   });
 
-  // 1. Glucose Readings State
+  // Helper to derive storage keys based on authenticated user email
+  const getUserStorageKey = (prefix, emailOverride = null) => {
+    const email = emailOverride || currentUser?.email || 'default_patient';
+    return `glucocare_${prefix}_${email.toLowerCase().trim()}`;
+  };
+
+  // 1. Glucose Readings State (Scoped per account)
   const [glucoseLogs, setGlucoseLogs] = useState(() => {
-    const saved = localStorage.getItem('glucocare_glucose_readings');
+    const key = getUserStorageKey('glucose');
+    const saved = localStorage.getItem(key);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       } catch (err) {}
     }
+    // Default initial seed for default patient
     return [
       { id: 'g-1', date: '2026-08-18', time: '8:00 AM', value: 110, context: 'Before breakfast', notes: 'Fasting check' },
       { id: 'g-2', date: '2026-08-18', time: '1:00 PM', value: 145, context: 'After lunch', notes: 'Walked 15 mins' },
@@ -55,13 +63,14 @@ export const AppProvider = ({ children }) => {
     ];
   });
 
-  // 2. Meal Logs State
+  // 2. Meal Logs State (Scoped per account)
   const [mealLogs, setMealLogs] = useState(() => {
-    const saved = localStorage.getItem('glucocare_meal_logs');
+    const key = getUserStorageKey('meals');
+    const saved = localStorage.getItem(key);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       } catch (err) {}
     }
     return [
@@ -71,13 +80,14 @@ export const AppProvider = ({ children }) => {
     ];
   });
 
-  // 3. Health Reminders State
+  // 3. Health Reminders State (Scoped per account)
   const [reminders, setReminders] = useState(() => {
-    const saved = localStorage.getItem('glucocare_reminders');
+    const key = getUserStorageKey('reminders');
+    const saved = localStorage.getItem(key);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       } catch (err) {}
     }
     return [
@@ -87,13 +97,14 @@ export const AppProvider = ({ children }) => {
     ];
   });
 
-  // 4. Lab Reports State
+  // 4. Lab Reports State (Scoped per account)
   const [labReports, setLabReports] = useState(() => {
-    const saved = localStorage.getItem('glucocare_lab_reports');
+    const key = getUserStorageKey('labs');
+    const saved = localStorage.getItem(key);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       } catch (err) {}
     }
     return [
@@ -102,7 +113,42 @@ export const AppProvider = ({ children }) => {
     ];
   });
 
-  // Save to LocalStorage effects
+  // Re-hydrate account-specific data whenever currentUser changes
+  useEffect(() => {
+    if (currentUser && currentUser.email) {
+      const emailKey = currentUser.email.toLowerCase().trim();
+      
+      const savedGlucose = localStorage.getItem(`glucocare_glucose_${emailKey}`);
+      if (savedGlucose) {
+        try { setGlucoseLogs(JSON.parse(savedGlucose)); } catch (e) {}
+      } else if (emailKey !== 'dinali@glucocare.ai') {
+        setGlucoseLogs([]); // Clean state for new patient account
+      }
+
+      const savedMeals = localStorage.getItem(`glucocare_meals_${emailKey}`);
+      if (savedMeals) {
+        try { setMealLogs(JSON.parse(savedMeals)); } catch (e) {}
+      } else if (emailKey !== 'dinali@glucocare.ai') {
+        setMealLogs([]);
+      }
+
+      const savedLabs = localStorage.getItem(`glucocare_labs_${emailKey}`);
+      if (savedLabs) {
+        try { setLabReports(JSON.parse(savedLabs)); } catch (e) {}
+      } else if (emailKey !== 'dinali@glucocare.ai') {
+        setLabReports([]);
+      }
+
+      const savedReminders = localStorage.getItem(`glucocare_reminders_${emailKey}`);
+      if (savedReminders) {
+        try { setReminders(JSON.parse(savedReminders)); } catch (e) {}
+      } else if (emailKey !== 'dinali@glucocare.ai') {
+        setReminders([]);
+      }
+    }
+  }, [currentUser?.email]);
+
+  // Theme Sync
   useEffect(() => {
     localStorage.setItem('glucocare_theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
@@ -115,8 +161,8 @@ export const AppProvider = ({ children }) => {
   const loginUser = (credentials) => {
     const userObj = {
       id: 'usr-' + Date.now(),
-      name: credentials.name || 'Dinali Bhagya',
-      email: credentials.email || 'dinali@glucocare.ai',
+      name: credentials.name || credentials.email?.split('@')[0] || 'Patient',
+      email: credentials.email || 'patient@glucocare.ai',
       role: 'patient'
     };
     setCurrentUser(userObj);
@@ -138,27 +184,28 @@ export const AppProvider = ({ children }) => {
     localStorage.removeItem('glucocare_user');
   };
 
-  // Add / Delete Glucose Reading
+  // Add / Delete Glucose Reading (Append-Only)
   const addGlucoseLog = (newLog) => {
     const entry = {
       id: 'g-' + Date.now(),
       date: newLog.date || new Date().toISOString().split('T')[0],
       time: newLog.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       value: Number(newLog.value),
-      context: newLog.context || 'Before breakfast',
+      context: newLog.context || 'Measurement context not provided',
       notes: newLog.notes || ''
     };
 
     setGlucoseLogs((prev) => {
       const updated = [entry, ...prev];
-      localStorage.setItem('glucocare_glucose_readings', JSON.stringify(updated));
+      const key = getUserStorageKey('glucose');
+      localStorage.setItem(key, JSON.stringify(updated));
       return updated;
     });
 
     setToastAlert({
       type: 'success',
-      title: 'Glucose Reading Saved',
-      message: `${entry.value} mg/dL (${entry.context}) recorded successfully.`
+      title: 'Glucose Reading Recorded',
+      message: `${entry.value} mg/dL logged for ${entry.date}.`
     });
     setTimeout(() => setToastAlert(null), 3500);
   };
@@ -166,7 +213,8 @@ export const AppProvider = ({ children }) => {
   const deleteGlucoseLog = (id) => {
     setGlucoseLogs((prev) => {
       const updated = prev.filter(item => item.id !== id);
-      localStorage.setItem('glucocare_glucose_readings', JSON.stringify(updated));
+      const key = getUserStorageKey('glucose');
+      localStorage.setItem(key, JSON.stringify(updated));
       return updated;
     });
   };
@@ -188,7 +236,8 @@ export const AppProvider = ({ children }) => {
 
     setMealLogs((prev) => {
       const updated = [entry, ...prev];
-      localStorage.setItem('glucocare_meal_logs', JSON.stringify(updated));
+      const key = getUserStorageKey('meals');
+      localStorage.setItem(key, JSON.stringify(updated));
       return updated;
     });
 
@@ -203,7 +252,8 @@ export const AppProvider = ({ children }) => {
   const deleteMealLog = (id) => {
     setMealLogs((prev) => {
       const updated = prev.filter(item => item.id !== id);
-      localStorage.setItem('glucocare_meal_logs', JSON.stringify(updated));
+      const key = getUserStorageKey('meals');
+      localStorage.setItem(key, JSON.stringify(updated));
       return updated;
     });
   };
@@ -220,7 +270,8 @@ export const AppProvider = ({ children }) => {
 
     setReminders((prev) => {
       const updated = [entry, ...prev];
-      localStorage.setItem('glucocare_reminders', JSON.stringify(updated));
+      const key = getUserStorageKey('reminders');
+      localStorage.setItem(key, JSON.stringify(updated));
       return updated;
     });
   };
@@ -228,7 +279,8 @@ export const AppProvider = ({ children }) => {
   const deleteReminder = (id) => {
     setReminders((prev) => {
       const updated = prev.filter(item => item.id !== id);
-      localStorage.setItem('glucocare_reminders', JSON.stringify(updated));
+      const key = getUserStorageKey('reminders');
+      localStorage.setItem(key, JSON.stringify(updated));
       return updated;
     });
   };
@@ -245,49 +297,39 @@ export const AppProvider = ({ children }) => {
 
     setLabReports((prev) => {
       const updated = [entry, ...prev];
-      localStorage.setItem('glucocare_lab_reports', JSON.stringify(updated));
+      const key = getUserStorageKey('labs');
+      localStorage.setItem(key, JSON.stringify(updated));
       return updated;
     });
   };
 
-  return (
-    <AppContext.Provider
-      value={{
-        theme,
-        toggleTheme,
-        isInitialLoading,
-        setIsInitialLoading,
-        role,
-        setRole,
-        activeTab,
-        setActiveTab,
-        pdfModalOpen,
-        setPdfModalOpen,
-        isAuthenticated,
-        authModalOpen,
-        setAuthModalOpen,
-        currentUser,
-        loginUser,
-        signupUser,
-        logoutUser,
-        toastAlert,
-        setToastAlert,
-        glucoseLogs,
-        addGlucoseLog,
-        deleteGlucoseLog,
-        mealLogs,
-        addMealLog,
-        deleteMealLog,
-        reminders,
-        addReminder,
-        deleteReminder,
-        labReports,
-        addLabReport
-      }}
-    >
-      {children}
-    </AppContext.Provider>
-  );
+  const deleteLabReport = (id) => {
+    setLabReports((prev) => {
+      const updated = prev.filter(item => item.id !== id);
+      const key = getUserStorageKey('labs');
+      localStorage.setItem(key, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const value = {
+    theme, toggleTheme,
+    activeTab, setActiveTab,
+    pdfModalOpen, setPdfModalOpen,
+    authModalOpen, setAuthModalOpen,
+    toastAlert, setToastAlert,
+    isInitialLoading,
+    isAuthenticated, setIsAuthenticated,
+    role, setRole,
+    currentUser, setCurrentUser,
+    loginUser, signupUser, logoutUser,
+    glucoseLogs, addGlucoseLog, deleteGlucoseLog,
+    mealLogs, addMealLog, deleteMealLog,
+    reminders, addReminder, deleteReminder,
+    labReports, addLabReport, deleteLabReport
+  };
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
 export const useApp = () => {
