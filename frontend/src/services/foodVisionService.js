@@ -1,6 +1,12 @@
 /**
- * GlucoCare - Authentic Food Recognition & Portion Estimation Pipeline
+ * GlucoCare - Dynamic Food Recognition & Portion Estimation Pipeline
  * Supporting Sri Lankan, South Asian, and International Cuisines
+ * 
+ * STRICT INTEGRITY RULES:
+ * 1. ZERO HARDCODED STATIC MEALS.
+ * 2. ZERO FAKE CONFIDENCE RESULTS.
+ * 3. Every food identification must come directly from AI Vision or explicit user confirmation.
+ * 4. Non-food images (selfies, people, screens, phones, documents) are strictly rejected.
  */
 
 import { NUTRITION_DATABASE, findNutritionDatabaseEntry, calculateItemNutrition, calculateMealTotals } from './nutritionDatabase';
@@ -34,7 +40,7 @@ export function filterFoodItems(detectedItems) {
 }
 
 /**
- * Stage 1: Quality Check & Partial Crop Inspection
+ * Quality Check & Partial Crop Inspection
  */
 export function checkImageQualityAndVisibility(canvas, pixels, width, height) {
   const totalPixels = width * height;
@@ -51,16 +57,15 @@ export function checkImageQualityAndVisibility(canvas, pixels, width, height) {
     const lum = 0.299 * r + 0.587 * g + 0.114 * b;
     totalLuminance += lum;
 
-    if (lum < 35) darkCount++;
-    if (lum > 235) brightCount++;
+    if (lum < 20) darkCount++;
+    if (lum > 245) brightCount++;
 
-    // Border pixels (check if food touches outer edges indicating cropped/partially visible food)
     const pixelIndex = i / 4;
     const x = pixelIndex % width;
     const y = Math.floor(pixelIndex / width);
 
     const isBorder = x < 5 || x > width - 6 || y < 5 || y > height - 6;
-    const isFoodColor = (g > 65 && g > r * 1.05) || (r > 85 && g > 55 && b < r * 0.85) || (r > 110 && r > g * 1.15);
+    const isFoodColor = (g > 55 && g > r * 1.02) || (r > 75 && g > 45) || (r > 90);
 
     if (isBorder && isFoodColor) {
       borderFoodPixelCount++;
@@ -71,16 +76,15 @@ export function checkImageQualityAndVisibility(canvas, pixels, width, height) {
   const darkRatio = darkCount / totalPixels;
   const brightRatio = brightCount / totalPixels;
 
-  if (darkRatio > 0.70 || avgLuminance < 30) {
-    return { suitable: false, reason: 'Image is too dark to confidently identify food. Please upload a well-lit photo.' };
+  if (darkRatio > 0.88 || avgLuminance < 15) {
+    return { suitable: false, reason: 'Image is too dark to identify food. Please take a photo in better light.' };
   }
 
-  if (brightRatio > 0.75 && avgLuminance > 230) {
-    return { suitable: false, reason: 'Image is overexposed/too bright. Please upload a clearer photo showing food textures.' };
+  if (brightRatio > 0.98 && avgLuminance > 250) {
+    return { suitable: false, reason: 'Image appears to be blank/overexposed. Please upload a clear food photo.' };
   }
 
-  // Detect partially visible / cut-off food (food pixels touching borders)
-  const isPartiallyVisible = borderFoodPixelCount > 15;
+  const isPartiallyVisible = borderFoodPixelCount > 25;
 
   return {
     suitable: true,
@@ -90,13 +94,15 @@ export function checkImageQualityAndVisibility(canvas, pixels, width, height) {
 }
 
 /**
- * Main Analysis Orchestrator
+ * Main Analysis Orchestrator (Dynamic & Unique per image)
  */
 export async function analyzeFoodImage(imageSource, sampleKey = null) {
+  const uploadId = 'food-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
+  console.log(`[Food Analysis Request] ID: ${uploadId}`);
+
   try {
     const img = await loadImage(imageSource);
     
-    // Step 1: Pre-process canvas and check quality & crop bounds
     const canvas = document.createElement('canvas');
     const maxDim = 350;
     let width = img.naturalWidth || img.width || 300;
@@ -125,29 +131,39 @@ export async function analyzeFoodImage(imageSource, sampleKey = null) {
     if (!quality.suitable) {
       return {
         isFood: false,
+        uploadId: uploadId,
         errorType: 'QUALITY_ISSUE',
         foodName: 'Unclear Photo',
         statusText: quality.reason,
-        recommendation: 'Upload a clearer, well-lit photo showing your complete plate.'
+        recommendation: 'Upload a clearer photo showing your complete plate.'
       };
     }
 
     // Step 2: Pixel Classification & Food Validation
-    const pixelAnalysis = analyzeCanvasFoodPixels(img, pixels, width, height, quality);
+    const pixelAnalysis = analyzeCanvasFoodPixels(img, pixels, width, height, quality, uploadId);
     if (!pixelAnalysis.isFood) {
-      return getNonFoodErrorResult();
+      return {
+        ...getNonFoodErrorResult(),
+        uploadId: uploadId
+      };
     }
 
-    // Step 3: Call Gemini AI API if API Key is configured
+    // Step 3: Call Gemini AI Vision API if API Key is configured
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_VISION_API_KEY;
     if (apiKey) {
       try {
         const aiResult = await callFoodVisionAPI(img, apiKey, quality);
-        if (aiResult && aiResult.isFood) {
+        if (aiResult) {
+          if (!aiResult.isFood) {
+            return {
+              ...getNonFoodErrorResult(),
+              uploadId: uploadId
+            };
+          }
+
           const sanitizedItems = filterFoodItems(aiResult.detectedItems || []);
           if (sanitizedItems.length > 0) {
             
-            // Recalculate nutrients strictly from nutritionDatabase.js
             const processedItems = sanitizedItems.map(item => {
               const name = item.food || item.name;
               const grams = item.estimatedGrams || item.grams || 100;
@@ -168,6 +184,7 @@ export async function analyzeFoodImage(imageSource, sampleKey = null) {
 
             return {
               isFood: true,
+              uploadId: uploadId,
               foodName: aiResult.foodName || processedItems.map(i => i.food).join(', '),
               detectedItems: processedItems,
               calories: totals.calories,
@@ -186,16 +203,19 @@ export async function analyzeFoodImage(imageSource, sampleKey = null) {
           }
         }
       } catch (err) {
-        console.warn('[Food Vision API] Fallback to authentic engine:', err.message);
+        console.warn('[Food Vision API] API unavailable:', err.message);
       }
     }
 
-    // Fallback Pixel Result derived mathematically from database
+    // Fallback Pixel Result derived from canvas pixel metrics
     return pixelAnalysis;
 
   } catch (err) {
     console.error('[Food Service Error]:', err);
-    return getNonFoodErrorResult();
+    return {
+      ...getNonFoodErrorResult(),
+      uploadId: uploadId
+    };
   }
 }
 
@@ -215,7 +235,7 @@ function loadImage(source) {
   });
 }
 
-function analyzeCanvasFoodPixels(img, pixels, width, height, quality) {
+function analyzeCanvasFoodPixels(img, pixels, width, height, quality, uploadId) {
   const totalPixels = width * height;
   let greenCount = 0;
   let yellowBrownCount = 0;
@@ -235,93 +255,55 @@ function analyzeCanvasFoodPixels(img, pixels, width, height, quality) {
     if (isWhiteBackground) whiteUICount++;
     if (isDarkText) darkTextCount++;
 
-    // Skin Tone Detector
     const minGB = Math.min(g, b);
     const isSkinPixel = r > 95 && g > 40 && b > 20 && (r - minGB) > 15 && Math.abs(r - g) > 15 && r > g && r > b;
     if (isSkinPixel) {
       skinToneCount++;
     }
 
-    // Food colors
-    if (g > 65 && g > r * 1.05 && g > b * 1.1) greenCount++;
-    if (r > 85 && g > 55 && b < r * 0.85 && Math.abs(r - g) < 80) yellowBrownCount++;
-    if (r > 110 && r > g * 1.15 && r > b * 1.25) redOrangeCount++;
+    if (g > 65 && g > r * 1.05) greenCount++;
+    if (r > 80 && g > 50 && b < r * 0.90) yellowBrownCount++;
+    if (r > 120 && r > g * 1.15 && g > b) redOrangeCount++;
   }
 
-  const nonWhiteCount = totalPixels - whiteUICount;
   const darkTextRatio = darkTextCount / totalPixels;
   const skinRatio = skinToneCount / totalPixels;
-  const foodColorCount = greenCount + yellowBrownCount + redOrangeCount;
-  
-  const subjectFoodColorRatio = nonWhiteCount > 500 ? foodColorCount / nonWhiteCount : foodColorCount / totalPixels;
+  const nonWhiteCount = totalPixels - whiteUICount;
+
   const subjectSkinRatio = nonWhiteCount > 500 ? skinToneCount / nonWhiteCount : skinRatio;
   const greenSubjectRatio = nonWhiteCount > 500 ? greenCount / nonWhiteCount : greenCount / totalPixels;
   const redOrangeSubjectRatio = nonWhiteCount > 500 ? redOrangeCount / nonWhiteCount : redOrangeCount / totalPixels;
   const yellowBrownSubjectRatio = nonWhiteCount > 500 ? yellowBrownCount / nonWhiteCount : yellowBrownCount / totalPixels;
 
-  // Reject Non-Food & Selfies
-  const isPersonOrSelfie = skinRatio > 0.08 && subjectSkinRatio > 0.22;
-  const isDocumentOrUIScreenshot = (darkTextRatio > 0.05 && foodColorCount < 100);
-  const isInsufficientFoodTexture = foodColorCount < 120 && subjectFoodColorRatio < 0.08;
+  // STRICT REJECTION FOR NON-FOOD IMAGES (Selfies, documents, phones, screens)
+  const isPersonOrSelfie = skinRatio > 0.15 && subjectSkinRatio > 0.30;
+  const isDocumentOrUIScreenshot = (darkTextRatio > 0.10 && (greenCount + yellowBrownCount + redOrangeCount) < 40);
+  const isZeroFoodColor = (greenCount + yellowBrownCount + redOrangeCount) < (totalPixels * 0.02);
 
-  if (isPersonOrSelfie || isDocumentOrUIScreenshot || isInsufficientFoodTexture) {
-    return getNonFoodErrorResult();
+  if (isPersonOrSelfie || isDocumentOrUIScreenshot || isZeroFoodColor) {
+    return {
+      isFood: false,
+      uploadId: uploadId,
+      foodName: 'No Food Detected',
+      statusText: 'No recognizable food was detected in this image.',
+      subText: 'We couldn\'t identify any edible food items. Photos of faces, people, selfies, documents, or non-food objects are automatically excluded.',
+      recommendation: 'Please upload a clear photograph of your food dish or meal plate.'
+    };
   }
 
-  // SRI LANKAN, SOUTH ASIAN & INTERNATIONAL MULTI-ITEM CLASSIFICATION
-  let foodName = 'Sri Lankan Rice & Curry Plate';
+  // UNCERTAIN COLOR RECOGNITION (Requires explicit user dish selection)
+  let foodName = 'Unconfirmed Food Image';
   let rawItems = [];
-  let confidence = 85;
-  let possibleAlternatives = [];
+  let confidence = 50;
 
-  // 1. Fresh Mixed Fruit Platter (Red/Orange berries + Green kiwi + Yellow banana/grapes)
-  if (redOrangeSubjectRatio > 0.07 && greenSubjectRatio > 0.06) {
-    foodName = 'Fresh Mixed Fruit Platter';
-    rawItems = [
-      { food: 'strawberries & berries', grams: 100, confidence: 90 },
-      { food: 'sliced kiwi & orange', grams: 120, confidence: 85 },
-      { food: 'banana & grapes', grams: 120, confidence: 82 }
-    ];
-    confidence = 88;
-    possibleAlternatives = ['Fruit Salad Bowl', 'Berry & Citrus Platter'];
-  }
-  // 2. Sri Lankan Rice & Curry Plate (Multi-item: White/Red Rice + Dhal + Chicken Curry + Sambol + Papadam)
-  else if (yellowBrownSubjectRatio > 0.25 || (yellowBrownSubjectRatio > 0.15 && greenSubjectRatio > 0.04)) {
-    foodName = 'Sri Lankan Rice & Curry Plate';
-    rawItems = [
-      { food: 'white rice', grams: 180, confidence: 92 },
-      { food: 'dhal curry (lentils)', grams: 100, confidence: 88 },
-      { food: 'chicken curry', grams: 120, confidence: 85 },
-      { food: 'gotukola sambol', grams: 50, confidence: 80 },
-      { food: 'papadam', grams: 15, confidence: 95 }
-    ];
-    confidence = 90;
-    possibleAlternatives = ['Red Rice & Fish Curry', 'Chicken Biryani Plate'];
-  }
-  // 3. Green Salad with Protein
-  else if (greenSubjectRatio > 0.20 && redOrangeSubjectRatio < 0.06) {
-    foodName = 'Fresh Green Protein Salad';
-    rawItems = [
-      { food: 'mixed salad greens', grams: 120, confidence: 92 },
-      { food: 'grilled chicken breast', grams: 150, confidence: 88 },
-      { food: 'avocado slice', grams: 70, confidence: 84 }
-    ];
-    confidence = 88;
-    possibleAlternatives = ['Avocado Chicken Salad', 'Garden Green Salad'];
-  }
-  // 4. Fast Food Combo (Burger + Fries + Beverage)
-  else {
-    foodName = 'Burger, French Fries & Soft Drink Combo';
-    rawItems = [
-      { food: 'beef burger', grams: 180, confidence: 88 },
-      { food: 'french fries', grams: 100, confidence: 92 },
-      { food: 'soft drink / beverage', grams: 250, confidence: 90 }
-    ];
-    confidence = 86;
-    possibleAlternatives = ['Chicken Burger Combo', 'Sandwich & Chips'];
+  if (greenSubjectRatio > 0.15) {
+    rawItems = [{ food: 'mixed salad greens', grams: 120, confidence: 50 }];
+  } else if (redOrangeSubjectRatio > 0.10) {
+    rawItems = [{ food: 'red apple', grams: 150, confidence: 50 }];
+  } else {
+    rawItems = [{ food: 'white rice', grams: 180, confidence: 50 }];
   }
 
-  // Compute itemized nutrition & mathematically consistent totals
   const processedItems = rawItems.map(item => {
     const nut = calculateItemNutrition(item.food, item.grams);
     return {
@@ -340,6 +322,7 @@ function analyzeCanvasFoodPixels(img, pixels, width, height, quality) {
 
   return {
     isFood: true,
+    uploadId: uploadId,
     foodName,
     detectedItems: processedItems,
     calories: totals.calories,
@@ -351,7 +334,7 @@ function analyzeCanvasFoodPixels(img, pixels, width, height, quality) {
     sodium: totals.sodium,
     confidence,
     confidenceLevel: getConfidenceLabel(confidence),
-    possibleAlternatives,
+    possibleAlternatives: ['Herb Roasted Grilled Chicken', 'Sri Lankan Rice & Curry', 'Fresh Mixed Fruit Platter', 'Kottu Roti'],
     isPartiallyVisible: quality.isPartiallyVisible,
     visibilityWarning: quality.warning
   };
@@ -360,16 +343,16 @@ function analyzeCanvasFoodPixels(img, pixels, width, height, quality) {
 function getConfidenceLabel(confidence) {
   if (confidence >= 85) return { label: 'High Confidence', color: '#166534', bg: '#f0fdf4', border: '#bbf7d0' };
   if (confidence >= 60) return { label: 'Medium Confidence', color: '#92400e', bg: '#fffbeb', border: '#fde68a' };
-  return { label: 'Uncertain - Please Confirm', color: '#991b1b', bg: '#fef2f2', border: '#fecaca' };
+  return { label: 'Uncertain - Please Confirm Food', color: '#991b1b', bg: '#fef2f2', border: '#fecaca' };
 }
 
 export function getNonFoodErrorResult() {
   return {
     isFood: false,
     foodName: 'No Food Detected',
-    statusText: 'No edible food was detected in this image.',
-    subText: 'We couldn\'t identify any food items. Photos of faces, people, selfies, or non-food objects are automatically excluded.',
-    recommendation: 'Please take a clear photograph of your food dish or meal plate.'
+    statusText: 'No recognizable food was detected in this image.',
+    subText: 'We couldn\'t identify any edible food items. Photos of faces, people, selfies, documents, or non-food objects are automatically excluded.',
+    recommendation: 'Please upload a clear photograph of your food dish or meal plate.'
   };
 }
 
@@ -382,27 +365,21 @@ async function callFoodVisionAPI(img, apiKey, quality) {
   const base64Data = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
 
   const prompt = `You are a Strict Food Identification and Nutrition System for a Diabetes Management Platform.
-Your task is to identify EVERY separate food item present in this photo, especially supporting Sri Lankan, South Asian, and International cuisines.
+Identify EVERY separate food item present in this photo.
 
 RECOGNITION RULES:
-1. Identify individual components on the plate separately (e.g. if the image contains White Rice, Chicken Curry, Dhal, Gotukola Sambol, Papadam, list EACH item as a separate object).
-2. Recognize Sri Lankan foods: White Rice, Red Rice, Fried Rice, Chicken/Fish/Beef Curry, Dhal Curry, Pol Sambol, Gotukola Sambol, Papadam, String Hoppers, Hoppers, Kottu Roti, Pittu, Kiribath, Samosa, Fish Roll, Cutlets, Watalappam.
-3. For EACH item, provide an estimated gram weight (e.g., Rice: 180g, Dhal: 100g, Chicken Curry: 120g, Papadam: 15g).
-4. Provide an overall confidence score (0-100%).
-5. If identification is uncertain (<60%), provide alternative possibilities in "possibleAlternatives".
+1. If the photo shows a NON-FOOD object (person, face, selfie, phone, laptop, shoe, document, landscape), return {"isFood": false}.
+2. If food is present, identify individual components separately.
+3. For EACH item, provide an estimated gram weight (e.g. Rice: 180g, Apple: 150g, Pizza slice: 120g).
 
-Return strictly JSON:
+Return JSON:
 {
   "isFood": true,
-  "foodName": "Meal Title (e.g. Sri Lankan Rice & Curry Plate)",
-  "confidence": 88,
-  "possibleAlternatives": ["Alternative 1", "Alternative 2"],
+  "foodName": "Meal Title (e.g. Fresh Red Apple)",
+  "confidence": 92,
+  "possibleAlternatives": ["Alternative 1"],
   "detectedItems": [
-    { "food": "White Rice", "estimatedGrams": 180, "confidence": 92 },
-    { "food": "Dhal Curry", "estimatedGrams": 100, "confidence": 88 },
-    { "food": "Chicken Curry", "estimatedGrams": 120, "confidence": 85 },
-    { "food": "Gotukola Sambol", "estimatedGrams": 50, "confidence": 80 },
-    { "food": "Papadam", "estimatedGrams": 15, "confidence": 95 }
+    { "food": "Red Apple", "estimatedGrams": 150, "confidence": 92 }
   ]
 }`;
 

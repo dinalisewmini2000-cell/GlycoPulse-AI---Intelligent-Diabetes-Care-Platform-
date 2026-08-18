@@ -125,12 +125,15 @@ export const MealsPage = () => {
   const handleConfirmCrop = (croppedBase64) => {
     setCroppedImage(croppedBase64);
     setIsCropModalOpen(false);
+    setAnalysisResult(null); // IMMEDIATELY CLEAR PREVIOUS RESULT
+    setDetectedItemsList([]); // IMMEDIATELY CLEAR PREVIOUS ITEMS
     runAnalysisOnImage(croppedBase64);
   };
 
   const runAnalysisOnImage = async (imageToAnalyze) => {
     setIsAnalyzing(true);
     setAnalysisResult(null);
+    setDetectedItemsList([]);
 
     try {
       const result = await analyzeFoodImage(imageToAnalyze);
@@ -190,6 +193,24 @@ export const MealsPage = () => {
 
     setDetectedItemsList(updated);
     setEditFoodName(updated.map(i => i.food).join(', '));
+  };
+
+  const handleApplyPreset = (preset) => {
+    setEditFoodName(preset.label);
+    const processed = preset.items.map(item => {
+      const nut = calculateItemNutrition(item.food, item.grams);
+      return {
+        food: nut.foodName,
+        grams: nut.grams,
+        portion: `${nut.grams} g`,
+        calories: nut.calories,
+        carbs: nut.carbs,
+        protein: nut.protein,
+        fat: nut.fat,
+        confidence: 100
+      };
+    });
+    setDetectedItemsList(processed);
   };
 
   const handleRemoveItem = (index) => {
@@ -527,6 +548,26 @@ export const MealsPage = () => {
                     </div>
                     <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.15rem' }}>
                       Itemized components & nutritional data calculated per gram.
+                    </div>
+
+                    {/* Quick Dish Presets bar */}
+                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.45rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 700 }}>Quick Dish Presets:</span>
+                      {[
+                        { label: 'Herb Roasted Grilled Chicken', items: [{ food: 'grilled chicken breast', grams: 180 }, { food: 'steamed vegetables', grams: 100 }] },
+                        { label: 'Sri Lankan Rice & Curry', items: [{ food: 'white rice', grams: 180 }, { food: 'chicken curry', grams: 120 }, { food: 'dhal curry (lentils)', grams: 100 }, { food: 'gotukola sambol', grams: 50 }] },
+                        { label: 'Fresh Mixed Fruit Platter', items: [{ food: 'strawberries & berries', grams: 100 }, { food: 'sliced kiwi & orange', grams: 120 }, { food: 'banana & grapes', grams: 120 }] },
+                        { label: 'Kottu Roti', items: [{ food: 'kottu roti', grams: 250 }] }
+                      ].map((preset, pIdx) => (
+                        <button
+                          key={pIdx}
+                          type="button"
+                          onClick={() => handleApplyPreset(preset)}
+                          style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#0284c7', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
