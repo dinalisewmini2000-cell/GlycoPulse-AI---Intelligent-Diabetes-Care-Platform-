@@ -1,474 +1,253 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
-import { listenToGlucoseRealtime } from '../services/firebase';
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   // Theme State
-  const [theme, setTheme] = useState(() => localStorage.getItem('glycopulse_theme') || 'dark');
+  const [theme, setTheme] = useState(() => localStorage.getItem('glucocare_theme') || 'light');
 
-  // Backend & SQL DB Status State
-  const [isBackendConnected, setIsBackendConnected] = useState(false);
-  const [dbEngineName, setDbEngineName] = useState('Checking...');
-
-  // Active Main Tab
-  const [activeTab, setActiveTab] = useState('glucose'); 
+  // Active Navigation Section: 'dashboard' | 'glucose' | 'meals' | 'calendar' | 'lab'
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
-
-  // Global Toast Alert Banner
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [toastAlert, setToastAlert] = useState(null);
-
-  // Initial 5-second Splash State
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
 
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const auth = localStorage.getItem('glycopulse_auth');
+    const auth = localStorage.getItem('glucocare_auth');
     if (auth !== null) return auth === 'true';
-    return false; // Show Landing & Login Gateway on initial load
+    return false;
   });
-  const [role, setRole] = useState(() => localStorage.getItem('glycopulse_role') || 'patient');
-  const [authModalOpen, setAuthModalOpen] = useState(false);
 
-  const formatNameByRole = (name, targetRole) => {
-    const raw = (name || '').trim();
-    if (!raw || raw.toLowerCase() === 'member' || raw.toLowerCase() === 'patient user') {
-      if (targetRole === 'admin') return 'System Administrator';
-      if (targetRole === 'doctor') return 'Dr. Medical Practitioner';
-      return 'Dinali Bhagya';
-    }
-    const clean = raw.replace(/^Dr\.\s*/i, '').trim();
-    const formatted = clean.split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '').join(' ');
-    return targetRole === 'doctor' ? `Dr. ${formatted}` : formatted;
-  };
+  const [role, setRole] = useState('patient');
 
   const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('glycopulse_user');
+    const saved = localStorage.getItem('glucocare_user');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.name) {
-          const activeRole = parsed.role || 'patient';
-          parsed.name = formatNameByRole(parsed.name, activeRole);
-          return parsed;
-        }
+        if (parsed && parsed.name) return parsed;
       } catch (err) {}
     }
     return {
       id: 'usr-101',
       name: 'Dinali Bhagya',
       email: 'dinali@glucocare.ai',
-      phone: '+94 77 123 4567',
-      emergencyEmail: 'dinali@glucocare.ai',
-      role: localStorage.getItem('glycopulse_role') || 'patient'
+      role: 'patient'
     };
   });
 
-  // Check Backend Connection & Fetch DB Logs on Mount
-  const checkBackend = async (silent = false) => {
-    const health = await apiService.checkBackendHealth();
-    if (health && !health.offline && health.status === 'success') {
-      setIsBackendConnected(true);
-      setDbEngineName(health.database || 'SQL Database');
-
-      // Sync Glucose logs from real SQL DB
-      const gRes = await apiService.getGlucoseData();
-      if (gRes && gRes.logs && gRes.logs.length > 0) {
-        setGlucoseLogs(gRes.logs);
-      }
-    } else {
-      setIsBackendConnected(false);
-      setDbEngineName('Offline');
-      if (!silent) {
-        setToastAlert({
-          type: 'warning',
-          title: 'PHP BACKEND SERVER OFFLINE',
-          message: 'Start the PHP backend (php -S localhost:8000 -t backend) to connect to SQL database.'
-        });
-      }
-    }
-  };
-
-  useEffect(() => {
-    checkBackend(true);
-    const interval = setInterval(() => {
-      checkBackend(true);
-    }, 8000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const saveUserToGlobalList = (userObj) => {
-    try {
-      if (!userObj || !userObj.email) return;
-      const savedList = localStorage.getItem('glycopulse_all_users');
-      let list = savedList ? JSON.parse(savedList) : [];
-      if (!Array.isArray(list)) list = [];
-      const existsIndex = list.findIndex(u => u.email?.toLowerCase() === userObj.email?.toLowerCase());
-      const entry = {
-        id: userObj.id || ('usr-' + Date.now()),
-        name: userObj.name || 'Dinali Bhagya',
-        email: userObj.email,
-        role: userObj.role || 'patient',
-        status: 'Active',
-        joined: new Date().toISOString().split('T')[0]
-      };
-      if (existsIndex >= 0) {
-        list[existsIndex] = { ...list[existsIndex], ...entry };
-      } else {
-        list.push(entry);
-      }
-      localStorage.setItem('glycopulse_all_users', JSON.stringify(list));
-    } catch (e) {}
-  };
-
-  const loginUser = async (credentials) => {
-    const res = await apiService.login(credentials);
-    const requestedRole = credentials.role || (credentials.email?.toLowerCase().includes('admin') ? 'admin' : 'patient');
-    let defaultName = 'Dinali Bhagya';
-    if (requestedRole === 'admin') defaultName = 'System Administrator';
-    else if (requestedRole === 'doctor') defaultName = 'Dr. Medical Practitioner';
-
-    let userObj = {
-      id: 'usr-' + Date.now(),
-      name: credentials.name || defaultName,
-      email: credentials.email,
-      role: requestedRole
-    };
-
-    if (res && res.status === 'success' && res.user) {
-      userObj = { ...userObj, ...res.user };
-    }
-
-    if (credentials.name && credentials.name.trim()) {
-      userObj.name = credentials.name.trim();
-    }
-    
-    const activeRole = requestedRole || userObj.role || 'patient';
-    userObj.role = activeRole;
-    userObj.name = formatNameByRole(userObj.name, activeRole);
-
-    saveUserToGlobalList(userObj);
-
-    setCurrentUser(userObj);
-    setRole(activeRole);
-    setIsAuthenticated(true);
-    setAuthModalOpen(false);
-
-    localStorage.setItem('glycopulse_auth', 'true');
-    localStorage.setItem('glycopulse_user', JSON.stringify(userObj));
-    localStorage.setItem('glycopulse_role', activeRole);
-
-    if (activeRole === 'doctor') setActiveTab('doctor_patients');
-    else if (activeRole === 'admin') setActiveTab('admin_telemetry');
-    else setActiveTab('glucose');
-  };
-
-  const signupUser = async (userData) => {
-    const res = await apiService.signup(userData);
-    const requestedRole = userData.role || 'patient';
-    let userObj = {
-      id: 'user-' + Date.now(),
-      name: userData.name || 'New Member',
-      email: userData.email,
-      role: requestedRole,
-      diabetesType: userData.diabetesType || 'Type 2'
-    };
-
-    if (res && res.status === 'success' && res.user) {
-      userObj = { ...userObj, ...res.user };
-    }
-
-    if (userData.name && userData.name.trim()) {
-      userObj.name = userData.name.trim();
-    }
-
-    const activeRole = requestedRole || userObj.role || 'patient';
-    userObj.role = activeRole;
-    userObj.name = formatNameByRole(userObj.name, activeRole);
-
-    saveUserToGlobalList(userObj);
-
-    setCurrentUser(userObj);
-    setRole(activeRole);
-    setIsAuthenticated(true);
-    setAuthModalOpen(false);
-
-    localStorage.setItem('glycopulse_auth', 'true');
-    localStorage.setItem('glycopulse_user', JSON.stringify(userObj));
-    localStorage.setItem('glycopulse_role', activeRole);
-
-    if (activeRole === 'doctor') setActiveTab('doctor_patients');
-    else if (activeRole === 'admin') setActiveTab('admin_telemetry');
-    else setActiveTab('glucose');
-  };
-
-  const logoutUser = () => {
-    setIsAuthenticated(false);
-    setCurrentUser(null);
-    setGlucoseLogs([]);
-    localStorage.setItem('glycopulse_auth', 'false');
-    localStorage.removeItem('glycopulse_user');
-    localStorage.removeItem('glycopulse_role');
-    setAuthModalOpen(false);
-  };
-
-  const switchRole = (newRole) => {
-    setRole(newRole);
-    localStorage.setItem('glycopulse_role', newRole);
-    
-    let name = 'Dinali Bhagya';
-    let email = 'dinali@glucocare.ai';
-    if (newRole === 'doctor') {
-      name = 'Dr. Medical Practitioner';
-      email = 'doctor@glycopulse.ai';
-    } else if (newRole === 'admin') {
-      name = 'System Administrator';
-      email = 'admin@glycopulse.ai';
-    }
-
-    const updatedUser = {
-      id: 'usr-' + newRole + '-101',
-      name,
-      email,
-      role: newRole
-    };
-
-    setCurrentUser(updatedUser);
-    localStorage.setItem('glycopulse_user', JSON.stringify(updatedUser));
-
-    if (newRole === 'doctor') setActiveTab('doctor_patients');
-    else if (newRole === 'admin') setActiveTab('admin_telemetry');
-    else setActiveTab('glucose');
-
-    setToastAlert({
-      type: 'info',
-      title: `SWITCHED TO ${newRole.toUpperCase()} PORTAL`,
-      message: `Active profile: ${name} (${email})`
-    });
-    setTimeout(() => setToastAlert(null), 3500);
-  };
-
-  // Health Data & Live Ticker State
-  const [currentGlucose, setCurrentGlucose] = useState(null);
-  const [cgmTrendArrow, setCgmTrendArrow] = useState('↗'); 
-  const [rateOfChange, setRateOfChange] = useState('Awaiting First Entry');
-  const [lastCgmSync, setLastCgmSync] = useState('Dexcom G7 Stream');
-
-  const [iobUnits, setIobUnits] = useState(0); 
-  const [cobGrams, setCobGrams] = useState(0);  
-  
-  const [waterIntake, setWaterIntakeState] = useState(() => {
-    const saved = localStorage.getItem('glycopulse_water_intake');
-    return saved ? parseFloat(saved) : 0.0;
-  });
-
-  const setWaterIntake = (val) => {
-    setWaterIntakeState(prev => {
-      const nextVal = typeof val === 'function' ? val(prev) : val;
-      localStorage.setItem('glycopulse_water_intake', nextVal.toString());
-      return nextVal;
-    });
-  };
-
-  const [waterGoal] = useState(2.5);
-
+  // 1. Glucose Readings State
   const [glucoseLogs, setGlucoseLogs] = useState(() => {
-    const saved = localStorage.getItem('glycopulse_glucose_logs');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      } catch (err) {}
-    }
-    return [];
-  });
-
-  const [hba1cHistory, setHba1cHistory] = useState([]);
-
-  const [aiPrediction, setAiPrediction] = useState({
-    predictedGlucose2h: null,
-    trend: 'Standby',
-    hypoglycemiaRisk: 'Low',
-    hyperglycemiaRisk: 'Low',
-    confidenceScore: '96.4%',
-    explanation: 'Awaiting blood sugar log to calculate personalized 4-Hour forecast curve.',
-    recommendation: 'Log your current blood glucose and meal carbs under Blood Glucose & CGM to generate AI trajectory guidance.',
-    hourlyForecast: []
-  });
-  const [streakDays, setStreakDays] = useState(0);
-  const [healthScore, setHealthScore] = useState(0);
-
-  // DFU Foot Vision Scanner State
-  const [dfuScanResult, setDfuScanResult] = useState(null);
-  const [dfuPhotoUrl, setDfuPhotoUrl] = useState(null);
-
-  // Complication Risk Matrix States (Retinopathy, Nephropathy, ASCVD)
-  const [retinopathyStatus, setRetinopathyStatus] = useState(null);
-  const [nephropathyStatus, setNephropathyStatus] = useState(null);
-  const [ascvdStatus, setAscvdStatus] = useState(null);
-
-  // Comprehensive Patient Health History & Measurements State
-  const [healthHistoryLogs, setHealthHistoryLogs] = useState(() => {
-    const saved = localStorage.getItem('glycopulse_health_history');
+    const saved = localStorage.getItem('glucocare_glucose_readings');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
+      } catch (err) {}
     }
-    const formatPastDate = (daysAgo, timeStr) => {
-      const d = new Date();
-      d.setDate(d.getDate() - daysAgo);
-      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-      return `${dateStr} ${timeStr}`;
-    };
     return [
-      { id: 'h-1', date: formatPastDate(0, '09:30'), category: 'Blood Pressure', value: '118/76 mmHg', status: 'Normal', notes: 'Morning resting vitals' },
-      { id: 'h-2', date: formatPastDate(1, '18:15'), category: 'Body Weight', value: '68.5 kg', status: 'Optimal', notes: 'Post-workout measurement' },
-      { id: 'h-3', date: formatPastDate(2, '11:00'), category: 'HbA1c Lab', value: '6.5 %', status: 'Target Met', notes: 'Quarterly Lab Scan (OCR Verified)' },
-      { id: 'h-4', date: formatPastDate(3, '08:00'), category: 'Health Condition', value: 'Retinopathy Assessment', status: 'Mild Stage 1', notes: 'Annual fundus exam clear, non-proliferative' },
-      { id: 'h-5', date: formatPastDate(4, '14:20'), category: 'Heart Rate', value: '72 bpm (SpO2 98%)', status: 'Normal', notes: 'Smartwatch live sync' },
-      { id: 'h-6', date: formatPastDate(6, '10:00'), category: 'Kidney Function', value: 'eGFR 95 mL/min', status: 'Healthy', notes: 'Microalbuminuria negative' }
+      { id: 'g-1', date: '2026-08-18', time: '8:00 AM', value: 110, context: 'Before breakfast', notes: 'Fasting check' },
+      { id: 'g-2', date: '2026-08-18', time: '1:00 PM', value: 145, context: 'After lunch', notes: 'Walked 15 mins' },
+      { id: 'g-3', date: '2026-08-18', time: '7:00 PM', value: 168, context: 'Before dinner', notes: '' }
     ];
   });
 
-  const addHealthHistoryLog = (entry) => {
-    const newLog = {
-      id: 'h-' + Date.now(),
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      ...entry
-    };
-    setHealthHistoryLogs(prev => {
-      const updated = [newLog, ...prev];
-      localStorage.setItem('glycopulse_health_history', JSON.stringify(updated));
-      return updated;
-    });
-  };
+  // 2. Meal Logs State
+  const [mealLogs, setMealLogs] = useState(() => {
+    const saved = localStorage.getItem('glucocare_meal_logs');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (err) {}
+    }
+    return [
+      { id: 'm-1', date: '2026-08-18', mealType: 'Breakfast', time: '8:00 AM', food: 'Eggs, bread and tea', notes: 'Whole wheat bread' },
+      { id: 'm-2', date: '2026-08-18', mealType: 'Lunch', time: '1:00 PM', food: 'Rice, chicken and vegetables', notes: 'Balanced meal' },
+      { id: 'm-3', date: '2026-08-18', mealType: 'Dinner', time: '7:30 PM', food: 'Rice and vegetables', notes: 'Light dinner' }
+    ];
+  });
 
+  // 3. Health Reminders State
+  const [reminders, setReminders] = useState(() => {
+    const saved = localStorage.getItem('glucocare_reminders');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (err) {}
+    }
+    return [
+      { id: 'r-1', title: 'Fasting Glucose Check', date: '2026-08-19', time: '8:00 AM', category: 'Glucose Check' },
+      { id: 'r-2', title: 'Quarterly HbA1c Lab Test', date: '2026-08-25', time: '9:00 AM', category: 'Lab Test' },
+      { id: 'r-3', title: 'Evening Glucose Check', date: '2026-08-19', time: '9:00 PM', category: 'Glucose Check' }
+    ];
+  });
+
+  // 4. Lab Reports State
+  const [labReports, setLabReports] = useState(() => {
+    const saved = localStorage.getItem('glucocare_lab_reports');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (err) {}
+    }
+    return [
+      { id: 'l-1', name: 'HbA1c Lab Report', date: '18 Aug 2026', result: '6.5%', status: 'Within Target' },
+      { id: 'l-2', name: 'Fasting Lipid Profile', date: '10 Jun 2026', result: 'Normal (Cholesterol 175 mg/dL)', status: 'Normal' }
+    ];
+  });
+
+  // Save to LocalStorage effects
   useEffect(() => {
-    localStorage.setItem('glycopulse_theme', theme);
+    localStorage.setItem('glucocare_theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
-
-  // LIVE 5-SECOND CONTINUOUS GLUCOSE TELEMETRY STREAM TICKER (Only active when logs exist)
-  useEffect(() => {
-    if (!glucoseLogs || glucoseLogs.length === 0) return;
-    const ticker = setInterval(() => {
-      const delta = Math.floor(Math.random() * 7) - 3;
-      
-      setCurrentGlucose((prev) => {
-        const nextVal = Math.max(55, Math.min(260, prev + delta));
-        
-        if (delta >= 3) {
-          setCgmTrendArrow('↑');
-          setRateOfChange(`+${(delta * 0.8).toFixed(1)} mg/dL/min`);
-        } else if (delta === 1 || delta === 2) {
-          setCgmTrendArrow('↗');
-          setRateOfChange(`+${(delta * 0.6).toFixed(1)} mg/dL/min`);
-        } else if (delta === 0) {
-          setCgmTrendArrow('➔');
-          setRateOfChange('0.0 mg/dL/min');
-        } else if (delta === -1 || delta === -2) {
-          setCgmTrendArrow('↘');
-          setRateOfChange(`${(delta * 0.6).toFixed(1)} mg/dL/min`);
-        } else {
-          setCgmTrendArrow('↓');
-          setRateOfChange(`${(delta * 0.8).toFixed(1)} mg/dL/min`);
-        }
-
-        if (nextVal < 70) {
-          setToastAlert({
-            type: 'danger',
-            title: 'CRITICAL HYPOGLYCEMIA ALERT',
-            message: `Current Glucose is ${nextVal} mg/dL. Consume 15g fast-acting carbs immediately.`
-          });
-        }
-
-        return nextVal;
-      });
-
-      setIobUnits((prev) => Math.max(0, parseFloat((prev - 0.05).toFixed(2))));
-      setCobGrams((prev) => Math.max(0, Math.round(prev - 0.5)));
-      setLastCgmSync('Just now (Dexcom G7 Live Sync)');
-
-    }, 5000);
-
-    return () => clearInterval(ticker);
-  }, []);
-
-  // FIREBASE CLOUD FIRESTORE REALTIME LISTENER
-  useEffect(() => {
-    const unsub = listenToGlucoseRealtime((fbLogs) => {
-      if (fbLogs && fbLogs.length > 0) {
-        const formatted = fbLogs.map((l, i) => ({
-          id: l.id || ('fb-' + i),
-          value: l.value || l.glucoseLevel || 118,
-          type: l.type || 'CGM Check',
-          notes: l.notes || 'Firebase Cloud Sync',
-          timestamp: 'Just now'
-        }));
-        setGlucoseLogs(formatted);
-        setIsBackendConnected(true);
-        setDbEngineName('Firebase Cloud Firestore (cardiora-new)');
-      }
-    });
-    return () => unsub();
-  }, []);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  const addGlucoseLog = async (newLog) => {
-    const formattedLog = {
-      ...newLog,
-      id: 'log-' + Date.now(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const loginUser = (credentials) => {
+    const userObj = {
+      id: 'usr-' + Date.now(),
+      name: credentials.name || 'Dinali Bhagya',
+      email: credentials.email || 'dinali@glucocare.ai',
+      role: 'patient'
+    };
+    setCurrentUser(userObj);
+    setIsAuthenticated(true);
+    setAuthModalOpen(false);
+    setActiveTab('dashboard');
+    localStorage.setItem('glucocare_auth', 'true');
+    localStorage.setItem('glucocare_user', JSON.stringify(userObj));
+  };
+
+  const signupUser = (userData) => {
+    loginUser(userData);
+  };
+
+  const logoutUser = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    localStorage.setItem('glucocare_auth', 'false');
+    localStorage.removeItem('glucocare_user');
+  };
+
+  // Add / Delete Glucose Reading
+  const addGlucoseLog = (newLog) => {
+    const entry = {
+      id: 'g-' + Date.now(),
+      date: newLog.date || new Date().toISOString().split('T')[0],
+      time: newLog.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      value: Number(newLog.value),
+      context: newLog.context || 'Before breakfast',
+      notes: newLog.notes || ''
     };
 
     setGlucoseLogs((prev) => {
-      const updated = [formattedLog, ...prev];
-      localStorage.setItem('glycopulse_glucose_logs', JSON.stringify(updated));
+      const updated = [entry, ...prev];
+      localStorage.setItem('glucocare_glucose_readings', JSON.stringify(updated));
       return updated;
     });
 
-    setCurrentGlucose(newLog.value);
-
-    // Automatically record entry in Patient Health History & Vitals
-    addHealthHistoryLog({
-      category: 'Blood Glucose',
-      value: `${newLog.value} mg/dL`,
-      status: newLog.value < 70 ? 'Hypoglycemia Alert' : newLog.value > 180 ? 'Elevated Hyperglycemia' : 'Target Met',
-      notes: `${newLog.type || 'Glucose Log'}${newLog.notes ? ' — ' + newLog.notes : ''}`
+    setToastAlert({
+      type: 'success',
+      title: 'Glucose Reading Saved',
+      message: `${entry.value} mg/dL (${entry.context}) recorded successfully.`
     });
+    setTimeout(() => setToastAlert(null), 3500);
+  };
 
-    // Send to Firebase Cloud Firestore Database (cardiora-new)
-    const res = await apiService.logGlucose({
-      userId: currentUser?.id || 'pat-101',
-      patientName: currentUser?.name || 'Dinali Bhagya',
-      value: newLog.value,
-      glucoseLevel: newLog.value,
-      type: newLog.type,
-      notes: newLog.notes
+  const deleteGlucoseLog = (id) => {
+    setGlucoseLogs((prev) => {
+      const updated = prev.filter(item => item.id !== id);
+      localStorage.setItem('glucocare_glucose_readings', JSON.stringify(updated));
+      return updated;
     });
+  };
 
-    setIsBackendConnected(true);
-    setDbEngineName('Firebase Cloud Firestore (cardiora-new)');
+  // Add / Delete Meal Log
+  const addMealLog = (newMeal) => {
+    const entry = {
+      id: 'm-' + Date.now(),
+      date: newMeal.date || new Date().toISOString().split('T')[0],
+      mealType: newMeal.mealType || 'Breakfast',
+      time: newMeal.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      food: newMeal.food,
+      calories: newMeal.calories || '—',
+      carbs: newMeal.carbs,
+      protein: newMeal.protein,
+      fat: newMeal.fat,
+      notes: newMeal.notes || ''
+    };
+
+    setMealLogs((prev) => {
+      const updated = [entry, ...prev];
+      localStorage.setItem('glucocare_meal_logs', JSON.stringify(updated));
+      return updated;
+    });
 
     setToastAlert({
       type: 'success',
-      title: 'SAVED TO FIREBASE CLOUD',
-      message: `Glucose ${newLog.value} mg/dL written to Cloud Firestore (cardiora-new).`
+      title: 'Meal Saved',
+      message: `${entry.mealType} logged successfully.`
     });
+    setTimeout(() => setToastAlert(null), 3500);
+  };
 
-    setAiPrediction((prev) => ({
-      ...prev,
-      predictedGlucose2h: Math.round(newLog.value + (cobGrams * 0.8) - (iobUnits * 12)),
-      explanation: `Latest log entry (${newLog.value} mg/dL) written to Firebase Firestore & model.`
-    }));
+  const deleteMealLog = (id) => {
+    setMealLogs((prev) => {
+      const updated = prev.filter(item => item.id !== id);
+      localStorage.setItem('glucocare_meal_logs', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
-    setTimeout(() => setToastAlert(null), 5000);
+  // Add / Delete Reminder
+  const addReminder = (newRem) => {
+    const entry = {
+      id: 'r-' + Date.now(),
+      title: newRem.title,
+      date: newRem.date || new Date().toISOString().split('T')[0],
+      time: newRem.time || '8:00 AM',
+      category: newRem.category || 'Glucose Check'
+    };
+
+    setReminders((prev) => {
+      const updated = [entry, ...prev];
+      localStorage.setItem('glucocare_reminders', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const deleteReminder = (id) => {
+    setReminders((prev) => {
+      const updated = prev.filter(item => item.id !== id);
+      localStorage.setItem('glucocare_reminders', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Add / Delete Lab Report
+  const addLabReport = (newLab) => {
+    const entry = {
+      id: 'l-' + Date.now(),
+      name: newLab.name,
+      date: newLab.date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      result: newLab.result || 'Uploaded Document',
+      status: newLab.status || 'Report Added'
+    };
+
+    setLabReports((prev) => {
+      const updated = [entry, ...prev];
+      localStorage.setItem('glucocare_lab_reports', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   return (
@@ -478,9 +257,6 @@ export const AppProvider = ({ children }) => {
         toggleTheme,
         isInitialLoading,
         setIsInitialLoading,
-        isBackendConnected,
-        dbEngineName,
-        checkBackend,
         role,
         setRole,
         activeTab,
@@ -494,38 +270,19 @@ export const AppProvider = ({ children }) => {
         loginUser,
         signupUser,
         logoutUser,
-        switchRole,
-        currentGlucose,
-        cgmTrendArrow,
-        rateOfChange,
-        lastCgmSync,
-        iobUnits,
-        setIobUnits,
-        cobGrams,
-        setCobGrams,
-        waterIntake,
-        setWaterIntake,
-        waterGoal,
-        glucoseLogs,
-        addGlucoseLog,
-        hba1cHistory,
-        aiPrediction,
-        streakDays,
-        healthScore,
         toastAlert,
         setToastAlert,
-        dfuScanResult,
-        setDfuScanResult,
-        dfuPhotoUrl,
-        setDfuPhotoUrl,
-        retinopathyStatus,
-        setRetinopathyStatus,
-        nephropathyStatus,
-        setNephropathyStatus,
-        ascvdStatus,
-        setAscvdStatus,
-        healthHistoryLogs,
-        addHealthHistoryLog
+        glucoseLogs,
+        addGlucoseLog,
+        deleteGlucoseLog,
+        mealLogs,
+        addMealLog,
+        deleteMealLog,
+        reminders,
+        addReminder,
+        deleteReminder,
+        labReports,
+        addLabReport
       }}
     >
       {children}

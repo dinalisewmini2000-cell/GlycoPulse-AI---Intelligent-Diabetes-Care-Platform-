@@ -1,76 +1,60 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
-  BarChart3, Brain, Utensils, Flame, FileSpreadsheet, 
-  ShieldAlert, Users, Stethoscope, Cpu, Pill
+  LayoutDashboard, Activity, Utensils, Calendar, FileText
 } from 'lucide-react';
 
 export const Sidebar = () => {
-  const { role, activeTab, setActiveTab, currentUser } = useApp();
+  const { activeTab, setActiveTab, currentUser } = useApp();
 
-  const patientTabs = [
-    { id: 'glucose', label: 'Blood Glucose & CGM', icon: BarChart3 },
-    { id: 'predictions', label: 'AI Glucose Forecast', icon: Brain },
-    { id: 'food', label: 'AI Food Vision & Meals', icon: Utensils },
-    { id: 'fitness', label: 'Fitness & Sleep Tracker', icon: Flame },
-    { id: 'complications', label: 'Complications & Risks', icon: ShieldAlert },
-    { id: 'lab', label: 'Lab OCR & Reports', icon: FileSpreadsheet }
+  const navigationItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'glucose', label: 'Glucose', icon: Activity },
+    { id: 'meals', label: 'Meals', icon: Utensils },
+    { id: 'calendar', label: 'Calendar', icon: Calendar },
+    { id: 'lab', label: 'Lab Reports', icon: FileText }
   ];
-
-  const doctorTabs = [
-    { id: 'doctor_patients', label: 'Patient Roster & CGM', icon: Users },
-    { id: 'doctor_prescriptions', label: 'E-Prescriptions & Dose', icon: Pill },
-    { id: 'doctor_appointments', label: 'Appointments & Consults', icon: Stethoscope }
-  ];
-
-  const adminTabs = [
-    { id: 'admin_telemetry', label: 'System Telemetry', icon: Cpu },
-    { id: 'admin_users', label: 'User Directory', icon: Users }
-  ];
-
-  let currentTabs = patientTabs;
-  if (role === 'doctor') currentTabs = doctorTabs;
-  if (role === 'admin') currentTabs = adminTabs;
 
   return (
-    <aside style={{ width: '240px', background: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)', padding: '1.2rem 0.8rem', display: 'flex', flexDirection: 'column', gap: '0.3rem', flexShrink: 0 }}>
-      <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', textTransform: 'uppercase', paddingLeft: '0.6rem', marginBottom: '0.5rem' }}>
-        {role.toUpperCase()} PORTAL
+    <aside style={{ width: '220px', background: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)', padding: '1.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', flexShrink: 0 }}>
+      
+      <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', textTransform: 'uppercase', paddingLeft: '0.6rem', marginBottom: '0.4rem' }}>
+        PATIENT MENU
       </div>
 
-      {currentTabs.map(t => {
-        const Icon = t.icon;
-        const active = activeTab === t.id;
+      {navigationItems.map(item => {
+        const Icon = item.icon;
+        const active = activeTab === item.id;
         return (
           <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '0.65rem',
-              padding: '0.6rem 0.8rem',
+              padding: '0.65rem 0.85rem',
               borderRadius: '6px',
               border: 'none',
               background: active ? 'var(--primary-color)' : 'transparent',
               color: active ? '#ffffff' : 'var(--text-muted)',
               fontWeight: active ? 600 : 500,
-              fontSize: '0.85rem',
+              fontSize: '0.88rem',
               cursor: 'pointer',
               textAlign: 'left',
-              transition: 'background-color 0.15s ease'
+              transition: 'background-color 0.15s ease, color 0.15s ease'
             }}
           >
-            <Icon size={16} color={active ? '#ffffff' : 'currentColor'} />
-            <span>{t.label}</span>
+            <Icon size={17} color={active ? '#ffffff' : 'currentColor'} />
+            <span>{item.label}</span>
           </button>
         );
       })}
 
-      {/* Profile session box */}
+      {/* User Session Info */}
       <div style={{ marginTop: 'auto', background: 'var(--bg-primary)', padding: '0.85rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Active Session</div>
-        <div style={{ fontSize: '0.85rem', fontWeight: 700, margin: '0.15rem 0', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600 }}>Logged in as</div>
+        <div style={{ fontSize: '0.85rem', fontWeight: 700, margin: '0.1rem 0', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {currentUser?.name || 'Dinali Bhagya'}
         </div>
         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

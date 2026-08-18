@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { loginWithFirebase, signupWithFirebase } from '../../services/firebase';
 import { 
-  UserCheck, Stethoscope, HeartHandshake, ShieldAlert, 
-  Lock, Mail, Key, LogIn, UserPlus, Activity, AlertCircle, X, User
+  UserCheck, ShieldAlert, 
+  Lock, Mail, LogIn, UserPlus, Activity, AlertCircle, X, User
 } from 'lucide-react';
 
 export const LoginModal = () => {
@@ -20,7 +20,6 @@ export const LoginModal = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [diabetesType, setDiabetesType] = useState('');
-  const [specialty, setSpecialty] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -33,26 +32,13 @@ export const LoginModal = () => {
       subtitle: 'Track blood sugar logs, AI risk predictions & food nutrition',
       icon: UserCheck,
       color: '#10b981',
-      defaultEmail: '',
-      defaultPassword: '',
       badge: 'Type 1 / Type 2 Care'
-    },
-    doctor: {
-      title: 'Clinical Doctor Portal',
-      subtitle: 'Access patient telemetry rosters, sign prescriptions & AI risk alerts',
-      icon: Stethoscope,
-      color: '#06b6d4',
-      defaultEmail: '',
-      defaultPassword: '',
-      badge: 'Medical Practitioner'
     },
     admin: {
       title: 'System Admin Console',
       subtitle: 'Manage platform user accounts, security audit trails & database metrics',
       icon: ShieldAlert,
       color: '#a855f7',
-      defaultEmail: '',
-      defaultPassword: '',
       badge: 'Super Admin Security'
     }
   };
@@ -65,7 +51,6 @@ export const LoginModal = () => {
     setPassword('');
     setConfirmPassword('');
     setDiabetesType('');
-    setSpecialty('');
     setError('');
   };
 
@@ -90,7 +75,7 @@ export const LoginModal = () => {
     setLoading(true);
     setError('');
 
-    const activeName = name.trim() || (selectedRole === 'admin' ? 'System Administrator' : selectedRole === 'doctor' ? 'Dr. Medical Practitioner' : 'Dinali Bhagya');
+    const activeName = name.trim() || (selectedRole === 'admin' ? 'System Administrator' : 'Dinali Bhagya');
 
     try {
       if (isSignUp) {
@@ -103,8 +88,7 @@ export const LoginModal = () => {
           email,
           password,
           role: selectedRole,
-          diabetesType,
-          specialty
+          diabetesType
         });
       } else {
         try {
@@ -126,21 +110,20 @@ export const LoginModal = () => {
     }
   };
 
-  const currentRole = roleDetails[selectedRole];
+  const currentRole = roleDetails[selectedRole] || roleDetails.patient;
 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(5, 10, 24, 0.92)', backdropFilter: 'blur(16px)',
+      background: 'rgba(5, 10, 24, 0.85)', backdropFilter: 'blur(12px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
       overflowY: 'auto'
     }}>
       <div style={{
-        maxWidth: '520px', width: '100%', borderRadius: '24px',
-        background: 'linear-gradient(145deg, #0b1329 0%, #172547 100%)',
-        border: `2px solid ${currentRole.color}66`, padding: '2.2rem',
-        boxShadow: `0 25px 60px -10px ${currentRole.color}44, 0 0 30px rgba(0,0,0,0.8)`, position: 'relative',
-        maxHeight: '94vh', overflowY: 'auto', color: '#ffffff'
+        maxWidth: '460px', width: '100%', borderRadius: '16px',
+        background: 'var(--bg-secondary)', border: `1px solid var(--border-color)`, padding: '1.75rem',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.4)', position: 'relative',
+        maxHeight: '90vh', overflowY: 'auto', color: 'var(--text-main)'
       }}>
         
         {/* Close Button if already authenticated */}
@@ -148,69 +131,65 @@ export const LoginModal = () => {
           <button 
             onClick={() => setAuthModalOpen(false)}
             style={{
-              position: 'absolute', top: '1.25rem', right: '1.25rem',
-              background: 'rgba(255,255,255,0.12)', border: 'none',
-              borderRadius: '50%', width: '38px', height: '38px',
+              position: 'absolute', top: '1rem', right: '1rem',
+              background: 'transparent', border: 'none',
+              borderRadius: '50%', width: '32px', height: '32px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#ffffff', cursor: 'pointer', transition: 'all 0.2s ease'
+              color: 'var(--text-muted)', cursor: 'pointer'
             }}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         )}
 
         {/* Brand Header */}
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
           <div style={{
-            width: '60px', height: '60px', borderRadius: '20px',
-            background: `linear-gradient(135deg, ${currentRole.color}, #2563eb)`,
+            width: '48px', height: '48px', borderRadius: '12px',
+            background: 'var(--primary-color)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 0.85rem auto', boxShadow: `0 0 25px ${currentRole.color}88`
+            margin: '0 auto 0.6rem auto'
           }}>
-            <Activity size={34} color="#ffffff" />
+            <Activity size={24} color="#ffffff" />
           </div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '0.3rem', color: '#ffffff' }}>
-            Glyco<span style={{ color: currentRole.color }}>Pulse AI</span>
+          <h2 style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '0.2rem', color: 'var(--text-main)' }}>
+            GlucoCare
           </h2>
-          <p style={{ fontSize: '0.88rem', color: '#cbd5e1', fontWeight: 600 }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
             {isSignUp ? `Register for ${currentRole.title}` : `Sign In to ${currentRole.title}`}
           </p>
         </div>
 
         {/* Mode Selector (Sign In vs Sign Up) */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem',
-          background: '#090d1a', padding: '0.35rem', borderRadius: '14px',
-          border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.4rem'
+          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem',
+          background: 'var(--bg-primary)', padding: '0.25rem', borderRadius: '8px',
+          border: '1px solid var(--border-color)', marginBottom: '1.2rem'
         }}>
           <button
             type="button"
             onClick={() => handleModeSwitch(false)}
             style={{
-              padding: '0.65rem', borderRadius: '10px', border: 'none',
-              background: !isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
-              color: '#ffffff', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              boxShadow: !isSignUp ? `0 4px 15px ${currentRole.color}55` : 'none',
-              transition: 'all 0.2s ease'
+              padding: '0.55rem', borderRadius: '6px', border: 'none',
+              background: !isSignUp ? 'var(--primary-color)' : 'transparent',
+              color: !isSignUp ? '#ffffff' : 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem'
             }}
           >
-            <LogIn size={18} />
+            <LogIn size={16} />
             <span>Sign In</span>
           </button>
           <button
             type="button"
             onClick={() => handleModeSwitch(true)}
             style={{
-              padding: '0.65rem', borderRadius: '10px', border: 'none',
-              background: isSignUp ? `linear-gradient(135deg, ${currentRole.color}, #2563eb)` : 'transparent',
-              color: '#ffffff', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              boxShadow: isSignUp ? `0 4px 15px ${currentRole.color}55` : 'none',
-              transition: 'all 0.2s ease'
+              padding: '0.55rem', borderRadius: '6px', border: 'none',
+              background: isSignUp ? 'var(--primary-color)' : 'transparent',
+              color: isSignUp ? '#ffffff' : 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem'
             }}
           >
-            <UserPlus size={18} />
+            <UserPlus size={16} />
             <span>Sign Up</span>
           </button>
         </div>
@@ -220,9 +199,9 @@ export const LoginModal = () => {
           const visibleRoles = Object.keys(roleDetails);
           return (
             <div style={{
-              display: 'grid', gridTemplateColumns: `repeat(${visibleRoles.length}, 1fr)`, gap: '0.6rem',
-              background: '#090d1a', padding: '0.45rem', borderRadius: '16px',
-              border: '1px solid rgba(255,255,255,0.12)', marginBottom: '1.4rem'
+              display: 'grid', gridTemplateColumns: `repeat(${visibleRoles.length}, 1fr)`, gap: '0.5rem',
+              background: 'var(--bg-primary)', padding: '0.3rem', borderRadius: '8px',
+              border: '1px solid var(--border-color)', marginBottom: '1.2rem'
             }}>
               {visibleRoles.map((rKey) => {
                 const r = roleDetails[rKey];
@@ -234,19 +213,16 @@ export const LoginModal = () => {
                     type="button"
                     onClick={() => handleRoleSelect(rKey)}
                     style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      gap: '0.4rem', padding: '0.75rem 0.5rem', borderRadius: '12px',
-                      border: isSelected ? `2px solid ${r.color}` : '1px solid transparent',
-                      background: isSelected ? `${r.color}25` : '#131c35',
-                      color: isSelected ? '#ffffff' : '#94a3b8',
-                      boxShadow: isSelected ? `0 0 12px ${r.color}44` : 'none',
-                      cursor: 'pointer', transition: 'all 0.2s ease', fontWeight: 700, fontSize: '0.82rem'
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      gap: '0.4rem', padding: '0.6rem', borderRadius: '6px',
+                      border: 'none',
+                      background: isSelected ? 'var(--primary-color)' : 'transparent',
+                      color: isSelected ? '#ffffff' : 'var(--text-muted)',
+                      cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem'
                     }}
                   >
-                    <IconComp size={20} color={isSelected ? r.color : '#94a3b8'} />
-                    <span style={{ color: isSelected ? '#ffffff' : '#cbd5e1' }}>
-                      {rKey.charAt(0).toUpperCase() + rKey.slice(1)}
-                    </span>
+                    <IconComp size={16} color={isSelected ? '#ffffff' : 'currentColor'} />
+                    <span>{rKey.charAt(0).toUpperCase() + rKey.slice(1)}</span>
                   </button>
                 );
               })}
@@ -254,188 +230,76 @@ export const LoginModal = () => {
           );
         })()}
 
-        {/* Loading Indicator */}
-        {loading && (
-          <div style={{
-            background: `${currentRole.color}25`, border: `1px solid ${currentRole.color}66`,
-            padding: '0.85rem 1rem', borderRadius: '12px', color: '#ffffff',
-            fontSize: '0.9rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem'
-          }}>
-            <Activity className="spin-slow" size={20} color={currentRole.color} />
-            <span>Authenticating with Firebase Cloud... Please wait</span>
-          </div>
-        )}
-
         {/* Form Error Alert */}
         {error && (
           <div style={{
-            background: 'rgba(239, 68, 68, 0.25)', border: '1px solid rgba(239, 68, 68, 0.6)',
-            padding: '0.85rem 1rem', borderRadius: '12px', color: '#fca5a5',
-            fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.2rem'
+            background: '#fee2e2', border: '1px solid #fecaca',
+            padding: '0.65rem 0.85rem', borderRadius: '6px', color: '#b91c1c',
+            fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem'
           }}>
-            <AlertCircle size={20} />
+            <AlertCircle size={16} />
             <span>{error}</span>
           </div>
         )}
 
-        {/* High-Contrast Authentication Form */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           
           {/* Full Name for Sign Up */}
           {isSignUp && (
             <div>
-              <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
+              <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
                 FULL NAME
               </label>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <User size={19} style={{ position: 'absolute', left: '1rem', color: currentRole.color }} />
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter Full Name"
-                  style={{
-                    width: '100%', padding: '0.85rem 1rem 0.85rem 2.9rem',
-                    borderRadius: '12px', background: '#090d1a',
-                    border: '1.5px solid rgba(255,255,255,0.2)', color: '#ffffff',
-                    outline: 'none', fontSize: '0.95rem', fontWeight: 600
-                  }}
-                />
-              </div>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter Full Name"
+                style={{ width: '100%' }}
+              />
             </div>
           )}
 
           {/* Email Field */}
           <div>
-            <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
-              {selectedRole.toUpperCase()} EMAIL ADDRESS
+            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+              EMAIL ADDRESS
             </label>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <Mail size={19} style={{ position: 'absolute', left: '1rem', color: currentRole.color }} />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter Email Address"
-                style={{
-                  width: '100%', padding: '0.85rem 1rem 0.85rem 2.9rem',
-                  borderRadius: '12px', background: '#090d1a',
-                  border: '1.5px solid rgba(255,255,255,0.2)', color: '#ffffff',
-                  outline: 'none', fontSize: '0.95rem', fontWeight: 600
-                }}
-              />
-            </div>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter Email Address"
+              style={{ width: '100%' }}
+            />
           </div>
 
           {/* Password Field */}
           <div>
-            <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
+            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
               PASSWORD
             </label>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <Lock size={19} style={{ position: 'absolute', left: '1rem', color: currentRole.color }} />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter Password"
-                style={{
-                  width: '100%', padding: '0.85rem 1rem 0.85rem 2.9rem',
-                  borderRadius: '12px', background: '#090d1a',
-                  border: '1.5px solid rgba(255,255,255,0.2)', color: '#ffffff',
-                  outline: 'none', fontSize: '0.95rem', fontWeight: 600
-                }}
-              />
-            </div>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter Password"
+              style={{ width: '100%' }}
+            />
           </div>
-
-          {/* Confirm Password for Sign Up */}
-          {isSignUp && (
-            <div>
-              <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
-                CONFIRM PASSWORD
-              </label>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <Lock size={19} style={{ position: 'absolute', left: '1rem', color: currentRole.color }} />
-                <input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm Password"
-                  style={{
-                    width: '100%', padding: '0.85rem 1rem 0.85rem 2.9rem',
-                    borderRadius: '12px', background: '#090d1a',
-                    border: '1.5px solid rgba(255,255,255,0.2)', color: '#ffffff',
-                    outline: 'none', fontSize: '0.95rem', fontWeight: 600
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Role Specific Registration Info */}
-          {isSignUp && selectedRole === 'patient' && (
-            <>
-              <div>
-                <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
-                  DIABETES DIAGNOSIS TYPE
-                </label>
-                <select
-                  value={diabetesType}
-                  onChange={(e) => setDiabetesType(e.target.value)}
-                  style={{
-                    width: '100%', padding: '0.85rem 1rem', borderRadius: '12px',
-                    background: '#090d1a', border: '1.5px solid rgba(255,255,255,0.2)',
-                    color: diabetesType ? '#ffffff' : '#94a3b8', outline: 'none', fontSize: '0.95rem', fontWeight: 600
-                  }}
-                >
-                  <option value="" disabled>Select Diabetes Type</option>
-                  <option value="Type 1">Type 1 Diabetes</option>
-                  <option value="Type 2">Type 2 Diabetes</option>
-                  <option value="Pre-diabetes">Pre-diabetes</option>
-                  <option value="Gestational">Gestational Diabetes</option>
-                </select>
-              </div>
-            </>
-          )}
-
-          {isSignUp && selectedRole === 'doctor' && (
-            <div>
-              <label style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginBottom: '0.4rem' }}>
-                MEDICAL SPECIALTY
-              </label>
-              <input
-                type="text"
-                value={specialty}
-                onChange={(e) => setSpecialty(e.target.value)}
-                placeholder="Enter Medical Specialty"
-                style={{
-                  width: '100%', padding: '0.85rem 1rem', borderRadius: '12px',
-                  background: '#090d1a', border: '1.5px solid rgba(255,255,255,0.2)',
-                  color: '#ffffff', outline: 'none', fontSize: '0.95rem', fontWeight: 600
-                }}
-              />
-            </div>
-          )}
 
           {/* Glowing Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            style={{
-              marginTop: '0.6rem', padding: '0.95rem', borderRadius: '14px',
-              border: 'none', background: `linear-gradient(135deg, ${currentRole.color}, #2563eb)`,
-              color: '#ffffff', fontWeight: 900, fontSize: '1rem', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
-              boxShadow: `0 8px 25px ${currentRole.color}66`, transition: 'all 0.2s ease',
-              letterSpacing: '0.5px', textTransform: 'uppercase'
-            }}
+            className="btn-primary"
+            style={{ width: '100%', justifyContent: 'center', padding: '0.65rem', marginTop: '0.4rem' }}
           >
-            {isSignUp ? <UserPlus size={22} /> : <LogIn size={22} />}
+            {isSignUp ? <UserPlus size={16} /> : <LogIn size={16} />}
             <span>
               {loading 
                 ? 'Authenticating...' 

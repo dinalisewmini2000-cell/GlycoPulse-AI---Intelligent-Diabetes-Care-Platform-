@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { jsPDF } from 'jspdf';
-import { FileText, Download, CheckCircle2, X, Calendar, Filter } from 'lucide-react';
+import { FileText, Download, CheckCircle2, X } from 'lucide-react';
 
 export const PDFExportModal = () => {
-  const { pdfModalOpen, setPdfModalOpen, glucoseLogs, currentGlucose, currentUser, dfuScanResult } = useApp();
+  const { pdfModalOpen, setPdfModalOpen, glucoseLogs, mealLogs, labReports, currentUser } = useApp();
   const [downloaded, setDownloaded] = useState(false);
   const [dateRange, setDateRange] = useState('30');
-  const [includeLab, setIncludeLab] = useState(true);
-  const [includeMeals, setIncludeMeals] = useState(true);
-  const [includeComplications, setIncludeComplications] = useState(true);
 
   if (!pdfModalOpen) return null;
 
@@ -17,106 +14,91 @@ export const PDFExportModal = () => {
     const doc = new jsPDF();
     
     // Header & Branding
-    doc.setFontSize(20);
-    doc.setTextColor(6, 182, 212);
-    doc.text('GlycoPulse AI - Clinical Diabetes Telemetry Report', 14, 22);
+    doc.setFontSize(18);
+    doc.setTextColor(2, 132, 199);
+    doc.text('GlucoCare - Diabetes Health Summary Report', 14, 22);
 
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Patient: ${currentUser?.name || 'Dinali Bhagya'} (${currentUser?.email || 'dinali@glucocare.ai'}) | Type: ${currentUser?.diabetesType || 'Type 1'}`, 14, 30);
-    doc.text(`Telemetry Range: Past ${dateRange} Days | Report Generated: ${new Date().toLocaleDateString()}`, 14, 36);
-    doc.text(`Attending Physician: Dr. Robert Vance, MD (Endocrinology & Diabetology)`, 14, 42);
+    doc.text(`Patient: ${currentUser?.name || 'Dinali Bhagya'} (${currentUser?.email || 'dinali@glucocare.ai'})`, 14, 30);
+    doc.text(`Time Frame: Past ${dateRange} Days | Generated: ${new Date().toLocaleDateString()}`, 14, 36);
 
     doc.setLineWidth(0.5);
     doc.setDrawColor(200);
-    doc.line(14, 48, 196, 48);
+    doc.line(14, 42, 196, 42);
 
-    // Section 1: Glycemic Control Summary
-    doc.setFontSize(14);
+    let y = 52;
+
+    // Section 1: Glucose Readings Log
+    doc.setFontSize(13);
     doc.setTextColor(0);
-    doc.text('1. Glycemic Telemetry & Control Metrics', 14, 58);
-
-    doc.setFontSize(10);
-    doc.text(`Real-Time Glucose: ${currentGlucose} mg/dL`, 14, 66);
-    doc.text(`Estimated HbA1c: 6.3% (Optimal Glycemic Range)`, 14, 72);
-    doc.text(`Time In Range (70-180 mg/dL): 84%`, 14, 78);
-    doc.text(`Glycemic Variability (CV%): 18.2% (Stable)`, 14, 84);
-
-    let y = 98;
-
-    // Section 2: Recent Readings Table
-    doc.setFontSize(14);
-    doc.text('2. Recent Glucose Readings Log', 14, y);
-    y += 10;
-
-    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('Timestamp', 14, y);
-    doc.text('Glucose (mg/dL)', 60, y);
-    doc.text('Category', 110, y);
-    doc.text('Clinical Note', 150, y);
+    doc.text('1. Glucose Readings', 14, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.text('Date', 14, y);
+    doc.text('Time', 50, y);
+    doc.text('Glucose (mg/dL)', 90, y);
+    doc.text('Context', 140, y);
     
     doc.setFont('helvetica', 'normal');
     y += 6;
 
-    (glucoseLogs || []).slice(0, 7).forEach(l => {
-      doc.text(l.timestamp, 14, y);
-      doc.text(String(l.value), 60, y);
-      doc.text(l.type, 110, y);
-      doc.text(l.notes || '—', 150, y);
-      y += 8;
+    (glucoseLogs || []).slice(0, 10).forEach(l => {
+      doc.text(l.date || 'Today', 14, y);
+      doc.text(l.time || '—', 50, y);
+      doc.text(`${l.value} mg/dL`, 90, y);
+      doc.text(l.context || 'General', 140, y);
+      y += 7;
     });
 
-    // Optional Lab OCR Section
-    if (includeLab) {
-      y += 6;
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('3. Verified Lab OCR Biomarkers', 14, y);
-      y += 8;
+    // Section 2: Recent Meals
+    y += 8;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('2. Meals Recorded', 14, y);
+    y += 8;
 
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`• Fasting Plasma Glucose: 108 mg/dL (Quest Diagnostics - ${new Date().toISOString().slice(0, 10)})`, 14, y);
-      y += 6;
-      doc.text('• Kidney eGFR: 94 mL/min/1.73m² (Normal renal filtration)', 14, y);
-      y += 6;
-      doc.text('• Microalbuminuria: 12 mg/g (Zero nephropathy risk)', 14, y);
-    }
+    doc.setFontSize(10);
+    doc.text('Meal', 14, y);
+    doc.text('Time', 50, y);
+    doc.text('Food Description', 90, y);
+    
+    doc.setFont('helvetica', 'normal');
+    y += 6;
 
-    // Optional Complications Risk Section
-    if (includeComplications) {
-      y += 10;
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('4. DFU AI Visual Foot Inspection & Screening', 14, y);
-      y += 8;
+    (mealLogs || []).slice(0, 5).forEach(m => {
+      doc.text(m.mealType || 'Meal', 14, y);
+      doc.text(m.time || '—', 50, y);
+      doc.text(m.food || '—', 90, y);
+      y += 7;
+    });
 
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      if (dfuScanResult) {
-        doc.text(`• Visual Screening Result: ${dfuScanResult.statusText || dfuScanResult.screeningResult}`, 14, y);
-        y += 6;
-        doc.text(`• Assessment Confidence: ${dfuScanResult.confidence}`, 14, y);
-        y += 6;
-        if (dfuScanResult.findings && dfuScanResult.findings.length > 0) {
-          dfuScanResult.findings.forEach(f => {
-            doc.text(`• Finding: ${f.type} (${f.location})`, 14, y);
-            y += 6;
-          });
-        }
-        if (dfuScanResult.recommendation) {
-          doc.text(`• Clinical Recommendation: ${dfuScanResult.recommendation.slice(0, 85)}...`, 14, y);
-          y += 6;
-        }
-        doc.text('• Safety Note: Image-based visual screening only; clinical evaluation required.', 14, y);
-      } else {
-        doc.text('• DFU Foot Inspection: No foot photo uploaded for visual screening.', 14, y);
-      }
-    }
+    // Section 3: Lab Reports Summary
+    y += 8;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('3. Lab Reports Summary', 14, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.text('Report Name', 14, y);
+    doc.text('Date', 80, y);
+    doc.text('Result', 130, y);
+    
+    doc.setFont('helvetica', 'normal');
+    y += 6;
+
+    (labReports || []).forEach(r => {
+      doc.text(r.name || 'Lab Report', 14, y);
+      doc.text(r.date || '—', 80, y);
+      doc.text(r.result || '—', 130, y);
+      y += 7;
+    });
 
     // Save PDF
-    doc.save(`GlycoPulse_Report_${currentUser?.name?.replace(' ', '_') || 'Patient'}_${dateRange}D.pdf`);
+    doc.save(`GlucoCare_Health_Summary_${currentUser?.name?.replace(' ', '_') || 'Patient'}.pdf`);
     setDownloaded(true);
     setTimeout(() => {
       setDownloaded(false);
@@ -125,71 +107,44 @@ export const PDFExportModal = () => {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '1.75rem' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
+      <div className="glass-panel" style={{ width: '100%', maxWidth: '440px', padding: '1.5rem', background: 'var(--bg-secondary)' }}>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <FileText size={22} color="var(--accent-cyan)" />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Export Clinical PDF Report</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <FileText size={20} color="var(--primary-color)" />
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>Export Health Summary PDF</h3>
           </div>
           <button onClick={() => setPdfModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
         {downloaded ? (
           <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--accent-emerald)' }}>
-            <CheckCircle2 size={44} style={{ margin: '0 auto 0.8rem auto' }} />
-            <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>PDF Report Exported!</div>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Saved to your device downloads for physician presentation.</p>
+            <CheckCircle2 size={40} style={{ margin: '0 auto 0.6rem auto' }} />
+            <div style={{ fontWeight: 700, fontSize: '1rem' }}>PDF Export Completed!</div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-            
-            {/* Range Selector */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.35rem' }}>
-                SELECT TELEMETRY TIME FRAME
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>
+                Select Time Frame
               </label>
               <select 
                 value={dateRange}
                 onChange={e => setDateRange(e.target.value)}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.9rem', fontWeight: 600 }}
+                style={{ width: '100%' }}
               >
-                <option value="7" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Past 7 Days Telemetry</option>
-                <option value="30" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Past 30 Days Telemetry (Recommended)</option>
-                <option value="90" style={{ background: 'var(--bg-primary)', color: 'var(--text-main)' }}>Past 90 Days Telemetry (Quarterly HbA1c)</option>
+                <option value="7">Past 7 Days</option>
+                <option value="30">Past 30 Days</option>
+                <option value="90">Past 90 Days</option>
               </select>
             </div>
 
-            {/* Inclusions */}
-            <div>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.35rem' }}>
-                REPORT SECTIONS TO INCLUDE
-              </label>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'var(--bg-secondary)', padding: '0.8rem', borderRadius: '8px' }}>
-                <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={includeLab} onChange={e => setIncludeLab(e.target.checked)} />
-                  <span>Lab OCR Biomarkers (eGFR, Lipids, HbA1c)</span>
-                </label>
-
-                <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={includeMeals} onChange={e => setIncludeMeals(e.target.checked)} />
-                  <span>AI Meal & Carbohydrate Intake History</span>
-                </label>
-
-                <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={includeComplications} onChange={e => setIncludeComplications(e.target.checked)} />
-                  <span>Foot Ulcer & Microvascular Risk Screening</span>
-                </label>
-              </div>
-            </div>
-
-            <button onClick={handleGeneratePDF} className="btn-glow" style={{ width: '100%', justifyContent: 'center', padding: '0.85rem' }}>
-              <Download size={17} />
-              <span>Download Formatted PDF Report</span>
+            <button onClick={handleGeneratePDF} className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', marginTop: '0.5rem' }}>
+              <Download size={16} />
+              <span>Download PDF Summary</span>
             </button>
           </div>
         )}

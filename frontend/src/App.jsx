@@ -3,19 +3,13 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { LandingPage } from './components/common/LandingPage';
-import { InitialSplashScreen } from './components/common/InitialSplashScreen';
 
-// Patient Components
-import { GlucoseDashboard } from './components/patient/GlucoseDashboard';
-import { AIPredictions } from './components/patient/AIPredictions';
-import { FoodNutrition } from './components/patient/FoodNutrition';
-import { FitnessSleep } from './components/patient/FitnessSleep';
-import { RiskComplications } from './components/patient/RiskComplications';
-import { LabOCR } from './components/patient/LabOCR';
-
-// Doctor and Admin Components
-import { DoctorPortal } from './components/doctor/DoctorPortal';
-import { AdminPortal } from './components/admin/AdminPortal';
+// Simplified Patient Components according to Human Design Spec
+import { DashboardView } from './components/patient/DashboardView';
+import { GlucosePage } from './components/patient/GlucosePage';
+import { MealsPage } from './components/patient/MealsPage';
+import { CalendarPage } from './components/patient/CalendarPage';
+import { LabReportsPage } from './components/patient/LabReportsPage';
 
 // Common Components
 import { AIChatWidget } from './components/common/AIChatWidget';
@@ -25,21 +19,22 @@ import { LoginModal } from './components/common/LoginModal';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const MainContentArea = () => {
-  const { role, activeTab } = useApp();
+  const { activeTab, setActiveTab } = useApp();
 
   const renderTabContent = () => {
-    if (role === 'doctor') return <DoctorPortal activeTab={activeTab} />;
-    if (role === 'admin') return <AdminPortal activeTab={activeTab} />;
-
-    // Patient Tabs
     switch (activeTab) {
-      case 'glucose': return <GlucoseDashboard />;
-      case 'predictions': return <AIPredictions />;
-      case 'food': return <FoodNutrition />;
-      case 'fitness': return <FitnessSleep />;
-      case 'complications': return <RiskComplications />;
-      case 'lab': return <LabOCR />;
-      default: return <GlucoseDashboard />;
+      case 'dashboard': 
+        return <DashboardView onOpenAddGlucose={() => setActiveTab('glucose')} />;
+      case 'glucose': 
+        return <GlucosePage />;
+      case 'meals': 
+        return <MealsPage />;
+      case 'calendar': 
+        return <CalendarPage />;
+      case 'lab': 
+        return <LabReportsPage />;
+      default: 
+        return <DashboardView onOpenAddGlucose={() => setActiveTab('glucose')} />;
     }
   };
 
@@ -53,11 +48,7 @@ const MainContentArea = () => {
 };
 
 const AppShell = () => {
-  const { isInitialLoading, setIsInitialLoading, isAuthenticated } = useApp();
-
-  if (isInitialLoading) {
-    return <InitialSplashScreen onComplete={() => setIsInitialLoading(false)} />;
-  }
+  const { isAuthenticated } = useApp();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-primary)' }}>
