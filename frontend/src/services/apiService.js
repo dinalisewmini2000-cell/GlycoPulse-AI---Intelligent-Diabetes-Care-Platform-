@@ -46,7 +46,7 @@ export const apiService = {
     } catch (e) {}
     const httpRes = await fetchAPI('auth.php?action=login', { method: 'POST', body: JSON.stringify(credentials) });
     if (httpRes && !httpRes.offline) return httpRes;
-    return { status: 'success', user: { email: credentials.email, name: credentials.name || 'Dinali Bhagya' } };
+    return { status: 'success', user: { email: credentials.email, name: credentials.name || credentials.email?.split('@')[0] || 'Patient User' } };
   },
 
   signup: async (userData) => {

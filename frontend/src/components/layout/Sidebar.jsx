@@ -55,10 +55,10 @@ export const Sidebar = () => {
       <div style={{ marginTop: 'auto', background: 'var(--bg-primary)', padding: '0.85rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
         <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600 }}>Logged in as</div>
         <div style={{ fontSize: '0.85rem', fontWeight: 700, margin: '0.1rem 0', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {currentUser?.name || 'Dinali Bhagya'}
+          {currentUser?.name || (currentUser?.email ? currentUser.email.split('@')[0] : 'Patient Account')}
         </div>
         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {currentUser?.email || 'dinali@glucocare.ai'}
+          {currentUser?.email || 'Not Logged In'}
         </div>
       </div>
 

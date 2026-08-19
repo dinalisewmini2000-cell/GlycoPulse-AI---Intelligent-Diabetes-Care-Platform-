@@ -64,7 +64,7 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
         if (parsedUser && parsedUser.email && !list.some(item => item.email?.toLowerCase() === parsedUser.email?.toLowerCase())) {
           list.push({
             id: parsedUser.id || ('usr-' + Date.now()),
-            name: parsedUser.name || 'Dinali Bhagya',
+            name: parsedUser.name || (parsedUser.email ? parsedUser.email.split('@')[0] : 'Registered User'),
             email: parsedUser.email,
             role: parsedUser.role || 'patient',
             status: 'Active',
@@ -78,7 +78,7 @@ export const AdminPortal = ({ activeTab = 'admin_telemetry' }) => {
       if (!list.some(item => item.email?.toLowerCase() === currentUser.email?.toLowerCase())) {
         list.push({
           id: currentUser.id || ('usr-' + Date.now()),
-          name: currentUser.name || 'Dinali Bhagya',
+          name: currentUser.name || (currentUser.email ? currentUser.email.split('@')[0] : 'Registered User'),
           email: currentUser.email,
           role: currentUser.role || 'patient',
           status: 'Active',

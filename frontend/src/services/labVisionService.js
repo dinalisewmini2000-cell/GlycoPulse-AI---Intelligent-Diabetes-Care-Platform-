@@ -2,66 +2,74 @@
  * GlucoCare - Clinical Lab Report Vision & Document Reader Engine
  * 
  * Pipeline:
- * File Ingestion -> Quality Inspection -> Real Text/OCR Extraction -> Stated Reference Range Preservation -> Patient Explanation -> Medical Safety Guard
+ * File Selection -> Format & MIME Resolution -> Gemini 1.5 Flash Vision / PDF OCR API -> Test Itemization -> Reference Range Preservation -> Patient Educational Explanation & Risk Level
  * 
  * STRICT CLINICAL INTEGRITY RULES:
- * 1. ZERO HARDCODED MOCK DATA.
- * 2. ZERO RANDOMIZED / PSEUDO-HASH NUMBERS.
- * 3. Every value displayed must be parsed directly from the uploaded document or Vision AI OCR.
- * 4. If a document cannot be read, return an explicit error.
+ * 1. ZERO MOCK DATA / ZERO HARDCODED LAB NUMBERS.
+ * 2. Real PDF & Image payloads sent to Gemini 1.5 Flash with exact MIME type (application/pdf, image/jpeg, image/png).
+ * 3. Every single upload generates a fresh unique upload ID and extracts real document contents.
+ * 4. Provides Essential Details (Lab Name, Date, Patient, Total Tests) and Clinical Risk Level (Low / Moderate / High).
  */
 
 export async function analyzeLabReportDocument(fileOrBase64, fileName = '') {
   const uploadId = 'lab-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
-  console.log(`[Lab Analysis Request] ID: ${uploadId}, File: ${fileName}`);
+  
+  console.log(`[DEBUG Lab Analysis Pipeline] Request ID: ${uploadId} | File: ${fileName} | Timestamp: ${new Date().toISOString()}`);
 
   try {
-    // Step 1: File Format Inspection
-    const ext = fileName.split('.').pop()?.toLowerCase() || '';
-    const validExtensions = ['pdf', 'png', 'jpg', 'jpeg', 'webp'];
-    
-    if (ext && !validExtensions.includes(ext)) {
-      return {
-        isReadable: false,
-        errorMessage: "Unsupported file format. Please upload a PDF, PNG, or JPG laboratory report."
-      };
-    }
-
-    // Step 2: Extract base64 and raw text content from uploaded file
     let base64Data = '';
     let imageSrc = '';
     let rawTextContent = '';
+    let mimeType = 'application/pdf';
+    let fileSizeStr = 'Unknown size';
 
-    if (typeof fileOrBase64 === 'string') {
-      base64Data = fileOrBase64.split(',')[1] || fileOrBase64;
-      imageSrc = fileOrBase64.startsWith('data:') ? fileOrBase64 : `data:image/jpeg;base64,${fileOrBase64}`;
-    } else if (fileOrBase64 instanceof File || fileOrBase64 instanceof Blob) {
+    if (fileOrBase64 instanceof File || fileOrBase64 instanceof Blob) {
+      fileSizeStr = `${(fileOrBase64.size / 1024).toFixed(1)} KB`;
+      mimeType = fileOrBase64.type || (fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+      
+      console.log(`[DEBUG Lab File Received] Name: ${fileName} | Type: ${mimeType} | Size: ${fileSizeStr}`);
+
       base64Data = await fileToBase64(fileOrBase64);
-      if (fileOrBase64.type.includes('image')) {
+      if (mimeType.includes('image')) {
         imageSrc = URL.createObjectURL(fileOrBase64);
       }
       try {
         rawTextContent = await readTextFromFile(fileOrBase64);
       } catch (e) {
-        console.log('[Lab Reader] Binary document ingestion');
+        console.log('[DEBUG Lab Reader] Text file reader skipped for binary payload.');
       }
+    } else if (typeof fileOrBase64 === 'string') {
+      if (fileOrBase64.startsWith('data:')) {
+        const parts = fileOrBase64.split(';');
+        mimeType = parts[0].replace('data:', '');
+        base64Data = fileOrBase64.split(',')[1];
+      } else {
+        base64Data = fileOrBase64;
+        mimeType = fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
+      }
+      imageSrc = fileOrBase64.startsWith('data:image') ? fileOrBase64 : '';
     }
 
-    if (!base64Data || base64Data.length < 100) {
+    if (!base64Data || base64Data.length < 50) {
       return {
         isReadable: false,
-        errorMessage: "We couldn't analyze this file. Please try again with a clearer image or supported document."
+        errorMessage: "We couldn't read this file. Please upload a clear digital PDF or high-resolution photo."
       };
     }
 
-    // Step 3: Execute Gemini AI Vision API OCR if API key is present
+    console.log(`[DEBUG Payload Ready] ID: ${uploadId} | MIME: ${mimeType} | Base64 Length: ${base64Data.length} chars`);
+
+    // Execute Gemini AI Vision / Document Reader API if API key is present
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_VISION_API_KEY;
     if (apiKey) {
       try {
-        const aiExtracted = await callGeminiLabVisionAPI(base64Data, apiKey);
+        const aiExtracted = await callGeminiLabVisionAPI(base64Data, mimeType, apiKey);
+        
+        console.log(`[DEBUG Vision API Output] ID: ${uploadId}`, aiExtracted);
+
         if (aiExtracted && aiExtracted.isLabReport && Array.isArray(aiExtracted.testResults) && aiExtracted.testResults.length > 0) {
-          
           const sanitizedResults = sanitizeAndValidateResults(aiExtracted.testResults);
+          const riskInfo = calculateOverallRiskLevel(sanitizedResults);
 
           return {
             isReadable: true,
@@ -72,42 +80,25 @@ export async function analyzeLabReportDocument(fileOrBase64, fileName = '') {
             reportDate: aiExtracted.reportDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
             patientName: aiExtracted.patientName || 'Patient',
             totalTestsFound: sanitizedResults.length,
+            riskAssessment: riskInfo,
             overallSummary: generateOverallSummary(sanitizedResults),
             testResults: sanitizedResults,
             disclaimer: getSafetyDisclaimer()
           };
         }
       } catch (err) {
-        console.warn('[Lab Vision API Warning]:', err.message);
+        console.warn('[DEBUG Lab Vision API Warning]:', err.message);
       }
     }
 
-    // Step 4: Parse REAL text extracted directly from document lines (No mock / no random numbers!)
-    const realExtractedResults = parseRealTextFromDocument(rawTextContent, fileName);
+    // Secondary Parser: Real text regex parser for text-based PDF/documents
+    if (rawTextContent && rawTextContent.length > 20) {
+      const realExtractedResults = parseRealTextFromDocument(rawTextContent, fileName);
 
-    if (realExtractedResults && realExtractedResults.length > 0) {
-      const sanitizedResults = sanitizeAndValidateResults(realExtractedResults);
+      if (realExtractedResults && realExtractedResults.length > 0) {
+        const sanitizedResults = sanitizeAndValidateResults(realExtractedResults);
+        const riskInfo = calculateOverallRiskLevel(sanitizedResults);
 
-      return {
-        isReadable: true,
-        isLabReport: true,
-        uploadId: uploadId,
-        imageSrc: imageSrc,
-        laboratoryName: extractLabNameFromText(rawTextContent, fileName),
-        reportDate: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-        patientName: 'Patient',
-        totalTestsFound: sanitizedResults.length,
-        overallSummary: generateOverallSummary(sanitizedResults),
-        testResults: sanitizedResults,
-        disclaimer: getSafetyDisclaimer()
-      };
-    }
-
-    // Step 5: If file is an image scan without API key, perform client-side Canvas OCR text reader
-    if (imageSrc || ext !== 'pdf') {
-      const canvasExtracted = await readTextFromImageCanvas(base64Data);
-      if (canvasExtracted && canvasExtracted.length > 0) {
-        const sanitizedResults = sanitizeAndValidateResults(canvasExtracted);
         return {
           isReadable: true,
           isLabReport: true,
@@ -117,6 +108,7 @@ export async function analyzeLabReportDocument(fileOrBase64, fileName = '') {
           reportDate: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
           patientName: 'Patient',
           totalTestsFound: sanitizedResults.length,
+          riskAssessment: riskInfo,
           overallSummary: generateOverallSummary(sanitizedResults),
           testResults: sanitizedResults,
           disclaimer: getSafetyDisclaimer()
@@ -124,10 +116,12 @@ export async function analyzeLabReportDocument(fileOrBase64, fileName = '') {
       }
     }
 
-    // IF REAL EXTRACTION FAILS: RETURN ERROR (NO RANDOMIZED MASQUERADE DATA!)
+    // IF EXTRACTION FAILS OR API KEY IS MISSING: RETURN EXPLICIT ERROR
     return {
       isReadable: false,
-      errorMessage: "We couldn't read the test values from this report. Please upload a clear digital PDF or high-resolution photo."
+      errorMessage: apiKey 
+        ? "We couldn't read the test values from this report. Please upload a clearer PDF or high-resolution image." 
+        : "Vision API Key is not configured. Please set VITE_GEMINI_API_KEY in frontend/.env to enable live AI lab report extraction."
     };
 
   } catch (err) {
@@ -157,16 +151,12 @@ function readTextFromFile(file) {
   });
 }
 
-/**
- * Parses REAL test lines, numbers, units, and ranges directly from document text using Regular Expressions
- */
 function parseRealTextFromDocument(rawText, fileName) {
   if (!rawText || typeof rawText !== 'string') return [];
 
   const lines = rawText.split(/[\r\n]+/);
   const detected = [];
 
-  // RegEx patterns for common lab test items
   const testPatterns = [
     { name: 'HbA1c (Glycated Hemoglobin)', keywords: ['hba1c', 'glycated hemoglobin', 'a1c'], category: 'Blood Glucose & HbA1c' },
     { name: 'Fasting Blood Glucose', keywords: ['fasting glucose', 'fbg', 'fasting blood sugar', 'glucose fasting'], category: 'Blood Glucose & HbA1c' },
@@ -190,16 +180,11 @@ function parseRealTextFromDocument(rawText, fileName) {
     for (const testPattern of testPatterns) {
       const matchKeyword = testPattern.keywords.some(kw => lowerLine.includes(kw));
       if (matchKeyword) {
-        // Extract real numerical value written on that line
         const numMatch = line.match(/([0-9]+(?:\.[0-9]+)?)/);
         if (numMatch) {
           const val = numMatch[1];
-          
-          // Extract real unit if present
           const unitMatch = line.match(/(%|mg\/dL|g\/dL|mmol\/L|U\/L|x10\^9\/L|fl|pg)/i);
           const unit = unitMatch ? unitMatch[1] : 'Not provided';
-
-          // Extract real reference range if present
           const rangeMatch = line.match(/([0-9.]+\s*[-–—to]+\s*[0-9.]+|[<>]\s*[0-9.]+)/);
           const range = rangeMatch ? rangeMatch[1] : 'Not provided';
 
@@ -218,14 +203,6 @@ function parseRealTextFromDocument(rawText, fileName) {
   }
 
   return detected;
-}
-
-/**
- * Client-side Canvas Image Text Extraction Scanner
- */
-async function readTextFromImageCanvas(base64Data) {
-  // If no Gemini API key is configured, image scan extraction is unavailable without Vision API
-  return [];
 }
 
 function extractLabNameFromText(rawText, fileName) {
@@ -261,6 +238,53 @@ function sanitizeAndValidateResults(rawResults) {
       explanation: explanation
     };
   });
+}
+
+function calculateOverallRiskLevel(sanitizedResults) {
+  const total = sanitizedResults.length;
+  const criticalCount = sanitizedResults.filter(t => t.status === 'Critical').length;
+  const outOfRangeCount = sanitizedResults.filter(t => t.status === 'Above range' || t.status === 'Below range').length;
+  const withinRangeCount = total - outOfRangeCount - criticalCount;
+
+  if (criticalCount > 0 || outOfRangeCount >= 3) {
+    return {
+      level: 'HIGH RISK',
+      label: 'High Clinical Risk — Immediate Medical Follow-up Advised',
+      description: `${criticalCount > 0 ? criticalCount + ' critical result(s)' : outOfRangeCount + ' lab values outside reference ranges'}. Discuss these findings with your attending physician.`,
+      color: '#dc2626',
+      bg: '#fef2f2',
+      border: '#fecaca',
+      withinRangeCount,
+      outOfRangeCount,
+      criticalCount
+    };
+  }
+
+  if (outOfRangeCount > 0) {
+    return {
+      level: 'MODERATE RISK',
+      label: 'Moderate Risk — Clinical Attention Needed',
+      description: `${outOfRangeCount} test result(s) fall outside stated reference ranges. Follow up with your healthcare provider.`,
+      color: '#b45309',
+      bg: '#fffbeb',
+      border: '#fde68a',
+      withinRangeCount,
+      outOfRangeCount,
+      criticalCount: 0
+    };
+  }
+
+  return {
+    level: 'LOW RISK',
+    label: 'Low Risk — All Values Within Target Ranges',
+    description: `All ${total} analyzed test results fall within the reference ranges stated on this laboratory report.`,
+    color: '#166534',
+    bg: '#f0fdf4',
+    border: '#bbf7d0',
+    withinRangeCount: total,
+    outOfRangeCount: 0,
+    criticalCount: 0
+  };
 }
 
 function determineStatusFromStatedRange(resultStr, rangeStr) {
@@ -349,18 +373,21 @@ function getSafetyDisclaimer() {
   return "This information is provided to help you understand the laboratory report and is not a medical diagnosis. Laboratory results should be interpreted together with your symptoms, medical history, medications, and other clinical information by a qualified healthcare professional.";
 }
 
-async function callGeminiLabVisionAPI(base64Data, apiKey) {
+async function callGeminiLabVisionAPI(base64Data, mimeType, apiKey) {
   const prompt = `You are an OCR and Clinical Extraction System for Laboratory Reports.
-Extract exact information written on this lab report.
+Analyze the provided document (PDF or image) and extract exact information written on this lab report.
 
 CRITICAL EXTRACTION RULES:
-1. Do NOT modify any numerical result or number. Preserve exact values, decimals, and units.
-2. Extract the exact reference range written on the report. Do NOT invent or substitute third-party ranges.
-3. Identify test categories (e.g., Blood Glucose & HbA1c, Complete Blood Count, Lipid Profile, Liver Function, Kidney Function).
-4. If a unit or reference range is missing, return "Not provided".
-5. Do NOT diagnose any diseases or conditions.
+1. NON-LAB-REPORT CHECK: If the uploaded file is NOT a laboratory report (e.g. a photo of a face, selfie, phone, landscape, non-medical document), return:
+   {"isLabReport": false, "reason": "Not a laboratory report"}
 
-Return JSON:
+2. EXACT NUMERICAL EXTRACTION: Do NOT modify any numerical result or number. Preserve exact values, decimals, and units as written on the report.
+3. REFERENCE RANGE PRESERVATION: Extract the exact reference range written on the report. Do NOT invent or substitute third-party ranges.
+4. CATEGORIZATION: Identify test categories (e.g., Blood Glucose & HbA1c, Complete Blood Count, Lipid Profile, Liver Function, Kidney Function).
+5. MISSING VALUES: If a unit or reference range is missing, return "Not provided".
+6. NO DIAGNOSES: Do NOT diagnose diseases.
+
+Return JSON format ONLY:
 {
   "isLabReport": true,
   "laboratoryName": string,
@@ -378,6 +405,10 @@ Return JSON:
   ]
 }`;
 
+  const validMime = mimeType === 'application/pdf' ? 'application/pdf' : (mimeType.includes('png') ? 'image/png' : 'image/jpeg');
+
+  console.log(`[DEBUG Vision Request] Sending payload to gemini-1.5-flash | MIME: ${validMime} | Length: ${base64Data.length} chars`);
+
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -385,18 +416,22 @@ Return JSON:
       contents: [{
         parts: [
           { text: prompt },
-          { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+          { inline_data: { mime_type: validMime, data: base64Data } }
         ]
       }]
     })
   });
 
-  if (!response.ok) return null;
-  const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) return null;
+  if (!response.ok) {
+    console.error(`[DEBUG Lab Vision Error] HTTP ${response.status} ${response.statusText}`);
+    return null;
+  }
 
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  const data = await response.json();
+  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!rawText) return null;
+
+  const jsonMatch = rawText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) return null;
 
   return JSON.parse(jsonMatch[0]);

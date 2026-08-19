@@ -42,7 +42,9 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
     // Determine realistic active patient name
     const actualPatientName = (currentUser?.role === 'patient' && currentUser?.name && !currentUser.name.includes('Doctor') && !currentUser.name.includes('Practitioner'))
       ? currentUser.name
-      : 'Dinali Bhagya';
+      : (currentUser?.email ? currentUser.email.split('@')[0] : 'Patient User');
+
+    const actualPatientEmail = currentUser?.email || 'N/A';
 
     return [{
       id: 'p-1',
@@ -56,7 +58,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
       lastVisit: 'Today',
       nextAppointment: 'Today, 10:00 AM',
       weightKg: '72',
-      phone: 'dinali@glucocare.ai',
+      phone: actualPatientEmail,
       doctorNotes: 'Awaiting clinical tele-health checkup.'
     }];
   });
@@ -65,7 +67,7 @@ export const DoctorPortal = ({ activeTab = 'doctor_patients' }) => {
   
   // Appointments state: dynamically initialized with real patients
   const [appointments, setAppointments] = useState(() => {
-    const patientName = patients[0]?.name || 'Dinali Bhagya';
+    const patientName = patients[0]?.name || (currentUser?.email ? currentUser.email.split('@')[0] : 'Patient User');
     return [
       {
         id: 'apt-1',

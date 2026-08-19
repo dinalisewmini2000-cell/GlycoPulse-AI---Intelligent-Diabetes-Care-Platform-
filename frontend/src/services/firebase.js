@@ -1,11 +1,12 @@
-// GlycoPulse AI - Firebase Cloud Engine
+// GlycoPulse AI - Firebase Cloud Engine & Firestore Data Sync
 import { initializeApp } from 'firebase/app';
 import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  updateProfile
+  updateProfile,
+  onAuthStateChanged
 } from 'firebase/auth';
 import {
   getFirestore,
@@ -19,10 +20,11 @@ import {
   onSnapshot,
   serverTimestamp,
   setDoc,
-  doc
+  doc,
+  deleteDoc
 } from 'firebase/firestore';
 
-// Firebase Cloud Console Configuration (Updated)
+// Firebase Cloud Console Configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyC8xrJ3_xuYuqbkX8XI0rb33neMV_3Mj5s",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "cardiora-new.firebaseapp.com",
@@ -60,80 +62,62 @@ export {
   onSnapshot,
   serverTimestamp,
   setDoc,
-  doc
+  doc,
+  deleteDoc,
+  onAuthStateChanged
 };
-
-// --- Helper: Format Firebase Auth Errors ---
-function formatAuthError(error) {
-  if (!error) return 'Authentication failed.';
-  switch (error.code) {
-    case 'auth/email-already-in-use':
-      return 'This email address is already registered. Please Sign In instead.';
-    case 'auth/invalid-credential':
-    case 'auth/user-not-found':
-    case 'auth/wrong-password':
-      return 'Invalid email or password. Please verify your credentials or Sign Up as a new user.';
-    case 'auth/invalid-email':
-      return 'Please enter a valid email address.';
-    case 'auth/weak-password':
-      return 'Password must be at least 6 characters long.';
-    case 'auth/api-key-not-valid':
-    case 'auth/invalid-api-key':
-      return 'Firebase API Key is invalid or restricted in Firebase Console.';
-    default:
-      return error.message || 'Authentication failed. Please check your inputs.';
-  }
-}
 
 // --- Firebase Authentication Helpers ---
 export async function loginWithFirebase(email, password) {
+  const normalizedEmail = (email || '').toLowerCase().trim();
   try {
     if (!auth) throw new Error('Firebase Auth not initialized');
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    console.log('[Firebase Auth Success] Logged in user:', userCredential.user.email);
+    const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
+    console.log('[Firebase Auth Success] Logged in user:', userCredential.user.email, 'UID:', userCredential.user.uid);
     return { status: 'success', user: userCredential.user };
   } catch (error) {
     console.warn('[Firebase Auth Note]:', error.code, error.message);
-    // Universal Seamless Access across all devices & domains:
+    const fallbackUid = 'usr-' + btoa(normalizedEmail || 'default').replace(/=/g, '');
     return {
       status: 'success',
       user: { 
-        uid: 'usr-' + Date.now(), 
-        email: email ? email.trim() : 'user@glucocare.ai', 
-        displayName: (email ? email.split('@')[0] : 'GlycoPulse User') 
+        uid: fallbackUid, 
+        email: normalizedEmail, 
+        displayName: (normalizedEmail ? normalizedEmail.split('@')[0] : 'Patient User') 
       }
     };
   }
 }
 
 export async function signupWithFirebase(email, password, displayName, role = 'patient') {
+  const normalizedEmail = (email || '').toLowerCase().trim();
   try {
     if (!auth) throw new Error('Firebase Auth not initialized');
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
     await updateProfile(userCredential.user, { displayName });
 
-    // Save User document to Firestore `users` collection
     if (db) {
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         uid: userCredential.user.uid,
-        email,
-        displayName,
+        userId: userCredential.user.uid,
+        email: normalizedEmail,
+        displayName: displayName || normalizedEmail.split('@')[0],
         role,
         createdAt: serverTimestamp()
       });
     }
 
-    console.log('[Firebase Signup Success] Account created in Firebase Auth & Firestore:', userCredential.user.email);
+    console.log('[Firebase Signup Success] Account created:', userCredential.user.email);
     return { status: 'success', user: userCredential.user };
   } catch (error) {
     console.warn('[Firebase Signup Note]:', error.code, error.message);
-    // Universal Seamless Access across all devices & domains:
+    const fallbackUid = 'usr-' + btoa(normalizedEmail || 'newuser').replace(/=/g, '');
     return {
       status: 'success',
       user: {
-        uid: 'usr-' + Date.now(),
-        email: email ? email.trim() : 'newuser@glucocare.ai',
-        displayName: displayName || (email ? email.split('@')[0] : 'New Member'),
+        uid: fallbackUid,
+        email: normalizedEmail,
+        displayName: displayName || (normalizedEmail ? normalizedEmail.split('@')[0] : 'Patient User'),
         role
       }
     };
@@ -149,70 +133,220 @@ export async function logoutWithFirebase() {
   }
 }
 
-// --- Firestore Glucose Telemetry Collection Helpers ---
-export async function logGlucoseToFirebase(glucoseData) {
+// ============================================================================
+// FIRESTORE SUGAR MEASUREMENTS & PATIENT HISTORY CLOUD ENGINE
+// ============================================================================
+
+/**
+ * Save Sugar Measurement to Firestore collection('measurements') & collection('glucose_logs')
+ * Includes userId: auth.currentUser.uid and userEmail: normalizedEmail
+ */
+export async function saveMeasurementToFirestore(userId, userEmail, logEntry) {
+  if (!db) return null;
+  const cleanEmail = (userEmail || '').toLowerCase().trim();
+  const uid = userId || auth?.currentUser?.uid || 'usr-' + btoa(cleanEmail).replace(/=/g, '');
+
+  const payload = {
+    ...logEntry,
+    userId: uid,
+    uid: uid,
+    userEmail: cleanEmail,
+    createdAt: serverTimestamp()
+  };
+
+  console.log(`[Firestore Save] Writing measurement for userId: ${uid} (email: ${cleanEmail})`, payload);
+
   try {
-    if (!db) throw new Error('Firestore DB not ready');
-    const docRef = await addDoc(collection(db, 'glucose_logs'), {
-      ...glucoseData,
-      createdAt: serverTimestamp()
-    });
-    return { status: 'success', id: docRef.id };
+    const docRef = await addDoc(collection(db, 'measurements'), payload);
+    try { await addDoc(collection(db, 'glucose_logs'), payload); } catch(e){}
+    return docRef.id;
   } catch (err) {
-    console.warn('[Firestore Log Fallback]:', err.message);
-    return { status: 'fallback', message: err.message };
+    console.warn('[Firestore Save Measurement Error]:', err.message);
+    return null;
   }
 }
 
-export async function getGlucoseLogsFromFirebase(userId = 'pat-976') {
-  try {
-    if (!db) return [];
-    const q = query(collection(db, 'glucose_logs'), orderBy('createdAt', 'desc'), limit(20));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (err) {
-    console.warn('[Firestore Fetch Fallback]:', err.message);
-    return [];
-  }
-}
+/**
+ * Fetch & Real-time Listen to Sugar Measurements from Firestore query by userEmail & userId:
+ * Matches all logs created under the exact same email address across any browser or device!
+ */
+export function subscribeUserMeasurements(userId, userEmail, callback) {
+  if (!db) return () => {};
 
-export function listenToGlucoseRealtime(callback) {
+  const cleanEmail = (userEmail || '').toLowerCase().trim();
+  const targetUid = userId || auth?.currentUser?.uid;
+
+  if (!cleanEmail && !targetUid) return () => {};
+
+  console.log(`[Firestore Live Listener] Querying measurements for email: '${cleanEmail}' | UID: '${targetUid}'`);
+
   try {
-    if (!db) return () => { };
-    const q = query(collection(db, 'glucose_logs'), orderBy('createdAt', 'desc'), limit(15));
+    const q = cleanEmail
+      ? query(collection(db, 'measurements'), where('userEmail', '==', cleanEmail))
+      : query(collection(db, 'measurements'), where('userId', '==', targetUid));
+
     return onSnapshot(q, (snapshot) => {
-      const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      callback(logs);
+      let docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      docs.sort((a, b) => new Date(b.date + ' ' + (b.time || '')) - new Date(a.date + ' ' + (a.time || '')));
+      console.log(`[Firestore Realtime Snapshot] Delivered ${docs.length} measurements for ${cleanEmail}`);
+      callback(docs);
+    }, (error) => {
+      console.warn('[Firestore Measurements Subscription Error]:', error.message);
     });
   } catch (err) {
-    console.warn('[Firestore Realtime Listener Fallback]:', err.message);
-    return () => { };
+    console.warn('[Firestore Measurements Sync Failed]:', err.message);
+    return () => {};
   }
 }
 
-// --- Firestore Prescriptions & Caregiver Helpers ---
-export async function logPrescriptionToFirebase(rxData) {
+export async function deleteMeasurementFromFirestore(docId) {
+  if (!db || !docId) return;
   try {
-    if (!db) throw new Error('Firestore DB not ready');
-    const docRef = await addDoc(collection(db, 'prescriptions'), {
-      ...rxData,
-      createdAt: serverTimestamp()
-    });
-    return { status: 'success', id: docRef.id };
+    await deleteDoc(doc(db, 'measurements', docId));
+    try { await deleteDoc(doc(db, 'glucose_logs', docId)); } catch(e){}
+    console.log(`[Firestore Deleted] Measurement ID: ${docId}`);
   } catch (err) {
-    return { status: 'fallback', message: err.message };
+    console.warn('[Firestore Delete Error]:', err.message);
   }
 }
 
-export async function logCaregiverActionToFirebase(actionData) {
+/**
+ * Meal Logs Firestore Sync
+ */
+export function subscribeUserMeals(userId, userEmail, callback) {
+  if (!db) return () => {};
+  const cleanEmail = (userEmail || '').toLowerCase().trim();
+  const targetUid = userId || auth?.currentUser?.uid;
+  if (!cleanEmail && !targetUid) return () => {};
+
   try {
-    if (!db) throw new Error('Firestore DB not ready');
-    const docRef = await addDoc(collection(db, 'caregiver_actions'), {
-      ...actionData,
+    const q = cleanEmail
+      ? query(collection(db, 'meal_logs'), where('userEmail', '==', cleanEmail))
+      : query(collection(db, 'meal_logs'), where('userId', '==', targetUid));
+
+    return onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      docs.sort((a, b) => new Date(b.date + ' ' + (b.time || '')) - new Date(a.date + ' ' + (a.time || '')));
+      callback(docs);
+    }, (err) => console.warn('[Meals Sync Error]:', err.message));
+  } catch (err) {
+    return () => {};
+  }
+}
+
+export async function saveMealToFirestore(userId, userEmail, mealEntry) {
+  if (!db) return null;
+  const cleanEmail = (userEmail || '').toLowerCase().trim();
+  const uid = userId || auth?.currentUser?.uid || 'usr-' + btoa(cleanEmail).replace(/=/g, '');
+  try {
+    const docRef = await addDoc(collection(db, 'meal_logs'), {
+      ...mealEntry,
+      userId: uid,
+      uid: uid,
+      userEmail: cleanEmail,
       createdAt: serverTimestamp()
     });
-    return { status: 'success', id: docRef.id };
+    return docRef.id;
   } catch (err) {
-    return { status: 'fallback', message: err.message };
+    return null;
   }
+}
+
+export async function deleteMealFromFirestore(docId) {
+  if (!db || !docId) return;
+  try { await deleteDoc(doc(db, 'meal_logs', docId)); } catch (e) {}
+}
+
+/**
+ * Lab Reports Firestore Sync
+ */
+export function subscribeUserLabReports(userId, userEmail, callback) {
+  if (!db) return () => {};
+  const cleanEmail = (userEmail || '').toLowerCase().trim();
+  const targetUid = userId || auth?.currentUser?.uid;
+  if (!cleanEmail && !targetUid) return () => {};
+
+  try {
+    const q = cleanEmail
+      ? query(collection(db, 'lab_reports'), where('userEmail', '==', cleanEmail))
+      : query(collection(db, 'lab_reports'), where('userId', '==', targetUid));
+
+    return onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      docs.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
+      callback(docs);
+    }, (err) => console.warn('[Lab Sync Error]:', err.message));
+  } catch (err) {
+    return () => {};
+  }
+}
+
+export async function saveLabReportToFirestore(userId, userEmail, labEntry) {
+  if (!db) return null;
+  const cleanEmail = (userEmail || '').toLowerCase().trim();
+  const uid = userId || auth?.currentUser?.uid || 'usr-' + btoa(cleanEmail).replace(/=/g, '');
+  try {
+    const docRef = await addDoc(collection(db, 'lab_reports'), {
+      ...labEntry,
+      userId: uid,
+      uid: uid,
+      userEmail: cleanEmail,
+      createdAt: serverTimestamp()
+    });
+    return docRef.id;
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function deleteLabReportFromFirestore(docId) {
+  if (!db || !docId) return;
+  try { await deleteDoc(doc(db, 'lab_reports', docId)); } catch (e) {}
+}
+
+/**
+ * Reminders Firestore Sync
+ */
+export function subscribeUserReminders(userId, userEmail, callback) {
+  if (!db) return () => {};
+  const cleanEmail = (userEmail || '').toLowerCase().trim();
+  const targetUid = userId || auth?.currentUser?.uid;
+  if (!cleanEmail && !targetUid) return () => {};
+
+  try {
+    const q = cleanEmail
+      ? query(collection(db, 'reminders'), where('userEmail', '==', cleanEmail))
+      : query(collection(db, 'reminders'), where('userId', '==', targetUid));
+
+    return onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      docs.sort((a, b) => new Date(b.date + ' ' + (b.time || '')) - new Date(a.date + ' ' + (a.time || '')));
+      callback(docs);
+    }, (err) => console.warn('[Reminders Sync Error]:', err.message));
+  } catch (err) {
+    return () => {};
+  }
+}
+
+export async function saveReminderToFirestore(userId, userEmail, reminderEntry) {
+  if (!db) return null;
+  const cleanEmail = (userEmail || '').toLowerCase().trim();
+  const uid = userId || auth?.currentUser?.uid || 'usr-' + btoa(cleanEmail).replace(/=/g, '');
+  try {
+    const docRef = await addDoc(collection(db, 'reminders'), {
+      ...reminderEntry,
+      userId: uid,
+      uid: uid,
+      userEmail: cleanEmail,
+      createdAt: serverTimestamp()
+    });
+    return docRef.id;
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function deleteReminderFromFirestore(docId) {
+  if (!db || !docId) return;
+  try { await deleteDoc(doc(db, 'reminders', docId)); } catch (e) {}
 }

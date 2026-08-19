@@ -18,9 +18,9 @@ export const PDFExportModal = () => {
     doc.setTextColor(2, 132, 199);
     doc.text('GlucoCare - Diabetes Health Summary Report', 14, 22);
 
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Patient: ${currentUser?.name || 'Dinali Bhagya'} (${currentUser?.email || 'dinali@glucocare.ai'})`, 14, 30);
+    const pName = currentUser?.name || (currentUser?.email ? currentUser.email.split('@')[0] : 'Patient User');
+    const pEmail = currentUser?.email || 'N/A';
+    doc.text(`Patient: ${pName} (${pEmail})`, 14, 30);
     doc.text(`Time Frame: Past ${dateRange} Days | Generated: ${new Date().toLocaleDateString()}`, 14, 36);
 
     doc.setLineWidth(0.5);

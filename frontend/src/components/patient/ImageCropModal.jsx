@@ -1,13 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ZoomIn, ZoomOut, RotateCw, Check, X, RefreshCw, Move, Crop } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ZoomIn, ZoomOut, RotateCw, Check, X, RefreshCw, Crop } from 'lucide-react';
 
 export const ImageCropModal = ({ imageSrc, onConfirmCrop, onCancel }) => {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
-  const [cropBox, setCropBox] = useState({ x: 10, y: 10, width: 80, height: 80 }); // percentage based
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
+  const [cropBox, setCropBox] = useState({ x: 5, y: 5, width: 90, height: 90 }); // Default 90% full view
   const containerRef = useRef(null);
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.15, 2.5));
@@ -16,27 +13,31 @@ export const ImageCropModal = ({ imageSrc, onConfirmCrop, onCancel }) => {
   const handleReset = () => {
     setZoom(1);
     setRotation(0);
-    setCropBox({ x: 10, y: 10, width: 80, height: 80 });
+    setCropBox({ x: 5, y: 5, width: 90, height: 90 });
   };
 
   const handleConfirm = () => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
+      const width = img.naturalWidth || img.width || 800;
+      const height = img.naturalHeight || img.height || 600;
+
+      const cropX = (cropBox.x / 100) * width;
+      const cropY = (cropBox.y / 100) * height;
+      const cropW = (cropBox.width / 100) * width;
+      const cropH = (cropBox.height / 100) * height;
+
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
 
-      // Crop coordinates calculation
-      const cropX = (cropBox.x / 100) * img.naturalWidth;
-      const cropY = (cropBox.y / 100) * img.naturalHeight;
-      const cropW = (cropBox.width / 100) * img.naturalWidth;
-      const cropH = (cropBox.height / 100) * img.naturalHeight;
-
-      canvas.width = Math.max(100, cropW);
-      canvas.height = Math.max(100, cropH);
+      // Preserve high resolution for AI vision (min 600px target)
+      const targetDim = Math.max(cropW, cropH);
+      const scale = targetDim > 0 ? Math.max(1, 600 / targetDim) : 1;
+      canvas.width = Math.round(cropW * scale);
+      canvas.height = Math.round(cropH * scale);
 
       ctx.save();
-      // Handle rotation
       if (rotation !== 0) {
         ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.rotate((rotation * Math.PI) / 180);
@@ -54,7 +55,11 @@ export const ImageCropModal = ({ imageSrc, onConfirmCrop, onCancel }) => {
       }
       ctx.restore();
 
-      const croppedBase64 = canvas.toDataURL('image/jpeg', 0.9);
+      const croppedBase64 = canvas.toDataURL('image/jpeg', 0.92);
+      
+      // Development Debug Information
+      console.log(`[DEBUG Crop Tool] Generated Cropped Base64: ${canvas.width}x${canvas.height}px | Output Length: ${croppedBase64.length} chars`);
+
       onConfirmCrop(croppedBase64);
     };
     img.src = imageSrc;
@@ -69,10 +74,10 @@ export const ImageCropModal = ({ imageSrc, onConfirmCrop, onCancel }) => {
           <div>
             <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Crop size={18} color="#0284c7" />
-              <span>Adjust & Crop Food Photo</span>
+              <span>Crop & Confirm Food Photo</span>
             </h3>
             <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
-              Ensure your complete food plate is inside the selection frame before scanning.
+              Ensure your complete food plate is visible inside the frame before scanning.
             </p>
           </div>
           <button onClick={onCancel} style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', borderRadius: '50%', padding: '0.4rem' }}>
@@ -111,11 +116,11 @@ export const ImageCropModal = ({ imageSrc, onConfirmCrop, onCancel }) => {
               pointerEvents: 'none',
               display: 'flex',
               alignItems: 'center',
-              justify: 'center'
+              justifyContent: 'center'
             }}
           >
             <span style={{ background: '#0284c7', color: '#ffffff', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 800 }}>
-              CROP SELECTION FRAME
+              AI SCANNING FRAME
             </span>
           </div>
         </div>
@@ -142,21 +147,21 @@ export const ImageCropModal = ({ imageSrc, onConfirmCrop, onCancel }) => {
           </div>
         </div>
 
-        {/* Expand / Fit Quick Presets */}
+        {/* Frame Presets */}
         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
           <button 
             type="button" 
             onClick={() => setCropBox({ x: 5, y: 5, width: 90, height: 90 })} 
             style={{ flex: 1, padding: '0.4rem', fontSize: '0.78rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#334155', fontWeight: 700, cursor: 'pointer' }}
           >
-            Expand Frame (Full Plate)
+            Full Plate (90%)
           </button>
           <button 
             type="button" 
             onClick={() => setCropBox({ x: 20, y: 20, width: 60, height: 60 })} 
             style={{ flex: 1, padding: '0.4rem', fontSize: '0.78rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#334155', fontWeight: 700, cursor: 'pointer' }}
           >
-            Center Crop
+            Center Crop (60%)
           </button>
         </div>
 
@@ -167,7 +172,7 @@ export const ImageCropModal = ({ imageSrc, onConfirmCrop, onCancel }) => {
           </button>
           <button type="button" onClick={handleConfirm} className="btn-primary" style={{ flex: 1, justifyContent: 'center', background: '#0284c7', padding: '0.65rem' }}>
             <Check size={16} />
-            <span>Confirm & Scan Image</span>
+            <span>Confirm & Analyze</span>
           </button>
         </div>
 

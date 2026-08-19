@@ -75,30 +75,33 @@ export const LoginModal = () => {
     setLoading(true);
     setError('');
 
-    const activeName = name.trim() || (selectedRole === 'admin' ? 'System Administrator' : 'Dinali Bhagya');
+    const activeName = name.trim() || (email ? email.split('@')[0] : (selectedRole === 'admin' ? 'Administrator' : 'Patient User'));
 
     try {
+      let fbRes = null;
       if (isSignUp) {
         try {
-          await signupWithFirebase(email, password, activeName, selectedRole);
+          fbRes = await signupWithFirebase(email, password, activeName, selectedRole);
         } catch (e) {}
 
         await signupUser({
+          uid: fbRes?.user?.uid,
           name: activeName,
-          email,
-          password,
+          email: fbRes?.user?.email || email,
+          password: password,
           role: selectedRole,
-          diabetesType
+          diabetesType: diabetesType
         });
       } else {
         try {
-          await loginWithFirebase(email, password);
+          fbRes = await loginWithFirebase(email, password);
         } catch (e) {}
 
         await loginUser({
-          name: activeName,
-          email,
-          password,
+          uid: fbRes?.user?.uid,
+          name: fbRes?.user?.displayName || activeName,
+          email: fbRes?.user?.email || email,
+          password: password,
           role: selectedRole
         });
       }

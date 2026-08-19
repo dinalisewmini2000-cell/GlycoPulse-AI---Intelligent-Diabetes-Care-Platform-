@@ -21,16 +21,16 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
   const isCaregiverUser = currentUser?.role === 'caregiver';
 
   const linkedPatientName = isCaregiverUser 
-    ? (currentUser?.linkedPatientName || 'Dinali Bhagya') 
-    : (currentUser?.name || 'Dinali Bhagya');
+    ? (currentUser?.linkedPatientName || 'Patient User') 
+    : (currentUser?.name || (currentUser?.email ? currentUser.email.split('@')[0] : 'Patient User'));
 
   const patientPhone = isCaregiverUser 
     ? (currentUser?.linkedPatientPhone || '+94 77 123 4567') 
     : (currentUser?.phone || '+94 77 123 4567');
 
   const patientEmergencyEmail = isCaregiverUser 
-    ? (currentUser?.linkedPatientEmail || 'dinali@glucocare.ai') 
-    : (currentUser?.emergencyEmail || 'dinali@glucocare.ai');
+    ? (currentUser?.linkedPatientEmail || 'patient@example.com') 
+    : (currentUser?.emergencyEmail || currentUser?.email || 'patient@example.com');
 
   const [patientData, setPatientData] = useState({
     patientName: linkedPatientName,
@@ -58,7 +58,7 @@ export const CaregiverPortal = ({ activeTab = 'caregiver_feed' }) => {
 
   // Modal States
   const [showSmsModal, setShowSmsModal] = useState(false);
-  const [smsText, setSmsText] = useState(`Hi ${currentUser?.name || 'Dinali'}, checking in on your blood sugar reading!`);
+  const [smsText, setSmsText] = useState(`Hi, checking in on your blood sugar reading!`);
   const [smsSent, setSmsSent] = useState(false);
 
   const [showNoteModal, setShowNoteModal] = useState(false);

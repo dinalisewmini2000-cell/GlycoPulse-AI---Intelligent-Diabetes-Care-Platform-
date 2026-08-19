@@ -3,12 +3,21 @@ import { useApp } from '../../context/AppContext';
 import { Activity, LogIn, ArrowRight } from 'lucide-react';
 
 export const LandingPage = () => {
-  const { loginUser } = useApp();
+  const { loginUser, setAuthModalOpen } = useApp();
+  const [emailInput, setEmailInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
 
-  const handleEnterPortal = () => {
+  const handleEnterPortal = (e) => {
+    e.preventDefault();
+    if (!emailInput.trim()) {
+      setAuthModalOpen(true);
+      return;
+    }
+    const cleanEmail = emailInput.trim().toLowerCase();
+    const cleanName = nameInput.trim() || cleanEmail.split('@')[0];
     loginUser({
-      name: 'Dinali Bhagya',
-      email: 'dinali@glucocare.ai',
+      name: cleanName,
+      email: cleanEmail,
       role: 'patient'
     });
   };
@@ -34,29 +43,56 @@ export const LandingPage = () => {
         </div>
 
         {/* Enter Portal Panel */}
-        <div className="glass-panel" style={{ width: '100%', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', background: 'var(--bg-secondary)' }}>
-          <div style={{ textAlign: 'left' }}>
+        <form onSubmit={handleEnterPortal} className="glass-panel" style={{ width: '100%', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.1rem', background: 'var(--bg-secondary)', textAlign: 'left' }}>
+          <div>
             <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
-              Welcome back, Dinali
+              Access Patient Care Portal
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Click below to access your daily glucose dashboard and health logs.
+              Enter your email address to open your daily glucose dashboard and health logs.
             </p>
           </div>
 
+          <div>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>
+              YOUR EMAIL ADDRESS
+            </label>
+            <input 
+              type="email" 
+              required
+              placeholder="e.g. user@example.com"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>
+              YOUR NAME (OPTIONAL)
+            </label>
+            <input 
+              type="text" 
+              placeholder="e.g. John Smith"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+            />
+          </div>
+
           <button 
-            onClick={handleEnterPortal} 
+            type="submit"
             className="btn-primary" 
-            style={{ width: '100%', justifyContent: 'center', padding: '0.85rem', fontSize: '1rem' }}
+            style={{ width: '100%', justifyContent: 'center', padding: '0.85rem', fontSize: '1rem', marginTop: '0.5rem' }}
           >
-            <span>Open Diabetes Portal</span>
+            <span>Enter Patient Portal</span>
             <ArrowRight size={18} />
           </button>
-        </div>
+        </form>
 
       </div>
 
-      <footer style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', borderTop: '1px solid var(--border-color)', marginTop: 'auto' }}>
+      <footer style={{ padding: '1.5rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)' }}>
         GlucoCare Diabetes Care Portal &copy; {new Date().getFullYear()}
       </footer>
 

@@ -223,25 +223,62 @@ export const LabReportsPage = () => {
             {analysisResult && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 
-                {/* Overview Card */}
-                <div style={{ background: '#f8fafc', padding: '1rem 1.1rem', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
-                  <div>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>{analysisResult.laboratoryName}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.15rem' }}>
-                      Report Date: <strong>{analysisResult.reportDate}</strong> | Tests Found: <strong>{analysisResult.totalTestsFound}</strong>
+                {/* Essential Report Details & Patient Risk Assessment Header Card */}
+                <div style={{ background: '#ffffff', padding: '1.1rem 1.25rem', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.85rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.76rem', textTransform: 'uppercase', tracking: '0.05em', color: '#64748b', fontWeight: 700 }}>Essential Report Details</div>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '0.1rem' }}>{analysisResult.laboratoryName}</div>
+                      <div style={{ fontSize: '0.82rem', color: '#475569', marginTop: '0.2rem', display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+                        <span>Patient: <strong>{analysisResult.patientName}</strong></span>
+                        <span>Date: <strong>{analysisResult.reportDate}</strong></span>
+                        <span>Tests Extracted: <strong>{analysisResult.totalTestsFound}</strong></span>
+                      </div>
                     </div>
+
+                    {/* Patient Risk Level Badge */}
+                    {analysisResult.riskAssessment && (
+                      <div style={{ background: analysisResult.riskAssessment.bg, border: `1px solid ${analysisResult.riskAssessment.border}`, padding: '0.5rem 0.85rem', borderRadius: '8px', textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.72rem', fontWeight: 800, color: analysisResult.riskAssessment.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Patient Risk Assessment
+                        </div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 900, color: analysisResult.riskAssessment.color, marginTop: '0.1rem' }}>
+                          {analysisResult.riskAssessment.level}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button 
-                      type="button" 
-                      onClick={() => setShowOriginalDoc(!showOriginalDoc)} 
-                      className="btn-outline" 
-                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: '#cbd5e1' }}
-                    >
-                      <Eye size={14} />
-                      <span>{showOriginalDoc ? 'Hide Original Document' : 'View Original Report'}</span>
-                    </button>
+                  {/* Risk Level Description & Breakdown Pill */}
+                  {analysisResult.riskAssessment && (
+                    <div style={{ background: analysisResult.riskAssessment.bg, border: `1px solid ${analysisResult.riskAssessment.border}`, padding: '0.75rem 0.95rem', borderRadius: '8px', fontSize: '0.82rem', color: analysisResult.riskAssessment.color, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem' }}>
+                      <div style={{ fontWeight: 600 }}>{analysisResult.riskAssessment.label} — {analysisResult.riskAssessment.description}</div>
+                      <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.76rem', fontWeight: 800 }}>
+                        <span style={{ background: '#ffffff', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.1)' }}>
+                          {analysisResult.riskAssessment.withinRangeCount} Within Range
+                        </span>
+                        {analysisResult.riskAssessment.outOfRangeCount > 0 && (
+                          <span style={{ background: '#ffffff', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.1)', color: '#dc2626' }}>
+                            {analysisResult.riskAssessment.outOfRangeCount} Out of Range
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                    {analysisResult.imageSrc && (
+                      <button 
+                        type="button" 
+                        onClick={() => setShowOriginalDoc(!showOriginalDoc)} 
+                        className="btn-outline" 
+                        style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: '#cbd5e1' }}
+                      >
+                        <Eye size={14} />
+                        <span>{showOriginalDoc ? 'Hide Original Document' : 'View Original Report'}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -249,7 +286,7 @@ export const LabReportsPage = () => {
                 <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', padding: '0.85rem 1rem', borderRadius: '10px', color: '#0369a1', fontSize: '0.84rem', lineHeight: 1.45 }}>
                   <div style={{ fontWeight: 800, color: '#0284c7', marginBottom: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                     <FileCheck size={16} />
-                    <span>Overall Report Summary</span>
+                    <span>Overall Clinical Summary</span>
                   </div>
                   <div>{analysisResult.overallSummary}</div>
                 </div>

@@ -213,6 +213,24 @@ export const MealsPage = () => {
     setDetectedItemsList(processed);
   };
 
+  const handleAddMissingPortion = () => {
+    const defaultName = 'Side Item / Curry';
+    const nut = calculateItemNutrition(defaultName, 100);
+    const newItem = {
+      food: defaultName,
+      grams: 100,
+      portion: '100 g',
+      calories: nut.calories,
+      carbs: nut.carbs,
+      protein: nut.protein,
+      fat: nut.fat,
+      confidence: 100
+    };
+    const updated = [...detectedItemsList, newItem];
+    setDetectedItemsList(updated);
+    setEditFoodName(updated.map(i => i.food).join(', '));
+  };
+
   const handleRemoveItem = (index) => {
     const updated = detectedItemsList.filter((_, i) => i !== index);
     setDetectedItemsList(updated);
@@ -508,17 +526,22 @@ export const MealsPage = () => {
               </div>
             )}
 
-            {/* RESULT CASE A: NO FOOD OR QUALITY ISSUE */}
+            {/* RESULT CASE: NO FOOD, QUALITY ISSUE, OR API ERROR */}
             {analysisResult && !analysisResult.isFood && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '1.25rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', textAlign: 'center' }}>
                 <AlertCircle size={36} style={{ margin: '0 auto', color: '#dc2626' }} />
                 <div>
                   <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#991b1b', marginBottom: '0.35rem' }}>
-                    {analysisResult.errorType === 'QUALITY_ISSUE' ? 'Unclear Image' : 'No Food Detected'}
+                    {analysisResult.errorType === 'API_ERROR' ? 'Unable to Analyze Image' : analysisResult.errorType === 'QUALITY_ISSUE' ? 'Unclear Image' : 'No Recognizable Food Detected'}
                   </h4>
                   <p style={{ fontSize: '0.85rem', color: '#7f1d1d', lineHeight: 1.45 }}>
-                    {analysisResult.statusText || 'We couldn\'t identify any edible food items in this image.'}
+                    {analysisResult.statusText || 'Unable to analyze this image. Please try again.'}
                   </p>
+                  {analysisResult.subText && (
+                    <p style={{ fontSize: '0.78rem', color: '#991b1b', marginTop: '0.35rem' }}>
+                      {analysisResult.subText}
+                    </p>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center' }}>
@@ -593,6 +616,14 @@ export const MealsPage = () => {
                     <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       Itemized Foods ({detectedItemsList.length}) & Gram Portion Sizes
                     </span>
+                    <button
+                      type="button"
+                      onClick={handleAddMissingPortion}
+                      style={{ fontSize: '0.74rem', padding: '0.2rem 0.6rem', borderRadius: '6px', border: '1px solid #0284c7', background: '#e0f2fe', color: '#0284c7', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                    >
+                      <PlusCircle size={13} />
+                      <span>+ Add Missing Portion</span>
+                    </button>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', marginBottom: '0.75rem' }}>

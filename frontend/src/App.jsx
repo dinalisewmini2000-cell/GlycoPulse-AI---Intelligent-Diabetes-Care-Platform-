@@ -12,7 +12,6 @@ import { CalendarPage } from './components/patient/CalendarPage';
 import { LabReportsPage } from './components/patient/LabReportsPage';
 
 // Common Components
-import { AIChatWidget } from './components/common/AIChatWidget';
 import { PDFExportModal } from './components/common/PDFExportModal';
 import { LoginModal } from './components/common/LoginModal';
 
@@ -63,7 +62,6 @@ const AppShell = () => {
         </div>
       )}
 
-      <AIChatWidget />
       <PDFExportModal />
       <LoginModal />
     </div>

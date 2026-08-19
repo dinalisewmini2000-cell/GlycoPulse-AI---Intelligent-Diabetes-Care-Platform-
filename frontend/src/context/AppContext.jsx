@@ -1,5 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiService } from '../services/apiService';
+import { 
+  auth,
+  onAuthStateChanged,
+  subscribeUserMeasurements,
+  saveMeasurementToFirestore,
+  deleteMeasurementFromFirestore,
+  subscribeUserMeals,
+  saveMealToFirestore,
+  deleteMealFromFirestore,
+  subscribeUserLabReports,
+  saveLabReportToFirestore,
+  deleteLabReportFromFirestore,
+  subscribeUserReminders,
+  saveReminderToFirestore,
+  deleteReminderFromFirestore
+} from '../services/firebase';
 
 const AppContext = createContext();
 
@@ -16,8 +31,8 @@ export const AppProvider = ({ children }) => {
 
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const auth = localStorage.getItem('glucocare_auth');
-    if (auth !== null) return auth === 'true';
+    const authFlag = localStorage.getItem('glucocare_auth');
+    if (authFlag !== null) return authFlag === 'true';
     return false;
   });
 
@@ -28,125 +43,111 @@ export const AppProvider = ({ children }) => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.email) return parsed;
+        if (parsed && (parsed.uid || parsed.email)) return parsed;
       } catch (err) {}
     }
-    return {
-      id: 'usr-101',
-      name: 'Dinali Bhagya',
-      email: 'dinali@glucocare.ai',
-      role: 'patient'
-    };
+    return null;
   });
 
-  // Helper to derive storage keys based on authenticated user email
-  const getUserStorageKey = (prefix, emailOverride = null) => {
-    const email = emailOverride || currentUser?.email || 'default_patient';
-    return `glucocare_${prefix}_${email.toLowerCase().trim()}`;
-  };
+  const currentEmail = currentUser?.email || '';
+  const currentUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid || '';
 
-  // 1. Glucose Readings State (Scoped per account)
-  const [glucoseLogs, setGlucoseLogs] = useState(() => {
-    const key = getUserStorageKey('glucose');
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      } catch (err) {}
-    }
-    // Default initial seed for default patient
-    return [
-      { id: 'g-1', date: '2026-08-18', time: '8:00 AM', value: 110, context: 'Before breakfast', notes: 'Fasting check' },
-      { id: 'g-2', date: '2026-08-18', time: '1:00 PM', value: 145, context: 'After lunch', notes: 'Walked 15 mins' },
-      { id: 'g-3', date: '2026-08-18', time: '7:00 PM', value: 168, context: 'Before dinner', notes: '' }
-    ];
-  });
+  // 1. Glucose Readings State (Populated strictly from Firestore Cloud, ZERO localStorage)
+  const [glucoseLogs, setGlucoseLogs] = useState([]);
 
-  // 2. Meal Logs State (Scoped per account)
-  const [mealLogs, setMealLogs] = useState(() => {
-    const key = getUserStorageKey('meals');
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      } catch (err) {}
-    }
-    return [
-      { id: 'm-1', date: '2026-08-18', mealType: 'Breakfast', time: '8:00 AM', food: 'Eggs, bread and tea', notes: 'Whole wheat bread' },
-      { id: 'm-2', date: '2026-08-18', mealType: 'Lunch', time: '1:00 PM', food: 'Rice, chicken and vegetables', notes: 'Balanced meal' },
-      { id: 'm-3', date: '2026-08-18', mealType: 'Dinner', time: '7:30 PM', food: 'Rice and vegetables', notes: 'Light dinner' }
-    ];
-  });
+  // 2. Meal Logs State (Populated strictly from Firestore Cloud)
+  const [mealLogs, setMealLogs] = useState([]);
 
-  // 3. Health Reminders State (Scoped per account)
-  const [reminders, setReminders] = useState(() => {
-    const key = getUserStorageKey('reminders');
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      } catch (err) {}
-    }
-    return [
-      { id: 'r-1', title: 'Fasting Glucose Check', date: '2026-08-19', time: '8:00 AM', category: 'Glucose Check' },
-      { id: 'r-2', title: 'Quarterly HbA1c Lab Test', date: '2026-08-25', time: '9:00 AM', category: 'Lab Test' },
-      { id: 'r-3', title: 'Evening Glucose Check', date: '2026-08-19', time: '9:00 PM', category: 'Glucose Check' }
-    ];
-  });
+  // 3. Health Reminders State (Populated strictly from Firestore Cloud)
+  const [reminders, setReminders] = useState([]);
 
-  // 4. Lab Reports State (Scoped per account)
-  const [labReports, setLabReports] = useState(() => {
-    const key = getUserStorageKey('labs');
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      } catch (err) {}
-    }
-    return [
-      { id: 'l-1', name: 'HbA1c Lab Report', date: '18 Aug 2026', result: '6.5%', status: 'Within Target' },
-      { id: 'l-2', name: 'Fasting Lipid Profile', date: '10 Jun 2026', result: 'Normal (Cholesterol 175 mg/dL)', status: 'Normal' }
-    ];
-  });
+  // 4. Lab Reports State (Populated strictly from Firestore Cloud)
+  const [labReports, setLabReports] = useState([]);
 
-  // Re-hydrate account-specific data whenever currentUser changes
+  // --------------------------------------------------------------------------
+  // FIREBASE AUTHENTICATION LISTENER
+  // --------------------------------------------------------------------------
   useEffect(() => {
-    if (currentUser && currentUser.email) {
-      const emailKey = currentUser.email.toLowerCase().trim();
-      
-      const savedGlucose = localStorage.getItem(`glucocare_glucose_${emailKey}`);
-      if (savedGlucose) {
-        try { setGlucoseLogs(JSON.parse(savedGlucose)); } catch (e) {}
-      } else if (emailKey !== 'dinali@glucocare.ai') {
-        setGlucoseLogs([]); // Clean state for new patient account
+    if (!auth) return;
+    const unsubscribeAuth = onAuthStateChanged(auth, (fbUser) => {
+      if (fbUser && fbUser.email) {
+        console.log('[Firebase Auth Active User]:', fbUser.email, 'UID:', fbUser.uid);
+        const email = fbUser.email.toLowerCase().trim();
+        const userObj = {
+          id: fbUser.uid,
+          uid: fbUser.uid,
+          name: fbUser.displayName || email.split('@')[0],
+          email: email,
+          role: 'patient'
+        };
+        setCurrentUser(userObj);
+        setIsAuthenticated(true);
+        localStorage.setItem('glucocare_auth', 'true');
+        localStorage.setItem('glucocare_user', JSON.stringify(userObj));
       }
+    });
 
-      const savedMeals = localStorage.getItem(`glucocare_meals_${emailKey}`);
-      if (savedMeals) {
-        try { setMealLogs(JSON.parse(savedMeals)); } catch (e) {}
-      } else if (emailKey !== 'dinali@glucocare.ai') {
-        setMealLogs([]);
-      }
+    return () => unsubscribeAuth();
+  }, []);
 
-      const savedLabs = localStorage.getItem(`glucocare_labs_${emailKey}`);
-      if (savedLabs) {
-        try { setLabReports(JSON.parse(savedLabs)); } catch (e) {}
-      } else if (emailKey !== 'dinali@glucocare.ai') {
-        setLabReports([]);
-      }
+  // --------------------------------------------------------------------------
+  // FIRESTORE REAL-TIME DATA SUBSCRIPTION (ZERO LOCAL STORAGE PATIENT DATA)
+  // --------------------------------------------------------------------------
+  useEffect(() => {
+    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid;
+    const targetEmail = currentUser?.email || auth?.currentUser?.email;
 
-      const savedReminders = localStorage.getItem(`glucocare_reminders_${emailKey}`);
-      if (savedReminders) {
-        try { setReminders(JSON.parse(savedReminders)); } catch (e) {}
-      } else if (emailKey !== 'dinali@glucocare.ai') {
-        setReminders([]);
+    if (!targetEmail && !targetUid) return;
+
+    console.log(`[Firestore Real-time Fetch] Listening for userId: '${targetUid}' (email: '${targetEmail}')`);
+
+    // 1. Subscribe Sugar Measurements (collection: measurements, where('userEmail', '==', targetEmail))
+    const unsubGlucose = subscribeUserMeasurements(targetUid, targetEmail, (cloudDocs) => {
+      setGlucoseLogs(cloudDocs);
+    });
+
+    // 2. Subscribe Meal Logs (collection: meal_logs)
+    const unsubMeals = subscribeUserMeals(targetUid, targetEmail, (cloudDocs) => {
+      setMealLogs(cloudDocs);
+    });
+
+    // 3. Subscribe Lab Reports (collection: lab_reports)
+    const unsubLabs = subscribeUserLabReports(targetUid, targetEmail, (cloudDocs) => {
+      setLabReports(cloudDocs);
+    });
+
+    // 4. Subscribe Reminders (collection: reminders)
+    const unsubReminders = subscribeUserReminders(targetUid, targetEmail, (cloudDocs) => {
+      setReminders(cloudDocs);
+    });
+
+    return () => {
+      unsubGlucose();
+      unsubMeals();
+      unsubLabs();
+      unsubReminders();
+    };
+  }, [currentUser?.uid, currentUser?.email]);
+
+  // Multi-Tab Theme & User Storage Sync
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (!e.key) return;
+      if (e.key === 'glucocare_user' || e.key === 'glucocare_auth') {
+        const savedAuth = localStorage.getItem('glucocare_auth') === 'true';
+        setIsAuthenticated(savedAuth);
+        const savedUserStr = localStorage.getItem('glucocare_user');
+        if (savedUserStr) {
+          try { setCurrentUser(JSON.parse(savedUserStr)); } catch (err) {}
+        } else {
+          setCurrentUser(null);
+        }
       }
-    }
-  }, [currentUser?.email]);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Theme Sync
   useEffect(() => {
@@ -159,12 +160,20 @@ export const AppProvider = ({ children }) => {
   };
 
   const loginUser = (credentials) => {
+    if (!credentials || !credentials.email) return;
+
+    const email = credentials.email.toLowerCase().trim();
+    const derivedName = credentials.name || credentials.displayName || (email ? email.split('@')[0] : 'Patient User');
+    const userUid = credentials.uid || auth?.currentUser?.uid || 'usr-' + btoa(email).replace(/=/g, '');
+    
     const userObj = {
-      id: 'usr-' + Date.now(),
-      name: credentials.name || credentials.email?.split('@')[0] || 'Patient',
-      email: credentials.email || 'patient@glucocare.ai',
-      role: 'patient'
+      id: userUid,
+      uid: userUid,
+      name: derivedName,
+      email: email,
+      role: credentials.role || 'patient'
     };
+
     setCurrentUser(userObj);
     setIsAuthenticated(true);
     setAuthModalOpen(false);
@@ -180,49 +189,61 @@ export const AppProvider = ({ children }) => {
   const logoutUser = () => {
     setIsAuthenticated(false);
     setCurrentUser(null);
+    setGlucoseLogs([]);
+    setMealLogs([]);
+    setLabReports([]);
+    setReminders([]);
     localStorage.setItem('glucocare_auth', 'false');
     localStorage.removeItem('glucocare_user');
   };
 
-  // Add / Delete Glucose Reading (Append-Only)
-  const addGlucoseLog = (newLog) => {
+  // Add Sugar Measurement Result -> Writes directly to Firebase Firestore collection('measurements') with userId & userEmail
+  const addGlucoseLog = async (newLog) => {
+    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid;
+    const targetEmail = currentUser?.email || auth?.currentUser?.email;
+
+    if (!targetEmail) {
+      console.warn('[Add Glucose Error] Cannot save measurement without an authenticated user email.');
+      return;
+    }
+
     const entry = {
-      id: 'g-' + Date.now(),
       date: newLog.date || new Date().toISOString().split('T')[0],
       time: newLog.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       value: Number(newLog.value),
-      context: newLog.context || 'Measurement context not provided',
-      notes: newLog.notes || ''
+      context: newLog.context || newLog.type || 'Measurement context not provided',
+      notes: newLog.notes || '',
+      insulinUnits: newLog.insulinUnits || null,
+      carbsGrams: newLog.carbsGrams || null
     };
 
-    setGlucoseLogs((prev) => {
-      const updated = [entry, ...prev];
-      const key = getUserStorageKey('glucose');
-      localStorage.setItem(key, JSON.stringify(updated));
-      return updated;
-    });
+    // Optimistic UI update while Firestore writes
+    setGlucoseLogs((prev) => [{ ...entry, id: 'g-' + Date.now(), userId: targetUid, userEmail: targetEmail }, ...prev]);
+
+    // Save directly to Firebase Firestore
+    await saveMeasurementToFirestore(targetUid, targetEmail, entry);
 
     setToastAlert({
       type: 'success',
       title: 'Glucose Reading Recorded',
-      message: `${entry.value} mg/dL logged for ${entry.date}.`
+      message: `${entry.value} mg/dL saved to Firebase Firestore.`
     });
     setTimeout(() => setToastAlert(null), 3500);
   };
 
-  const deleteGlucoseLog = (id) => {
-    setGlucoseLogs((prev) => {
-      const updated = prev.filter(item => item.id !== id);
-      const key = getUserStorageKey('glucose');
-      localStorage.setItem(key, JSON.stringify(updated));
-      return updated;
-    });
+  const deleteGlucoseLog = async (id) => {
+    setGlucoseLogs((prev) => prev.filter(item => item.id !== id));
+    await deleteMeasurementFromFirestore(id);
   };
 
-  // Add / Delete Meal Log
-  const addMealLog = (newMeal) => {
+  // Add Meal Log -> Writes directly to Firebase Firestore collection('meal_logs')
+  const addMealLog = async (newMeal) => {
+    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid;
+    const targetEmail = currentUser?.email || auth?.currentUser?.email;
+
+    if (!targetEmail) return;
+
     const entry = {
-      id: 'm-' + Date.now(),
       date: newMeal.date || new Date().toISOString().split('T')[0],
       mealType: newMeal.mealType || 'Breakfast',
       time: newMeal.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -234,82 +255,66 @@ export const AppProvider = ({ children }) => {
       notes: newMeal.notes || ''
     };
 
-    setMealLogs((prev) => {
-      const updated = [entry, ...prev];
-      const key = getUserStorageKey('meals');
-      localStorage.setItem(key, JSON.stringify(updated));
-      return updated;
-    });
+    setMealLogs((prev) => [{ ...entry, id: 'm-' + Date.now(), userId: targetUid, userEmail: targetEmail }, ...prev]);
+    await saveMealToFirestore(targetUid, targetEmail, entry);
 
     setToastAlert({
       type: 'success',
       title: 'Meal Saved',
-      message: `${entry.mealType} logged successfully.`
+      message: `${entry.mealType} saved to Firebase Firestore.`
     });
     setTimeout(() => setToastAlert(null), 3500);
   };
 
-  const deleteMealLog = (id) => {
-    setMealLogs((prev) => {
-      const updated = prev.filter(item => item.id !== id);
-      const key = getUserStorageKey('meals');
-      localStorage.setItem(key, JSON.stringify(updated));
-      return updated;
-    });
+  const deleteMealLog = async (id) => {
+    setMealLogs((prev) => prev.filter(item => item.id !== id));
+    await deleteMealFromFirestore(id);
   };
 
-  // Add / Delete Reminder
-  const addReminder = (newRem) => {
+  // Add Reminder -> Writes directly to Firebase Firestore collection('reminders')
+  const addReminder = async (newRem) => {
+    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid;
+    const targetEmail = currentUser?.email || auth?.currentUser?.email;
+
+    if (!targetEmail) return;
+
     const entry = {
-      id: 'r-' + Date.now(),
       title: newRem.title,
       date: newRem.date || new Date().toISOString().split('T')[0],
       time: newRem.time || '8:00 AM',
       category: newRem.category || 'Glucose Check'
     };
 
-    setReminders((prev) => {
-      const updated = [entry, ...prev];
-      const key = getUserStorageKey('reminders');
-      localStorage.setItem(key, JSON.stringify(updated));
-      return updated;
-    });
+    setReminders((prev) => [{ ...entry, id: 'r-' + Date.now(), userId: targetUid, userEmail: targetEmail }, ...prev]);
+    await saveReminderToFirestore(targetUid, targetEmail, entry);
   };
 
-  const deleteReminder = (id) => {
-    setReminders((prev) => {
-      const updated = prev.filter(item => item.id !== id);
-      const key = getUserStorageKey('reminders');
-      localStorage.setItem(key, JSON.stringify(updated));
-      return updated;
-    });
+  const deleteReminder = async (id) => {
+    setReminders((prev) => prev.filter(item => item.id !== id));
+    await deleteReminderFromFirestore(id);
   };
 
-  // Add / Delete Lab Report
-  const addLabReport = (newLab) => {
+  // Add Lab Report -> Writes directly to Firebase Firestore collection('lab_reports')
+  const addLabReport = async (newLab) => {
+    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid;
+    const targetEmail = currentUser?.email || auth?.currentUser?.email;
+
+    if (!targetEmail) return;
+
     const entry = {
-      id: 'l-' + Date.now(),
       name: newLab.name,
       date: newLab.date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       result: newLab.result || 'Uploaded Document',
       status: newLab.status || 'Report Added'
     };
 
-    setLabReports((prev) => {
-      const updated = [entry, ...prev];
-      const key = getUserStorageKey('labs');
-      localStorage.setItem(key, JSON.stringify(updated));
-      return updated;
-    });
+    setLabReports((prev) => [{ ...entry, id: 'l-' + Date.now(), userId: targetUid, userEmail: targetEmail }, ...prev]);
+    await saveLabReportToFirestore(targetUid, targetEmail, entry);
   };
 
-  const deleteLabReport = (id) => {
-    setLabReports((prev) => {
-      const updated = prev.filter(item => item.id !== id);
-      const key = getUserStorageKey('labs');
-      localStorage.setItem(key, JSON.stringify(updated));
-      return updated;
-    });
+  const deleteLabReport = async (id) => {
+    setLabReports((prev) => prev.filter(item => item.id !== id));
+    await deleteLabReportFromFirestore(id);
   };
 
   const value = {

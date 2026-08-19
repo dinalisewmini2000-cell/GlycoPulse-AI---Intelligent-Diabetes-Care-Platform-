@@ -21,7 +21,7 @@ export const PatientHistory = () => {
   const [status, setStatus] = useState('Normal');
   const [notes, setNotes] = useState('');
 
-  const patientName = currentUser?.name || 'Dinali Bhagya';
+  const patientName = currentUser?.name || (currentUser?.email ? currentUser.email.split('@')[0] : 'Patient');
   const diabetesType = currentUser?.diabetesType || 'Type 1 Diabetes';
 
   const currentYear = new Date().getFullYear();
