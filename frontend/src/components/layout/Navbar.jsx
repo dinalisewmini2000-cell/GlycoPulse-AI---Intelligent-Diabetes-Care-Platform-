@@ -47,24 +47,17 @@ export const Navbar = () => {
         {/* Header Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           
-          {/* Always Available Sign In & Sign Up Buttons */}
-          <button 
-            onClick={() => openAuthModal('signin')} 
-            className="btn-outline" 
-            style={{ fontSize: '0.82rem', padding: '0.35rem 0.75rem', background: 'transparent' }}
-          >
-            <LogIn size={14} />
-            <span>Sign In</span>
-          </button>
-
-          <button 
-            onClick={() => openAuthModal('signup')} 
-            className="btn-primary" 
-            style={{ fontSize: '0.82rem', padding: '0.35rem 0.75rem' }}
-          >
-            <UserPlus size={14} />
-            <span>Sign Up</span>
-          </button>
+          {/* Sign In button for unauthenticated state */}
+          {!isAuthenticated && (
+            <button 
+              onClick={() => openAuthModal('signin')} 
+              className="btn-outline" 
+              style={{ fontSize: '0.82rem', padding: '0.35rem 0.75rem', background: 'transparent' }}
+            >
+              <LogIn size={14} />
+              <span>Sign In</span>
+            </button>
+          )}
 
           {/* User Profile Chip & Sign Out if Authenticated */}
           {isAuthenticated && (

@@ -10,16 +10,17 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
 
   const currentHour = new Date().getHours();
   const greetingTime = currentHour < 12 ? 'Good morning' : currentHour < 17 ? 'Good afternoon' : 'Good evening';
-  const userName = currentUser?.name?.split(' ')[0] || 'Patient';
+  const userName = currentUser?.name ? currentUser.name.split(' ')[0] : 'Patient';
 
-  const latestLog = glucoseLogs[0];
-  const trendInfo = calculateGlucoseTrend(glucoseLogs);
+  const safeLogs = Array.isArray(glucoseLogs) ? glucoseLogs : [];
+  const latestLog = safeLogs.length > 0 ? safeLogs[0] : null;
+  const trendInfo = calculateGlucoseTrend(safeLogs);
   const details = latestLog ? getGlucoseContextDetails(latestLog.value, latestLog.context) : null;
 
-  const chartData = glucoseLogs.slice(0, timeRange === '7' ? 7 : 30).reverse().map((log, index) => ({
-    displayTime: log.time || `Log ${index + 1}`,
-    value: log.value,
-    date: log.date || 'Today'
+  const chartData = safeLogs.slice(0, timeRange === '7' ? 7 : 30).reverse().map((log, index) => ({
+    displayTime: log?.time || `Log ${index + 1}`,
+    value: Number(log?.value) || 0,
+    date: log?.date || 'Today'
   }));
 
   const displayChartData = chartData.length > 0 ? chartData : [];
@@ -42,7 +43,7 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
         <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
           <div>
             <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.35rem' }}>
-              Latest Glucose Reading ({latestLog.date})
+              Latest Glucose Reading ({latestLog.date || 'Today'})
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.4rem' }}>
               <span style={{ fontSize: '2.75rem', fontWeight: 800, lineHeight: 1, color: details?.isWithinRange ? 'var(--primary-color)' : '#dc2626' }}>
@@ -55,18 +56,18 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
               <span className={`badge ${details?.isWithinRange ? 'badge-success' : 'badge-warning'}`}>
-                {details?.status}
+                {details?.status || 'Logged'}
               </span>
               <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                Context: {latestLog.context} ({details?.rangeLabel})
+                Context: {latestLog.context || 'General'} ({details?.rangeLabel || ''})
               </span>
             </div>
 
             <div style={{ marginTop: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              {trendInfo.direction === 'up' && <TrendingUp size={15} color="#dc2626" />}
-              {trendInfo.direction === 'down' && <TrendingDown size={15} color="#16a34a" />}
-              {trendInfo.direction === 'stable' && <Minus size={15} color="var(--text-muted)" />}
-              <span>{trendInfo.text}</span>
+              {trendInfo?.direction === 'up' && <TrendingUp size={15} color="#dc2626" />}
+              {trendInfo?.direction === 'down' && <TrendingDown size={15} color="#16a34a" />}
+              {trendInfo?.direction === 'stable' && <Minus size={15} color="var(--text-muted)" />}
+              <span>{trendInfo?.text || 'No trend data'}</span>
             </div>
           </div>
 
@@ -98,12 +99,12 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
                 Glucose trend over time
               </h3>
             </div>
-
-            <div style={{ display: 'flex', background: 'var(--bg-primary)', padding: '0.2rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-              <button
+            
+            <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--bg-primary)', padding: '0.2rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+              <button 
                 onClick={() => setTimeRange('7')}
-                style={{
-                  padding: '0.35rem 0.75rem', borderRadius: '4px', border: 'none',
+                style={{ 
+                  padding: '0.3rem 0.65rem', borderRadius: '4px', border: 'none',
                   background: timeRange === '7' ? 'var(--primary-color)' : 'transparent',
                   color: timeRange === '7' ? '#ffffff' : 'var(--text-muted)',
                   fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer'
@@ -111,10 +112,10 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
               >
                 7 days
               </button>
-              <button
+              <button 
                 onClick={() => setTimeRange('30')}
-                style={{
-                  padding: '0.35rem 0.75rem', borderRadius: '4px', border: 'none',
+                style={{ 
+                  padding: '0.3rem 0.65rem', borderRadius: '4px', border: 'none',
                   background: timeRange === '30' ? 'var(--primary-color)' : 'transparent',
                   color: timeRange === '30' ? '#ffffff' : 'var(--text-muted)',
                   fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer'
@@ -160,7 +161,7 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
           </button>
         </div>
 
-        {glucoseLogs.length === 0 ? (
+        {safeLogs.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>No previous records available.</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -174,21 +175,21 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
                 </tr>
               </thead>
               <tbody>
-                {glucoseLogs.slice(0, 5).map((log) => {
+                {safeLogs.slice(0, 5).map((log, i) => {
                   const itemCtx = getGlucoseContextDetails(log.value, log.context);
                   return (
-                    <tr key={log.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                    <tr key={log.id || i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                       <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)' }}>
-                        {log.date} ({log.time})
+                        {log.date || 'Today'} ({log.time || '--:--'})
                       </td>
                       <td style={{ padding: '0.75rem 0.5rem', fontWeight: 700, color: 'var(--text-main)' }}>
                         {log.value} mg/dL
                       </td>
                       <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-main)' }}>
-                        {log.context}
+                        {log.context || 'General'}
                       </td>
                       <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                        {itemCtx.rangeLabel}
+                        {itemCtx?.rangeLabel || ''}
                       </td>
                     </tr>
                   );

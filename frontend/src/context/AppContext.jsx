@@ -24,6 +24,7 @@ export const AppProvider = ({ children }) => {
 
   // Active Navigation Section: 'dashboard' | 'glucose' | 'meals' | 'calendar' | 'lab'
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('signin');
 
