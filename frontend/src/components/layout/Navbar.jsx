@@ -2,14 +2,14 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   Activity, Sun, Moon, FileText, 
-  LogOut, LogIn, User
+  LogOut, LogIn, UserPlus, User
 } from 'lucide-react';
 
 export const Navbar = () => {
   const { 
     theme, toggleTheme, 
     setPdfModalOpen,
-    isAuthenticated, setAuthModalOpen,
+    isAuthenticated, setAuthModalOpen, openAuthModal,
     currentUser, logoutUser
   } = useApp();
 
@@ -20,37 +20,56 @@ export const Navbar = () => {
       padding: '0.65rem 1.5rem', 
       position: 'sticky', 
       top: 0, 
-      zIndex: 100 
+      zIndex: 100, 
+      boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '1400px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         
-        {/* Brand Logo & Portal Name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ 
-            width: '32px', height: '32px', borderRadius: '4px', 
-            background: 'var(--primary-color)', 
+        {/* Brand Logo & Platform Title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div style={{
+            width: '34px', height: '34px', borderRadius: '8px',
+            background: 'var(--primary-color)',
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
-            <Activity size={18} color="#ffffff" />
+            <Activity size={20} color="#ffffff" />
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.2px' }}>
+          <div>
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
               GlucoCare
             </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500, paddingLeft: '0.5rem', borderLeft: '1px solid var(--border-color)' }}>
-              Patient Portal
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '-2px' }}>
+              Diabetes Clinical Portal
             </span>
           </div>
         </div>
 
-        {/* User Account Bar & Subtle Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        {/* Header Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           
-          {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              
-              {/* Account Identity */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {/* Always Available Sign In & Sign Up Buttons */}
+          <button 
+            onClick={() => openAuthModal('signin')} 
+            className="btn-outline" 
+            style={{ fontSize: '0.82rem', padding: '0.35rem 0.75rem', background: 'transparent' }}
+          >
+            <LogIn size={14} />
+            <span>Sign In</span>
+          </button>
+
+          <button 
+            onClick={() => openAuthModal('signup')} 
+            className="btn-primary" 
+            style={{ fontSize: '0.82rem', padding: '0.35rem 0.75rem' }}
+          >
+            <UserPlus size={14} />
+            <span>Sign Up</span>
+          </button>
+
+          {/* User Profile Chip & Sign Out if Authenticated */}
+          {isAuthenticated && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: '0.35rem', borderLeft: '1px solid var(--border-color)', paddingLeft: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                 <div style={{
                   width: '28px', height: '28px', borderRadius: '50%',
                   background: 'var(--bg-primary)',
@@ -93,17 +112,7 @@ export const Navbar = () => {
                 <LogOut size={14} />
                 <span>Sign out</span>
               </button>
-
             </div>
-          ) : (
-            <button 
-              onClick={() => setAuthModalOpen(true)} 
-              className="btn-primary" 
-              style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem' }}
-            >
-              <LogIn size={15} />
-              <span>Sign In</span>
-            </button>
           )}
 
           {/* Export Report */}

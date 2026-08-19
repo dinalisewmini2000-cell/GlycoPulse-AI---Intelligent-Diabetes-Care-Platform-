@@ -7,11 +7,11 @@ import {
 } from 'lucide-react';
 
 export const LoginModal = () => {
-  const { authModalOpen, setAuthModalOpen, loginUser, signupUser, isAuthenticated } = useApp();
+  const { authModalOpen, setAuthModalOpen, authMode, loginUser, signupUser, isAuthenticated } = useApp();
 
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(authMode === 'signup');
   const [selectedRole, setSelectedRole] = useState('patient');
-  
+
   // Form Fields
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -24,7 +24,13 @@ export const LoginModal = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  if (!authModalOpen && isAuthenticated) return null;
+  React.useEffect(() => {
+    if (authModalOpen) {
+      setIsSignUp(authMode === 'signup');
+    }
+  }, [authModalOpen, authMode]);
+
+  if (!authModalOpen) return null;
 
   const roleDetails = {
     patient: {

@@ -24,8 +24,13 @@ export const AppProvider = ({ children }) => {
 
   // Active Navigation Section: 'dashboard' | 'glucose' | 'meals' | 'calendar' | 'lab'
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('signin');
+
+  const openAuthModal = (mode = 'signin') => {
+    setAuthMode(mode);
+    setAuthModalOpen(true);
+  };
   const [toastAlert, setToastAlert] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
 
@@ -322,6 +327,7 @@ export const AppProvider = ({ children }) => {
     activeTab, setActiveTab,
     pdfModalOpen, setPdfModalOpen,
     authModalOpen, setAuthModalOpen,
+    authMode, setAuthMode, openAuthModal,
     toastAlert, setToastAlert,
     isInitialLoading,
     isAuthenticated, setIsAuthenticated,
