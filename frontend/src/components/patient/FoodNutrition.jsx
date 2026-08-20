@@ -1,15 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { analyzeFoodImage } from '../../services/foodVisionService';
-import { 
-  Utensils, Camera, Sparkles, CheckCircle2, AlertTriangle, 
-  ShoppingCart, Droplets, Flame, PieChart, RefreshCw, ChevronRight, UploadCloud, Download, AlertCircle, RotateCcw 
+import {
+  Utensils, Camera, Sparkles, CheckCircle2, AlertTriangle,
+  ShoppingCart, Droplets, Flame, PieChart, RefreshCw, ChevronRight, UploadCloud, Download, AlertCircle, RotateCcw
 } from 'lucide-react';
 
 export const FoodNutrition = () => {
   const appData = useApp();
   const waterIntake = appData?.waterIntake ?? 0.0;
-  const setWaterIntake = appData?.setWaterIntake || (() => {});
+  const setWaterIntake = appData?.setWaterIntake || (() => { });
   const waterGoal = appData?.waterGoal ?? 2.5;
 
   const [selectedFood, setSelectedFood] = useState('salad');
@@ -36,7 +36,7 @@ export const FoodNutrition = () => {
     setSelectedFood(typeKey);
     setIsScanning(true);
     setCustomImage(null);
-    
+
     try {
       const result = await analyzeFoodImage(null, typeKey);
       setFoodAnalysis(result);
@@ -50,11 +50,13 @@ export const FoodNutrition = () => {
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     const fileUrl = URL.createObjectURL(file);
     setCustomImage(fileUrl);
     setSelectedFood('custom');
     setIsScanning(true);
+
+    console.log("My API Key is:", import.meta.env.VITE_GEMINI_API_KEY);
 
     try {
       const result = await analyzeFoodImage(file);
@@ -97,7 +99,7 @@ export const FoodNutrition = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      
+
       {/* Header Banner */}
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.4rem' }}>
@@ -118,12 +120,12 @@ export const FoodNutrition = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              accept="image/*" 
-              onChange={handleFileUpload} 
-              style={{ display: 'none' }} 
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              onChange={handleFileUpload}
+              style={{ display: 'none' }}
             />
             <button onClick={() => fileInputRef.current?.click()} className="btn-glow" style={{ fontSize: '0.82rem' }}>
               <UploadCloud size={16} />
@@ -200,7 +202,7 @@ export const FoodNutrition = () => {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-            
+
             {/* Meal Title & Score */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -283,7 +285,7 @@ export const FoodNutrition = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>{waterIntake.toFixed(1)} / {waterGoal} L</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{Math.round((waterIntake/waterGoal)*100)}% Goal</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{Math.round((waterIntake / waterGoal) * 100)}% Goal</div>
           </div>
 
           <button onClick={() => setWaterIntake(prev => Math.min(waterGoal, prev + 0.25))} className="btn-glow" style={{ fontSize: '0.82rem' }}>
@@ -307,7 +309,7 @@ export const FoodNutrition = () => {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-          
+
           <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '10px', borderLeft: '3px solid var(--accent-amber)', border: '1px solid var(--border-color)', borderLeftWidth: '3px' }}>
             <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', fontWeight: 700 }}>BREAKFAST</div>
             <div style={{ fontSize: '0.9rem', fontWeight: 800, margin: '0.4rem 0', color: 'var(--text-main)' }}>Avocado Toast & Poached Eggs</div>
