@@ -52,10 +52,16 @@ export function filterFoodItems(rawItems) {
     const cleanName = sanitizeFoodName(rawName);
 
     if (cleanName && isEdibleFood(cleanName)) {
+      const parsedWeight = Number(item?.weight ?? item?.estimatedGrams ?? item?.grams ?? item?.portion_estimate_grams ?? item?.weightGrams);
+      const parsedCalories = item?.calories !== undefined ? Number(item?.calories) : undefined;
+      const weightVal = (!isNaN(parsedWeight) && parsedWeight > 0) ? parsedWeight : 120;
       valid.push({
         ...(typeof item === 'object' ? item : {}),
         food: cleanName,
-        grams: Number(item?.estimatedGrams || item?.grams || item?.weight || item?.portion_estimate_grams || item?.weightGrams) || 120,
+        name: cleanName,
+        grams: weightVal,
+        weight: weightVal,
+        calories: (parsedCalories !== undefined && !isNaN(parsedCalories)) ? parsedCalories : item?.calories,
         confidence: Number(item?.confidence) || 88
       });
     }
@@ -68,41 +74,53 @@ export function parseVisionAPIResponse(responseText) {
   if (!responseText || typeof responseText !== 'string') return null;
 
   let cleanedText = responseText.trim();
-  // Strip Markdown code block indicators ```json ... ```
-  cleanedText = cleanedText.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '').replace(/```/g, '').trim();
+  // Strip Markdown code block indicators ```json ... ``` or backticks
+  cleanedText = cleanedText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').replace(/```/g, '').trim();
 
-  // 1. Try Direct JSON Parsing
+  let directJSON = null;
   try {
-    const directJSON = JSON.parse(cleanedText);
-    if (directJSON && typeof directJSON === 'object') return normalizeParsedJSON(directJSON);
-  } catch (e) { }
-
-  // 2. Try RegEx Extraction of JSON Object
-  const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    try {
-      const extractedJSON = JSON.parse(jsonMatch[0]);
-      if (extractedJSON && typeof extractedJSON === 'object') return normalizeParsedJSON(extractedJSON);
-    } catch (e) { }
+    directJSON = JSON.parse(cleanedText);
+  } catch (e) {
+    const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        directJSON = JSON.parse(jsonMatch[0]);
+      } catch (e2) { }
+    }
   }
 
-  // 3. Line-by-Line extraction fallback
+  if (directJSON && typeof directJSON === 'object') {
+    return normalizeParsedJSON(directJSON);
+  }
+
+  // Fallback line-by-line extraction
   const lines = cleanedText.split('\n').filter(l => l.trim().length > 0);
   const extractedFoods = [];
 
   for (const line of lines) {
     const cleanLine = line.replace(/^[\*\-\d\.\,\s]+/, '').replace(/[\:\(\)\-\d\.\,]+/g, ' ').trim();
     if (cleanLine.length > 2 && cleanLine.length < 50 && isEdibleFood(cleanLine)) {
-      extractedFoods.push({ food: sanitizeFoodName(cleanLine), estimatedGrams: 120, confidence: 80 });
+      extractedFoods.push({
+        food: sanitizeFoodName(cleanLine),
+        name: sanitizeFoodName(cleanLine),
+        weight: 120,
+        estimatedGrams: 120,
+        grams: 120,
+        calories: 150,
+        confidence: 80
+      });
     }
   }
 
   if (extractedFoods.length > 0) {
+    const mainDishName = extractedFoods.map(f => f.food).join(', ');
     return {
       isFood: true,
-      foodName: extractedFoods.map(f => f.food).join(', '),
+      dishName: mainDishName,
+      foodName: mainDishName,
       confidence: 80,
-      detectedItems: extractedFoods
+      detectedItems: extractedFoods,
+      nutritionTotals: null
     };
   }
 
@@ -116,26 +134,57 @@ function normalizeParsedJSON(parsed) {
     return { isFood: false, isNonFoodObject: true, reason: parsed.reason || 'Non-food object' };
   }
 
-  let items = parsed.detectedItems || parsed.items || parsed.foods || parsed.components || parsed.ingredients || parsed.dishes || [];
+  const items = parsed.items || parsed.detectedItems || parsed.foods || parsed.components || parsed.ingredients || parsed.dishes || [];
+  const dishName = parsed.dishName || parsed.foodName || parsed.dish || parsed.mealName || parsed.title || parsed.name || 'Recorded Food Dish';
+  const confidence = Number(parsed.confidence) || 88;
 
-  if (!Array.isArray(items) || items.length === 0) {
-    const mainTitle = parsed.dishName || parsed.foodName || parsed.food || parsed.dish || parsed.title || parsed.name || parsed.mealName;
-    if (mainTitle && isEdibleFood(mainTitle)) {
-      items = [{ food: sanitizeFoodName(mainTitle), estimatedGrams: 150, confidence: parsed.confidence || 88 }];
-    }
+  let mappedItems = [];
+  if (Array.isArray(items) && items.length > 0) {
+    mappedItems = items.map(i => {
+      const rawName = typeof i === 'string' ? i : (i.name || i.food || i.item || i.ingredient);
+      const cleanName = sanitizeFoodName(rawName);
+
+      const itemWeight = typeof i === 'object' ? Number(i.weight ?? i.estimatedGrams ?? i.grams ?? i.portion_estimate_grams ?? i.weightGrams) : NaN;
+      const dynamicWeight = (!isNaN(itemWeight) && itemWeight > 0) ? itemWeight : 120;
+
+      const itemCalories = typeof i === 'object' ? Number(i.calories ?? i.cal ?? i.kcal) : NaN;
+      const dynamicCalories = (!isNaN(itemCalories) && itemCalories >= 0) ? itemCalories : Math.round((dynamicWeight / 100) * 150);
+
+      return {
+        name: cleanName,
+        food: cleanName,
+        weight: dynamicWeight,
+        estimatedGrams: dynamicWeight,
+        grams: dynamicWeight,
+        calories: dynamicCalories,
+        confidence: Number(i.confidence) || confidence
+      };
+    }).filter(item => item.name && isEdibleFood(item.name));
   }
+
+  if (mappedItems.length === 0 && dishName && isEdibleFood(dishName)) {
+    mappedItems = [{
+      name: sanitizeFoodName(dishName),
+      food: sanitizeFoodName(dishName),
+      weight: 150,
+      estimatedGrams: 150,
+      grams: 150,
+      calories: 225,
+      confidence: confidence
+    }];
+  }
+
+  const nutritionTotals = parsed.totals || parsed.nutritionTotals || null;
 
   return {
     isFood: true,
-    foodName: parsed.dishName || parsed.foodName || parsed.dish || parsed.mealName || (items[0]?.food ? items.map(i => i.food || i.name).join(', ') : 'Recorded Food Dish'),
-    confidence: Number(parsed.confidence) || 88,
+    dishName: dishName,
+    foodName: dishName,
+    confidence: confidence,
     complete_image_visible: parsed.complete_image_visible !== false,
     possibleAlternatives: parsed.possibleAlternatives || [],
-    detectedItems: items.map(i => ({
-      food: sanitizeFoodName(i.food || i.name || i.item),
-      estimatedGrams: Number(i.estimatedGrams || i.grams || i.weight) || 120,
-      confidence: Number(i.confidence) || 88
-    }))
+    detectedItems: mappedItems,
+    nutritionTotals: nutritionTotals
   };
 }
 
@@ -205,7 +254,22 @@ export async function callGeminiSDKFoodVisionAPI(imageSource, apiKey) {
     const { base64, mimeType } = await toBase64Data(imageSource);
     if (!base64) return null;
 
-    const prompt = "Analyze this food image. Identify the main dish and itemized food items with weights, calories, and macros. Return ONLY a valid JSON object matching the required schema.";
+    const prompt = `Analyze this food image. Identify the main dish and itemized food items with realistic weights (in grams) and calculated calories for EACH detected ingredient/item. Return ONLY a valid JSON object matching this schema without markdown code blocks:
+{
+  "dishName": "string",
+  "confidence": number,
+  "items": [
+    { "name": "string", "weight": number, "calories": number }
+  ],
+  "totals": {
+    "calories": number,
+    "carbs": number,
+    "protein": number,
+    "fat": number,
+    "fiber": number,
+    "sugar": number
+  }
+}`;
 
     const result = await model.generateContent([
       prompt,
@@ -551,10 +615,14 @@ export async function analyzeFoodImage(imageSource, sampleType) {
     const rawItems = aiResult.detectedItems || [];
     let sanitizedItems = filterFoodItems(rawItems);
 
-    if (sanitizedItems.length === 0 && aiResult.foodName && isEdibleFood(aiResult.foodName)) {
+    if (sanitizedItems.length === 0 && (aiResult.dishName || aiResult.foodName) && isEdibleFood(aiResult.dishName || aiResult.foodName)) {
+      const fallbackName = sanitizeFoodName(aiResult.dishName || aiResult.foodName);
       sanitizedItems = [{
-        food: sanitizeFoodName(aiResult.foodName),
+        food: fallbackName,
+        name: fallbackName,
         grams: 150,
+        weight: 150,
+        calories: 225,
         confidence: aiResult.confidence || 85
       }];
     }
@@ -567,14 +635,17 @@ export async function analyzeFoodImage(imageSource, sampleType) {
     }
 
     const processedItems = sanitizedItems.map(item => {
-      const name = item.food;
-      const grams = item.grams || 120;
+      const name = item.food || item.name;
+      const grams = Number(item.weight || item.grams || item.estimatedGrams) || 120;
       const nut = calculateItemNutrition(name, grams);
+      const calories = (typeof item.calories === 'number' && !isNaN(item.calories) && item.calories > 0) ? item.calories : nut.calories;
       return {
         food: nut.foodName || name,
+        name: nut.foodName || name,
         grams: grams,
+        weight: grams,
         portion: `${grams} g`,
-        calories: nut.calories,
+        calories: calories,
         carbs: nut.carbs,
         protein: nut.protein,
         fat: nut.fat,
@@ -584,17 +655,28 @@ export async function analyzeFoodImage(imageSource, sampleType) {
 
     const totals = calculateMealTotals(processedItems);
 
-    return {
-      isFood: true,
-      uploadId: uploadId,
-      foodName: aiResult.foodName || processedItems.map(i => i.food).join(', '),
-      detectedItems: processedItems,
+    const nutritionTotals = aiResult.nutritionTotals || {
       calories: totals.calories,
       carbs: totals.carbs,
       protein: totals.protein,
       fat: totals.fat,
       fiber: totals.fiber,
-      sugar: totals.sugar,
+      sugar: totals.sugar
+    };
+
+    return {
+      isFood: true,
+      uploadId: uploadId,
+      dishName: aiResult.dishName || aiResult.foodName || processedItems.map(i => i.food).join(', '),
+      foodName: aiResult.dishName || aiResult.foodName || processedItems.map(i => i.food).join(', '),
+      detectedItems: processedItems,
+      nutritionTotals: nutritionTotals,
+      calories: Number(nutritionTotals.calories) || totals.calories,
+      carbs: Number(nutritionTotals.carbs) || totals.carbs,
+      protein: Number(nutritionTotals.protein) || totals.protein,
+      fat: Number(nutritionTotals.fat) || totals.fat,
+      fiber: Number(nutritionTotals.fiber) || totals.fiber,
+      sugar: Number(nutritionTotals.sugar) || totals.sugar,
       sodium: totals.sodium,
       confidence: aiResult.confidence || 88,
       confidenceLevel: getConfidenceLabel(aiResult.confidence || 88),
