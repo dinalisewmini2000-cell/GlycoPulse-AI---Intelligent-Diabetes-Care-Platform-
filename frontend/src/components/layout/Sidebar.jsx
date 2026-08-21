@@ -11,7 +11,7 @@ export const Sidebar = () => {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'glucose', label: 'Glucose', icon: Activity },
     { id: 'meals', label: 'Meals', icon: Utensils },
-    { id: 'calendar', label: 'Calendar', icon: Calendar },
+    { id: 'calendar', label: 'History', icon: Calendar },
     { id: 'lab', label: 'Lab Reports', icon: FileText }
   ];
 

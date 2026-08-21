@@ -604,7 +604,7 @@ export const MealsPage = () => {
                 )}
 
                 {/* UNCERTAIN CONFIDENCE WARNING BANNER */}
-                {analysisResult.confidence < 60 && (
+                {analysisResult.confidence < 70 && analysisResult.isFood !== false && (
                   <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '0.65rem 0.85rem', borderRadius: '8px', color: '#991b1b', fontSize: '0.78rem' }}>
                     <strong>Uncertain AI Identification:</strong> Please confirm or edit the detected foods below to ensure an accurate calorie & nutrient total.
                   </div>
