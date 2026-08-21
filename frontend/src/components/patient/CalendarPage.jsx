@@ -23,8 +23,8 @@ export const CalendarPage = () => {
   };
 
   // Filter logs by date if selected
-  const filteredLogs = selectedDateFilter === 'ALL' 
-    ? glucoseLogs 
+  const filteredLogs = selectedDateFilter === 'ALL'
+    ? glucoseLogs
     : glucoseLogs.filter(log => log.date === selectedDateFilter);
 
   // Get unique dates for filter dropdown
@@ -32,7 +32,7 @@ export const CalendarPage = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '960px', fontFamily: 'Inter, system-ui, sans-serif' }}>
-      
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
@@ -47,7 +47,7 @@ export const CalendarPage = () => {
 
       {/* FILTER & HISTORY SECTION */}
       <div className="glass-panel" style={{ padding: '1.5rem', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-        
+
         {/* Table Header with Date Filter */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
           <div>
@@ -62,8 +62,8 @@ export const CalendarPage = () => {
           {/* Filter by Date Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Filter size={15} color="#64748b" />
-            <select 
-              value={selectedDateFilter} 
+            <select
+              value={selectedDateFilter}
               onChange={e => setSelectedDateFilter(e.target.value)}
               style={{ fontSize: '0.82rem', padding: '0.4rem 0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 600 }}
             >
@@ -118,8 +118,8 @@ export const CalendarPage = () => {
                       {log.notes || '—'}
                     </td>
                     <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>
-                      <button 
-                        onClick={() => deleteGlucoseLog(log.id)} 
+                      <button
+                        onClick={() => deleteGlucoseLog(log.id)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-rose)', padding: '0.2rem' }}
                         title="Delete log"
                       >
