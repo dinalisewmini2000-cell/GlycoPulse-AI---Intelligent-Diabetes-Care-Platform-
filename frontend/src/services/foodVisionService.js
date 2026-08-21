@@ -43,6 +43,19 @@ export function isEdibleFood(itemName) {
   return true;
 }
 
+export function normalizeConfidence(rawConfidence, fallback = 88) {
+  let val = Number(rawConfidence);
+  if (isNaN(val) || val === null || val === undefined) {
+    val = fallback;
+  }
+  if (val <= 1 && val > 0) {
+    val = Math.round(val * 100);
+  } else {
+    val = Math.round(val);
+  }
+  return Math.min(100, Math.max(0, val));
+}
+
 export function filterFoodItems(rawItems) {
   if (!Array.isArray(rawItems)) return [];
   const valid = [];
@@ -62,7 +75,7 @@ export function filterFoodItems(rawItems) {
         grams: weightVal,
         weight: weightVal,
         calories: (parsedCalories !== undefined && !isNaN(parsedCalories)) ? parsedCalories : item?.calories,
-        confidence: Number(item?.confidence) || 88
+        confidence: normalizeConfidence(item?.confidence, 88)
       });
     }
   }
@@ -107,7 +120,7 @@ export function parseVisionAPIResponse(responseText) {
         estimatedGrams: 120,
         grams: 120,
         calories: 150,
-        confidence: 80
+        confidence: normalizeConfidence(80)
       });
     }
   }
@@ -118,7 +131,7 @@ export function parseVisionAPIResponse(responseText) {
       isFood: true,
       dishName: mainDishName,
       foodName: mainDishName,
-      confidence: 80,
+      confidence: normalizeConfidence(80),
       detectedItems: extractedFoods,
       nutritionTotals: null
     };
@@ -136,7 +149,9 @@ function normalizeParsedJSON(parsed) {
 
   const items = parsed.items || parsed.detectedItems || parsed.foods || parsed.components || parsed.ingredients || parsed.dishes || [];
   const dishName = parsed.dishName || parsed.foodName || parsed.dish || parsed.mealName || parsed.title || parsed.name || 'Recorded Food Dish';
-  const confidence = Number(parsed.confidence) || 88;
+  
+  const rawConfidence = parsed.confidence !== undefined ? parsed.confidence : 88;
+  const confidence = normalizeConfidence(rawConfidence, 88);
 
   let mappedItems = [];
   if (Array.isArray(items) && items.length > 0) {
@@ -150,6 +165,8 @@ function normalizeParsedJSON(parsed) {
       const itemCalories = typeof i === 'object' ? Number(i.calories ?? i.cal ?? i.kcal) : NaN;
       const dynamicCalories = (!isNaN(itemCalories) && itemCalories >= 0) ? itemCalories : Math.round((dynamicWeight / 100) * 150);
 
+      const itemConfidence = typeof i === 'object' && i.confidence !== undefined ? i.confidence : confidence;
+
       return {
         name: cleanName,
         food: cleanName,
@@ -157,7 +174,7 @@ function normalizeParsedJSON(parsed) {
         estimatedGrams: dynamicWeight,
         grams: dynamicWeight,
         calories: dynamicCalories,
-        confidence: Number(i.confidence) || confidence
+        confidence: normalizeConfidence(itemConfidence, confidence)
       };
     }).filter(item => item.name && isEdibleFood(item.name));
   }
@@ -257,7 +274,7 @@ export async function callGeminiSDKFoodVisionAPI(imageSource, apiKey) {
     const prompt = `Analyze this food image. Identify the main dish and itemized food items with realistic weights (in grams) and calculated calories for EACH detected ingredient/item. Return ONLY a valid JSON object matching this schema without markdown code blocks:
 {
   "dishName": "string",
-  "confidence": number,
+  "confidence": 92 (an integer percentage from 0 to 100, never a decimal),
   "items": [
     { "name": "string", "weight": number, "calories": number }
   ],
@@ -623,7 +640,7 @@ export async function analyzeFoodImage(imageSource, sampleType) {
         grams: 150,
         weight: 150,
         calories: 225,
-        confidence: aiResult.confidence || 85
+        confidence: normalizeConfidence(aiResult.confidence, 85)
       }];
     }
 
@@ -649,7 +666,7 @@ export async function analyzeFoodImage(imageSource, sampleType) {
         carbs: nut.carbs,
         protein: nut.protein,
         fat: nut.fat,
-        confidence: item.confidence || aiResult.confidence || 88
+        confidence: normalizeConfidence(item.confidence || aiResult.confidence, 88)
       };
     });
 
@@ -663,6 +680,8 @@ export async function analyzeFoodImage(imageSource, sampleType) {
       fiber: totals.fiber,
       sugar: totals.sugar
     };
+
+    const normConfidence = normalizeConfidence(aiResult.confidence, 88);
 
     return {
       isFood: true,
@@ -678,8 +697,8 @@ export async function analyzeFoodImage(imageSource, sampleType) {
       fiber: Number(nutritionTotals.fiber) || totals.fiber,
       sugar: Number(nutritionTotals.sugar) || totals.sugar,
       sodium: totals.sodium,
-      confidence: aiResult.confidence || 88,
-      confidenceLevel: getConfidenceLabel(aiResult.confidence || 88),
+      confidence: normConfidence,
+      confidenceLevel: getConfidenceLabel(normConfidence),
       possibleAlternatives: aiResult.possibleAlternatives || []
     };
 
@@ -706,8 +725,9 @@ function loadImage(source) {
 }
 
 function getConfidenceLabel(confidence) {
-  if (confidence >= 85) return { label: 'High Confidence', color: '#166534', bg: '#f0fdf4', border: '#bbf7d0' };
-  if (confidence >= 60) return { label: 'Medium Confidence', color: '#92400e', bg: '#fffbeb', border: '#fde68a' };
+  const normConf = normalizeConfidence(confidence, 88);
+  if (normConf >= 85) return { label: 'High Confidence', color: '#166534', bg: '#f0fdf4', border: '#bbf7d0' };
+  if (normConf >= 70) return { label: 'Medium Confidence', color: '#92400e', bg: '#fffbeb', border: '#fde68a' };
   return { label: 'Uncertain - Please Confirm Food', color: '#991b1b', bg: '#fef2f2', border: '#fecaca' };
 }
 
