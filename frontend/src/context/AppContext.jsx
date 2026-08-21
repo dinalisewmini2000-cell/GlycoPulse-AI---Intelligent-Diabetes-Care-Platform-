@@ -307,11 +307,16 @@ export const AppProvider = ({ children }) => {
 
     if (!targetEmail) return;
 
+    const fullData = newLab.fullReport || newLab.extractedData || newLab.fullPayload || null;
+
     const entry = {
       name: newLab.name,
       date: newLab.date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       result: newLab.result || 'Uploaded Document',
-      status: newLab.status || 'Report Added'
+      status: newLab.status || 'Report Added',
+      fullReport: fullData,
+      extractedData: fullData,
+      fullPayload: fullData
     };
 
     setLabReports((prev) => [{ ...entry, id: 'l-' + Date.now(), userId: targetUid, userEmail: targetEmail }, ...prev]);

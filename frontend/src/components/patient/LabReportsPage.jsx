@@ -4,16 +4,17 @@ import {
   FileText, Upload, X, ShieldAlert, CheckCircle2, AlertTriangle, 
   Info, Eye, Trash2, RefreshCw, FileCheck, Layers, ChevronDown, ChevronUp
 } from 'lucide-react';
-import { analyzeLabReportDocument } from '../../services/labVisionService';
+import { analyzeLabReportDocument } from '../../services/labReportService';
 
 export const LabReportsPage = () => {
-  const { labReports, addLabReport } = useApp();
+  const { labReports, addLabReport, deleteLabReport } = useApp();
 
   // Modal & File States
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isViewOnly, setIsViewOnly] = useState(false);
   
   // Extraction Result State
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -30,6 +31,7 @@ export const LabReportsPage = () => {
     setAnalysisResult(null);
     setUnreadableError('');
     setShowOriginalDoc(false);
+    setIsViewOnly(false);
   };
 
   // Handle File Selection & Process
@@ -46,7 +48,8 @@ export const LabReportsPage = () => {
     setSelectedFile(file);
     setFileName(file.name);
     setUnreadableError('');
-    setAnalysisResult(null); // IMMEDIATELY CLEAR PREVIOUS ANALYSIS RESULT
+    setAnalysisResult(null);
+    setIsViewOnly(false);
 
     // Trigger Extraction Analysis
     setIsAnalyzing(true);
@@ -60,9 +63,13 @@ export const LabReportsPage = () => {
         
         // Auto expand all categories
         const catMap = {};
-        (result.testResults || []).forEach(item => {
-          catMap[item.category] = true;
-        });
+        if (Array.isArray(result.categories) && result.categories.length > 0) {
+          result.categories.forEach(c => { catMap[c.categoryName] = true; });
+        } else if (Array.isArray(result.testResults)) {
+          result.testResults.forEach(item => {
+            catMap[item.category || 'General Biochemistry'] = true;
+          });
+        }
         setExpandedCategories(catMap);
       }
     } catch (err) {
@@ -80,17 +87,101 @@ export const LabReportsPage = () => {
   const handleSaveToRecords = () => {
     if (!analysisResult) return;
 
-    const mainTest = analysisResult.testResults[0];
-    const summaryText = `${mainTest?.testName || 'Lab Test'}: ${mainTest?.result || ''} ${mainTest?.unit || ''}`;
+    const mainTest = (analysisResult.testResults && analysisResult.testResults[0]) || 
+                     (analysisResult.categories && analysisResult.categories[0] && analysisResult.categories[0].tests && analysisResult.categories[0].tests[0]);
+
+    const summaryText = mainTest 
+      ? `${mainTest.testName}: ${mainTest.result} ${mainTest.unit !== 'Not provided' ? mainTest.unit : ''}`.trim()
+      : (analysisResult.overallSummary || 'Diagnostic Report');
+
+    const totalCount = analysisResult.totalTestsFound || 
+                       (analysisResult.testResults ? analysisResult.testResults.length : 0);
+
+    const hasOut = analysisResult.testResults 
+      ? analysisResult.testResults.some(t => t.status !== 'Within range')
+      : false;
+
+    const labName = analysisResult.labName || analysisResult.laboratoryName || 'Lab Report';
 
     addLabReport({
-      name: `${analysisResult.laboratoryName} (${analysisResult.totalTestsFound} tests)`,
-      date: analysisResult.reportDate,
+      name: `${labName} (${totalCount} tests)`,
+      date: analysisResult.reportDate || new Date().toLocaleDateString('en-GB'),
       result: summaryText,
-      status: analysisResult.testResults.some(t => t.status !== 'Within range') ? 'Out of Range' : 'Within Target'
+      status: hasOut ? 'Out of Range' : 'Within Target',
+      fullReport: analysisResult,
+      extractedData: analysisResult,
+      fullPayload: analysisResult
     });
 
     handleCloseModal();
+  };
+
+  const handleViewSavedReport = (report) => {
+    const fullData = report.fullReport || report.extractedData || report.fullPayload;
+
+    let payload = null;
+
+    if (fullData && typeof fullData === 'object' && (Array.isArray(fullData.categories) || Array.isArray(fullData.testResults))) {
+      payload = fullData;
+    } else {
+      const cleanLabName = report.name ? report.name.replace(/\s*\(\d+\s*tests\)/i, '').trim() : 'Laboratory Report';
+      payload = {
+        labName: cleanLabName,
+        laboratoryName: cleanLabName,
+        patientName: 'Patient',
+        reportDate: report.date,
+        totalTestsFound: 1,
+        overallSummary: report.result || 'Saved Laboratory Record',
+        riskAssessment: {
+          level: report.status === 'Out of Range' ? 'MODERATE RISK' : 'NORMAL',
+          label: report.status === 'Out of Range' ? 'Moderate Risk — Clinical Attention Needed' : 'Low Risk — All Values Within Target Ranges',
+          description: report.result || 'Summary of saved test findings.',
+          color: report.status === 'Out of Range' ? '#b45309' : '#166534',
+          bg: report.status === 'Out of Range' ? '#fffbeb' : '#f0fdf4',
+          border: report.status === 'Out of Range' ? '#fde68a' : '#bbf7d0',
+          withinRangeCount: report.status === 'Out of Range' ? 0 : 1,
+          outOfRangeCount: report.status === 'Out of Range' ? 1 : 0
+        },
+        categories: [
+          {
+            categoryName: 'General Biochemistry',
+            tests: [
+              {
+                testName: 'Laboratory Summary Record',
+                result: report.result,
+                unit: '',
+                referenceRange: 'See lab printout',
+                status: report.status === 'Out of Range' ? 'Above range' : 'Within range',
+                explanation: `Saved diagnostic record: ${report.result}`
+              }
+            ]
+          }
+        ],
+        testResults: [
+          {
+            testName: 'Laboratory Summary Record',
+            result: report.result,
+            unit: '',
+            referenceRange: 'See lab printout',
+            status: report.status === 'Out of Range' ? 'Above range' : 'Within range',
+            category: 'General Biochemistry',
+            explanation: `Saved diagnostic record: ${report.result}`
+          }
+        ]
+      };
+    }
+
+    setAnalysisResult(payload);
+    setIsViewOnly(true);
+
+    const catMap = {};
+    if (Array.isArray(payload.categories) && payload.categories.length > 0) {
+      payload.categories.forEach(c => { catMap[c.categoryName] = true; });
+    } else if (Array.isArray(payload.testResults)) {
+      payload.testResults.forEach(t => { catMap[t.category || 'General Biochemistry'] = true; });
+    }
+    setExpandedCategories(catMap);
+    setIsUploadModalOpen(true);
   };
 
   const getStatusBadge = (status) => {
@@ -120,12 +211,19 @@ export const LabReportsPage = () => {
 
   // Group results by category
   const groupedResults = {};
-  if (analysisResult && Array.isArray(analysisResult.testResults)) {
-    analysisResult.testResults.forEach(item => {
-      const cat = item.category || 'General Biochemistry';
-      if (!groupedResults[cat]) groupedResults[cat] = [];
-      groupedResults[cat].push(item);
-    });
+  if (analysisResult) {
+    if (Array.isArray(analysisResult.categories) && analysisResult.categories.length > 0) {
+      analysisResult.categories.forEach(cObj => {
+        const cat = cObj.categoryName || 'General Biochemistry';
+        groupedResults[cat] = cObj.tests || [];
+      });
+    } else if (Array.isArray(analysisResult.testResults)) {
+      analysisResult.testResults.forEach(item => {
+        const cat = item.category || 'General Biochemistry';
+        if (!groupedResults[cat]) groupedResults[cat] = [];
+        groupedResults[cat].push(item);
+      });
+    }
   }
 
   return (
@@ -143,7 +241,7 @@ export const LabReportsPage = () => {
         </div>
 
         <button 
-          onClick={() => setIsUploadModalOpen(true)}
+          onClick={() => { setIsViewOnly(false); setAnalysisResult(null); setIsUploadModalOpen(true); }}
           className="btn-primary" 
           style={{ padding: '0.65rem 1.25rem', fontSize: '0.88rem', background: 'linear-gradient(135deg, #0284c7, #2563eb)', border: 'none' }}
         >
@@ -163,11 +261,11 @@ export const LabReportsPage = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.15rem' }}>
                   <FileText size={18} color="#0284c7" />
                   <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
-                    Laboratory Report Extraction & Reader
+                    {isViewOnly ? 'Saved Laboratory Report Details' : 'Laboratory Report Extraction & Reader'}
                   </h3>
                 </div>
                 <p style={{ fontSize: '0.82rem', color: '#64748b' }}>
-                  Supports digital PDFs and scanned PNG/JPG reports. Exact extraction with laboratory reference range preservation.
+                  {isViewOnly ? 'Reviewing saved diagnostic findings and test values.' : 'Supports digital PDFs and scanned PNG/JPG reports. Exact extraction with laboratory reference range preservation.'}
                 </p>
               </div>
               <button onClick={handleCloseModal} style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', borderRadius: '50%', padding: '0.4rem' }}>
@@ -176,7 +274,7 @@ export const LabReportsPage = () => {
             </div>
 
             {/* STEP 1: FILE PICKER */}
-            {!analysisResult && !isAnalyzing && (
+            {!analysisResult && !isAnalyzing && !isViewOnly && (
               <div style={{ border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '2.5rem 1rem', textAlign: 'center', background: '#f8fafc', marginBottom: '1rem' }}>
                 <Upload size={34} color="#0284c7" style={{ marginBottom: '0.6rem' }} />
                 <div style={{ fontSize: '0.98rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.25rem' }}>Select Laboratory Report Document</div>
@@ -229,11 +327,11 @@ export const LabReportsPage = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.85rem' }}>
                     <div>
                       <div style={{ fontSize: '0.76rem', textTransform: 'uppercase', tracking: '0.05em', color: '#64748b', fontWeight: 700 }}>Essential Report Details</div>
-                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '0.1rem' }}>{analysisResult.laboratoryName}</div>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '0.1rem' }}>{analysisResult.labName || analysisResult.laboratoryName}</div>
                       <div style={{ fontSize: '0.82rem', color: '#475569', marginTop: '0.2rem', display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
-                        <span>Patient: <strong>{analysisResult.patientName}</strong></span>
+                        <span>Patient: <strong>{analysisResult.patientName || 'Patient'}</strong></span>
                         <span>Date: <strong>{analysisResult.reportDate}</strong></span>
-                        <span>Tests Extracted: <strong>{analysisResult.totalTestsFound}</strong></span>
+                        <span>Tests Extracted: <strong>{analysisResult.totalTestsFound || (analysisResult.testResults ? analysisResult.testResults.length : 0)}</strong></span>
                       </div>
                     </div>
 
@@ -354,7 +452,7 @@ export const LabReportsPage = () => {
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             {groupedResults[categoryName].map((testItem, idx) => (
                               <div key={idx} style={{ background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '8px', borderLeft: '3px solid #0284c7', fontSize: '0.8rem', color: '#334155', lineHeight: 1.45 }}>
-                                <strong style={{ color: '#0f172a' }}>{testItem.testName}:</strong> {testItem.explanation}
+                                <strong style={{ color: '#0f172a' }}>{testItem.testName}:</strong> {testItem.explanation || `Reported value is ${testItem.result}`}
                               </div>
                             ))}
                           </div>
@@ -372,18 +470,26 @@ export const LabReportsPage = () => {
                     <Info size={15} />
                     <span>Important Clinical Safety Notice</span>
                   </div>
-                  <div>{analysisResult.disclaimer}</div>
+                  <div>{analysisResult.disclaimer || 'This information is provided to help you understand your laboratory report and is not a medical diagnosis.'}</div>
                 </div>
 
                 {/* MODAL ACTION BUTTONS */}
                 <div style={{ display: 'flex', gap: '0.65rem', marginTop: '0.5rem' }}>
-                  <button type="button" onClick={() => setAnalysisResult(null)} className="btn-outline" style={{ flex: 1, justifyContent: 'center', padding: '0.65rem' }}>
-                    Upload Different Report
-                  </button>
-                  <button type="button" onClick={handleSaveToRecords} className="btn-primary" style={{ flex: 1, justifyContent: 'center', background: '#0284c7', padding: '0.65rem' }}>
-                    <CheckCircle2 size={16} />
-                    <span>Save Report to Health Records</span>
-                  </button>
+                  {isViewOnly ? (
+                    <button type="button" onClick={handleCloseModal} className="btn-primary" style={{ flex: 1, justifyContent: 'center', background: '#0284c7', padding: '0.65rem' }}>
+                      Close Details
+                    </button>
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => setAnalysisResult(null)} className="btn-outline" style={{ flex: 1, justifyContent: 'center', padding: '0.65rem' }}>
+                        Upload Different Report
+                      </button>
+                      <button type="button" onClick={handleSaveToRecords} className="btn-primary" style={{ flex: 1, justifyContent: 'center', background: '#0284c7', padding: '0.65rem' }}>
+                        <CheckCircle2 size={16} />
+                        <span>Save Report to Health Records</span>
+                      </button>
+                    </>
+                  )}
                 </div>
 
               </div>
@@ -407,22 +513,57 @@ export const LabReportsPage = () => {
                 <th style={{ padding: '0.65rem 0.5rem', color: 'var(--text-muted)', fontWeight: 600 }}>REPORT DATE</th>
                 <th style={{ padding: '0.65rem 0.5rem', color: 'var(--text-muted)', fontWeight: 600 }}>TEST SUMMARY</th>
                 <th style={{ padding: '0.65rem 0.5rem', color: 'var(--text-muted)', fontWeight: 600 }}>STATUS</th>
+                <th style={{ padding: '0.65rem 0.5rem', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
-              {labReports.map((report) => (
-                <tr key={report.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.75rem 0.5rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <FileText size={16} color="#0284c7" />
-                    <span>{report.name}</span>
-                  </td>
-                  <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)' }}>{report.date}</td>
-                  <td style={{ padding: '0.75rem 0.5rem', fontWeight: 700, color: '#0284c7' }}>{report.result}</td>
-                  <td style={{ padding: '0.75rem 0.5rem' }}>
-                    {getStatusBadge(report.status)}
+              {labReports.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                    No saved laboratory test records found. Click "+ Upload Lab Report" to add your first report.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                labReports.map((report) => (
+                  <tr 
+                    key={report.id} 
+                    onClick={() => handleViewSavedReport(report)}
+                    style={{ borderBottom: '1px solid var(--border-subtle)', cursor: 'pointer' }}
+                  >
+                    <td style={{ padding: '0.75rem 0.5rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <FileText size={16} color="#0284c7" />
+                      <span>{report.name}</span>
+                    </td>
+                    <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)' }}>{report.date}</td>
+                    <td style={{ padding: '0.75rem 0.5rem', fontWeight: 700, color: '#0284c7' }}>{report.result}</td>
+                    <td style={{ padding: '0.75rem 0.5rem' }}>
+                      {getStatusBadge(report.status)}
+                    </td>
+                    <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>
+                        <button 
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleViewSavedReport(report); }} 
+                          className="btn-outline" 
+                          style={{ fontSize: '0.76rem', padding: '0.25rem 0.55rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                          title="View full report details"
+                        >
+                          <Eye size={14} />
+                          <span>View Details</span>
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); deleteLabReport(report.id); }} 
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-rose)', padding: '0.35rem', borderRadius: '4px' }}
+                          title="Delete report"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
