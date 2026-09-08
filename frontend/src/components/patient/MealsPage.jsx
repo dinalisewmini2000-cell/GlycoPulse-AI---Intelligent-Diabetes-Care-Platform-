@@ -1,12 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { PlusCircle, Camera, Upload, Trash2, X, RefreshCw, CheckCircle2, AlertCircle, Info, Plus, Utensils, Crop, ShieldAlert, Edit2 } from 'lucide-react';
+import { PlusCircle, Camera, Upload, Trash2, X, RefreshCw, CheckCircle2, AlertCircle, Info, Plus, Utensils, Crop, ShieldAlert, Edit2, Calendar, Sparkles } from 'lucide-react';
 import { analyzeFoodImage, isEdibleFood } from '../../services/foodVisionService';
 import { NUTRITION_DATABASE, calculateItemNutrition, calculateMealTotals, findNutritionDatabaseEntry } from '../../services/nutritionDatabase';
 import { ImageCropModal } from './ImageCropModal';
+import { WeeklyMealPlanner } from './WeeklyMealPlanner';
 
 export const MealsPage = () => {
-  const { mealLogs, addMealLog, deleteMealLog } = useApp();
+  const { mealLogs, addMealLog, deleteMealLog, mealSubTab, setMealSubTab } = useApp();
+
+  // Section Tab State: 'daily' | 'weekly' (Synced via AppContext)
+  const mainSectionTab = mealSubTab || 'daily';
+  const setMainSectionTab = setMealSubTab;
 
   // Modal States
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
@@ -319,37 +324,95 @@ export const MealsPage = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '960px', fontFamily: 'Inter, system-ui, sans-serif' }}>
       
-      {/* Header & Action Buttons */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.2rem', letterSpacing: '-0.02em' }}>
-            Meals & Nutrition Pipeline
-          </h1>
-          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-            Accurate, food-only recognition supporting Sri Lankan, South Asian, and international meals.
-          </p>
+      {/* Header & Tab Bar */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.2rem', letterSpacing: '-0.02em' }}>
+              Meals & Nutrition Pipeline
+            </h1>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+              Food-only AI vision scanner, daily logs, personalized 7-day meal planner & smart shopping generator.
+            </p>
+          </div>
+
+          {mainSectionTab === 'daily' && (
+            <div style={{ display: 'flex', gap: '0.65rem' }}>
+              <button 
+                onClick={() => setIsManualModalOpen(true)}
+                className="btn-outline" 
+                style={{ padding: '0.65rem 1.1rem', fontSize: '0.88rem' }}
+              >
+                <PlusCircle size={17} />
+                <span>+ Enter Manually</span>
+              </button>
+
+              <button 
+                onClick={() => { setIsScanModalOpen(true); setActiveTab('camera'); }}
+                className="btn-primary" 
+                style={{ padding: '0.65rem 1.15rem', fontSize: '0.88rem', background: 'linear-gradient(135deg, #0284c7, #2563eb)', border: 'none' }}
+              >
+                <Camera size={17} />
+                <span>Scan Food Image</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.65rem' }}>
-          <button 
-            onClick={() => setIsManualModalOpen(true)}
-            className="btn-outline" 
-            style={{ padding: '0.65rem 1.1rem', fontSize: '0.88rem' }}
+        {/* Top Tab Bar: Daily Scanner vs Weekly AI Planner */}
+        <div style={{ display: 'flex', gap: '0.5rem', background: '#f1f5f9', padding: '0.3rem', borderRadius: '10px', width: 'fit-content', border: '1px solid #e2e8f0' }}>
+          <button
+            type="button"
+            onClick={() => setMainSectionTab('daily')}
+            style={{
+              padding: '0.55rem 1.15rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: mainSectionTab === 'daily' ? '#0284c7' : 'transparent',
+              color: mainSectionTab === 'daily' ? '#ffffff' : '#64748b',
+              fontWeight: 800,
+              fontSize: '0.86rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              transition: 'all 0.15s ease'
+            }}
           >
-            <PlusCircle size={17} />
-            <span>+ Enter Manually</span>
+            <Utensils size={16} />
+            <span>Daily Food Scanner & Logs</span>
           </button>
 
-          <button 
-            onClick={() => { setIsScanModalOpen(true); setActiveTab('camera'); }}
-            className="btn-primary" 
-            style={{ padding: '0.65rem 1.15rem', fontSize: '0.88rem', background: 'linear-gradient(135deg, #0284c7, #2563eb)', border: 'none' }}
+          <button
+            type="button"
+            onClick={() => setMainSectionTab('weekly')}
+            style={{
+              padding: '0.55rem 1.15rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: mainSectionTab === 'weekly' ? '#0284c7' : 'transparent',
+              color: mainSectionTab === 'weekly' ? '#ffffff' : '#64748b',
+              fontWeight: 800,
+              fontSize: '0.86rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              transition: 'all 0.15s ease'
+            }}
           >
-            <Camera size={17} />
-            <span>Scan Food Image</span>
+            <Sparkles size={16} />
+            <span>Weekly AI Planner & Shopping List</span>
           </button>
         </div>
       </div>
+
+      {/* RENDER FEATURE 6: WEEKLY MEAL PLANNER & SHOPPING LIST */}
+      {mainSectionTab === 'weekly' && <WeeklyMealPlanner />}
+
+      {/* RENDER TAB 1 CONTENT: DAILY FOOD SCANNER & LOGS */}
+      {mainSectionTab === 'daily' && (
+        <>
 
       {/* 1. INTERACTIVE CROP MODAL PRE-SCANNING STEP */}
       {isCropModalOpen && rawImage && (
@@ -526,29 +589,54 @@ export const MealsPage = () => {
               </div>
             )}
 
-            {/* RESULT CASE: NO FOOD, QUALITY ISSUE, OR API ERROR */}
-            {analysisResult && !analysisResult.isFood && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '1.25rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', textAlign: 'center' }}>
-                <AlertCircle size={36} style={{ margin: '0 auto', color: '#dc2626' }} />
+            {/* RESULT CASE A1: API CONNECTION ERROR */}
+            {analysisResult && (analysisResult.isApiError || analysisResult.errorType === 'API_ERROR') && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '1.6rem', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', textAlign: 'center' }}>
+                <AlertCircle size={42} style={{ margin: '0 auto', color: '#d97706' }} />
                 <div>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#991b1b', marginBottom: '0.35rem' }}>
-                    {analysisResult.errorType === 'API_ERROR' ? 'Unable to Analyze Image' : analysisResult.errorType === 'QUALITY_ISSUE' ? 'Unclear Image' : 'No Recognizable Food Detected'}
+                  <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#92400e', marginBottom: '0.35rem' }}>
+                    AI Service Connection Error
                   </h4>
-                  <p style={{ fontSize: '0.85rem', color: '#7f1d1d', lineHeight: 1.45 }}>
-                    {analysisResult.statusText || 'Unable to analyze this image. Please try again.'}
+                  <p style={{ fontSize: '0.88rem', color: '#78350f', lineHeight: 1.5, margin: '0 0 0.35rem 0' }}>
+                    AI Service Connection Error. Please try again.
                   </p>
-                  {analysisResult.subText && (
-                    <p style={{ fontSize: '0.78rem', color: '#991b1b', marginTop: '0.35rem' }}>
-                      {analysisResult.subText}
-                    </p>
-                  )}
+                  <p style={{ fontSize: '0.8rem', color: '#b45309', margin: 0 }}>
+                    {analysisResult.subText || 'Could not connect to AI Vision Service. Please check your internet connection or API key.'}
+                  </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center' }}>
-                  <button type="button" onClick={() => { setCroppedImage(null); setRawImage(null); setAnalysisResult(null); setActiveTab('camera'); }} className="btn-outline" style={{ background: '#ffffff', borderColor: '#fca5a5', color: '#991b1b', fontWeight: 600 }}>
-                    Try Again
+                <div style={{ display: 'flex', gap: '0.65rem', justifyContent: 'center', marginTop: '0.4rem' }}>
+                  <button type="button" onClick={() => { setCroppedImage(null); setRawImage(null); setAnalysisResult(null); setActiveTab('camera'); }} className="btn-outline" style={{ background: '#ffffff', borderColor: '#fcd34d', color: '#92400e', fontWeight: 700, padding: '0.55rem 1.1rem' }}>
+                    Retry Connection
                   </button>
-                  <button type="button" onClick={() => { handleCloseScanModal(); setIsManualModalOpen(true); }} className="btn-primary" style={{ background: '#dc2626', borderColor: '#dc2626' }}>
+                  <button type="button" onClick={() => { handleCloseScanModal(); setIsManualModalOpen(true); }} className="btn-primary" style={{ background: '#d97706', borderColor: '#d97706', fontWeight: 700, padding: '0.55rem 1.1rem' }}>
+                    Enter Manually
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* RESULT CASE A2: NO FOOD DETECTED (RED LABEL NOTICE) */}
+            {analysisResult && !analysisResult.isFood && !analysisResult.isApiError && analysisResult.errorType !== 'API_ERROR' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '1.6rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', textAlign: 'center' }}>
+                <AlertCircle size={42} style={{ margin: '0 auto', color: '#dc2626' }} />
+                <div>
+                  <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#991b1b', marginBottom: '0.35rem' }}>
+                    No Food Detected
+                  </h4>
+                  <p style={{ fontSize: '0.88rem', color: '#7f1d1d', lineHeight: 1.5, margin: '0 0 0.35rem 0' }}>
+                    {analysisResult.statusText || 'The scanned image does not contain any recognizable food items.'}
+                  </p>
+                  <p style={{ fontSize: '0.8rem', color: '#991b1b', margin: 0 }}>
+                    {analysisResult.subText || 'The photo appears to show a person, selfie, face, or non-food object. Please capture or upload a clear photo of your food plate.'}
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.65rem', justifyContent: 'center', marginTop: '0.4rem' }}>
+                  <button type="button" onClick={() => { setCroppedImage(null); setRawImage(null); setAnalysisResult(null); setActiveTab('camera'); }} className="btn-outline" style={{ background: '#ffffff', borderColor: '#fca5a5', color: '#991b1b', fontWeight: 700, padding: '0.55rem 1.1rem' }}>
+                    Try Again (Scan Food)
+                  </button>
+                  <button type="button" onClick={() => { handleCloseScanModal(); setIsManualModalOpen(true); }} className="btn-primary" style={{ background: '#dc2626', borderColor: '#dc2626', fontWeight: 700, padding: '0.55rem 1.1rem' }}>
                     Enter Manually
                   </button>
                 </div>
@@ -556,7 +644,7 @@ export const MealsPage = () => {
             )}
 
             {/* RESULT CASE B: VALIDATED FOOD ANALYSIS & PORTION EDITOR */}
-            {analysisResult && analysisResult.isFood && (
+            {analysisResult && analysisResult.isFood && !analysisResult.foodName?.toLowerCase().includes('no food') && !analysisResult.foodName?.toLowerCase().includes('non-food') && !analysisResult.foodName?.toLowerCase().includes('not food') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                 
                 {/* Header & Confidence Badge */}
@@ -577,6 +665,7 @@ export const MealsPage = () => {
                     <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.45rem', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 700 }}>Quick Dish Presets:</span>
                       {[
+                        { label: 'Chicken Lasagna', items: [{ food: 'chicken lasagna', grams: 250 }] },
                         { label: 'Herb Roasted Grilled Chicken', items: [{ food: 'grilled chicken breast', grams: 180 }, { food: 'steamed vegetables', grams: 100 }] },
                         { label: 'Sri Lankan Rice & Curry', items: [{ food: 'white rice', grams: 180 }, { food: 'chicken curry', grams: 120 }, { food: 'dhal curry (lentils)', grams: 100 }, { food: 'gotukola sambol', grams: 50 }] },
                         { label: 'Fresh Mixed Fruit Platter', items: [{ food: 'strawberries & berries', grams: 100 }, { food: 'sliced kiwi & orange', grams: 120 }, { food: 'banana & grapes', grams: 120 }] },
@@ -817,6 +906,8 @@ export const MealsPage = () => {
           </table>
         </div>
       </div>
+      </>
+      )}
 
     </div>
   );

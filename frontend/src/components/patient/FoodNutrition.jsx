@@ -55,14 +55,38 @@ export const FoodNutrition = () => {
     setCustomImage(fileUrl);
     setSelectedFood('custom');
     setIsScanning(true);
-
-    console.log("My API Key is:", import.meta.env.VITE_GEMINI_API_KEY);
+    setFoodAnalysis(null);
 
     try {
       const result = await analyzeFoodImage(file);
       setFoodAnalysis(result);
+
+      if (result?.isApiError || result?.errorType === 'API_ERROR') {
+        if (setToastAlert) {
+          setToastAlert({
+            type: 'error',
+            title: 'AI Connection Error',
+            message: 'AI Service Connection Error. Please try again.'
+          });
+        }
+      }
     } catch (err) {
       console.error('Food upload error:', err);
+      const apiErrRes = {
+        isFood: false,
+        isApiError: true,
+        errorType: 'API_ERROR',
+        statusText: 'AI Service Connection Error. Please try again.',
+        subText: 'Could not connect to AI Vision Service. Please check your internet connection or API key.'
+      };
+      setFoodAnalysis(apiErrRes);
+      if (setToastAlert) {
+        setToastAlert({
+          type: 'error',
+          title: 'AI Connection Error',
+          message: 'AI Service Connection Error. Please try again.'
+        });
+      }
     } finally {
       setIsScanning(false);
     }
@@ -179,25 +203,46 @@ export const FoodNutrition = () => {
               Upload a meal photo or select a sample meal to estimate carbohydrates, glycemic load, and glucose impact.
             </p>
           </div>
-        ) : foodAnalysis.isFood === false ? (
-          <div style={{ background: 'rgba(244, 63, 94, 0.08)', padding: '1.5rem', borderRadius: '14px', border: '1px solid rgba(244, 63, 94, 0.25)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+        ) : foodAnalysis.isApiError || foodAnalysis.errorType === 'API_ERROR' ? (
+          <div style={{ background: '#fffbeb', padding: '1.5rem', borderRadius: '14px', border: '1px solid #fde68a', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--accent-rose)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#b45309' }}>
                 <AlertCircle size={22} />
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>
-                  {foodAnalysis.statusText || 'No Food Detected'}
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#92400e' }}>
+                  AI Service Connection Error. Please try again.
                 </h4>
               </div>
-              <button onClick={() => fileInputRef.current?.click()} className="btn-glow" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
+              <button onClick={() => fileInputRef.current?.click()} className="btn-glow" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', background: '#d97706', borderColor: '#d97706' }}>
+                <RotateCcw size={14} />
+                <span>Retry Connection</span>
+              </button>
+            </div>
+            <p style={{ fontSize: '0.88rem', color: '#78350f', margin: 0, fontWeight: 500 }}>
+              {foodAnalysis.subText || 'Could not connect to AI Vision Service. Please check your internet connection or API key.'}
+            </p>
+            <div style={{ background: '#ffffff', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.82rem', color: '#92400e', border: '1px solid #fcd34d' }}>
+              💡 <strong>Notice:</strong> If the model or connection error persists, please check your network connection or try again later.
+            </div>
+          </div>
+        ) : foodAnalysis.isFood === false ? (
+          <div style={{ background: '#fef2f2', padding: '1.5rem', borderRadius: '14px', border: '1px solid #fecaca', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#dc2626' }}>
+                <AlertCircle size={22} />
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#991b1b' }}>
+                  {foodAnalysis.statusText || 'No food detected! Please upload a clear picture of a meal.'}
+                </h4>
+              </div>
+              <button onClick={() => fileInputRef.current?.click()} className="btn-glow" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', background: '#dc2626', borderColor: '#dc2626' }}>
                 <RotateCcw size={14} />
                 <span>Upload New Photo</span>
               </button>
             </div>
-            <p style={{ fontSize: '0.88rem', color: 'var(--text-main)', margin: 0 }}>
-              {foodAnalysis.subText || 'The uploaded image appears to be a mobile screenshot, document, or non-food image.'}
+            <p style={{ fontSize: '0.88rem', color: '#7f1d1d', margin: 0, fontWeight: 500 }}>
+              {foodAnalysis.subText || 'The photo appears to show a person, selfie, face, or non-food object.'}
             </p>
-            <div style={{ background: 'var(--bg-secondary)', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.82rem', color: 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
-              💡 <strong>Instruction:</strong> {foodAnalysis.recommendation || 'Please upload a clear photograph of a real meal or food item to perform food nutrition recognition.'}
+            <div style={{ background: '#ffffff', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.82rem', color: '#991b1b', border: '1px solid #fca5a5' }}>
+              💡 <strong>Instruction:</strong> Please upload a clear photograph of a real meal or food item.
             </div>
           </div>
         ) : (

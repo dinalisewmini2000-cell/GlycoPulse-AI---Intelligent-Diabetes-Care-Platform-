@@ -58,7 +58,7 @@ export function calculateGlucoseTrend(logs) {
 }
 
 export const GlucosePage = ({ showAddModal, onCloseAddModal }) => {
-  const { glucoseLogs, addGlucoseLog, deleteGlucoseLog } = useApp();
+  const { glucoseLogs, addGlucoseLog, deleteGlucoseLog, latestBLEReading } = useApp();
 
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -175,6 +175,15 @@ export const GlucosePage = ({ showAddModal, onCloseAddModal }) => {
                 <X size={18} />
               </button>
             </div>
+
+            {latestBLEReading && (
+              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', padding: '0.65rem 0.85rem', borderRadius: '8px', fontSize: '0.8rem', color: '#0369a1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+                <span>📡 <strong>BLE Telemetry:</strong> {latestBLEReading.value} mg/dL ({latestBLEReading.device})</span>
+                <button type="button" onClick={() => setValue(String(latestBLEReading.value))} style={{ background: '#0284c7', color: '#ffffff', border: 'none', borderRadius: '4px', padding: '0.25rem 0.6rem', fontSize: '0.74rem', fontWeight: 800, cursor: 'pointer' }}>
+                  Auto-Fill Value
+                </button>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>

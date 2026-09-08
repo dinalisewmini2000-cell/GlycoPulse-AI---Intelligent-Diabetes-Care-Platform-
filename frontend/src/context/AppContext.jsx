@@ -22,11 +22,69 @@ export const AppProvider = ({ children }) => {
   // Theme State
   const [theme, setTheme] = useState(() => localStorage.getItem('glucocare_theme') || 'light');
 
-  // Active Navigation Section: 'dashboard' | 'glucose' | 'meals' | 'calendar' | 'lab'
-  const [activeTab, setActiveTab] = useState('dashboard');
+  // Active Navigation Section: 'dashboard' | 'glucose' | 'meals' | 'calendar' | 'lab' | 'community' | 'mental-health' | 'medications' | 'devices' | 'premium-ai'
+  const getPathTab = () => {
+    const raw = window.location.pathname.replace('/', '').toLowerCase().trim();
+    if (['dashboard', 'glucose', 'meals', 'calendar', 'lab', 'community', 'mental-health', 'medications', 'devices', 'premium-ai'].includes(raw)) {
+      return raw;
+    }
+    return 'dashboard';
+  };
+
+  const [activeTab, setActiveTabState] = useState(getPathTab);
+  const [mealSubTab, setMealSubTab] = useState('daily'); // 'daily' | 'weekly'
+
+  const setActiveTab = (tab, subTab = null) => {
+    setActiveTabState(tab);
+    if (subTab) setMealSubTab(subTab);
+    const targetUrl = '/' + tab + (subTab ? `?tab=${subTab}` : '');
+    if (window.location.pathname + window.location.search !== targetUrl) {
+      window.history.pushState(null, '', targetUrl);
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = getPathTab();
+      setActiveTabState(path);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('signin');
+  const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
+
+  // Digital Medical Profile State
+  const [medicalProfile, setMedicalProfile] = useState(() => {
+    const saved = localStorage.getItem('glucocare_medical_profile');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return {
+      fullName: 'Kasun Perera',
+      age: 42,
+      bloodGroup: 'O+',
+      diabetesType: 'Type 1 Diabetes',
+      allergies: 'Penicillin, Sulfa drugs',
+      medications: 'Insulin Glargine (Lantus) 18U bedtime, Novorapid 6U pre-meal',
+      emergencyContactName: 'Sanduni Perera (Spouse)',
+      emergencyContactPhone: '+94 77 123 4567',
+      doctorName: 'Dr. A. Samarasinghe (Endocrinologist)',
+      doctorPhone: '+94 71 987 6543',
+      hypoInstructions: 'If unconscious, DO NOT give liquids. Call 1990 Suwa Seriya immediately. If conscious, administer 15-20g fast-acting sugar.'
+    };
+  });
+
+  const updateMedicalProfile = (updatedFields) => {
+    setMedicalProfile((prev) => {
+      const next = { ...prev, ...updatedFields };
+      localStorage.setItem('glucocare_medical_profile', JSON.stringify(next));
+      return next;
+    });
+  };
 
   const openAuthModal = (mode = 'signin') => {
     setAuthMode(mode);
@@ -35,11 +93,19 @@ export const AppProvider = ({ children }) => {
   const [toastAlert, setToastAlert] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
 
+  const DEFAULT_PATIENT_USER = {
+    id: 'usr-sewmini',
+    uid: 'usr-sewmini',
+    name: 'sewmini',
+    email: 'sewmini@gmail.com',
+    role: 'patient'
+  };
+
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const authFlag = localStorage.getItem('glucocare_auth');
     if (authFlag !== null) return authFlag === 'true';
-    return false;
+    return true;
   });
 
   const [role, setRole] = useState('patient');
@@ -52,7 +118,7 @@ export const AppProvider = ({ children }) => {
         if (parsed && (parsed.uid || parsed.email)) return parsed;
       } catch (err) {}
     }
-    return null;
+    return DEFAULT_PATIENT_USER;
   });
 
   const currentEmail = currentUser?.email || '';
@@ -96,6 +162,55 @@ export const AppProvider = ({ children }) => {
     return () => unsubscribeAuth();
   }, []);
 
+  // Auto-seed initial 7-day historical records for new patient accounts
+  useEffect(() => {
+    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid;
+    const targetEmail = currentUser?.email || auth?.currentUser?.email;
+
+    if (!targetEmail || !targetUid) return;
+
+    const seedIfNeeded = async () => {
+      try {
+        const seededKey = `glucocare_seeded_${targetEmail}`;
+        if (localStorage.getItem(seededKey)) return;
+
+        localStorage.setItem(seededKey, 'true');
+        console.log(`[Firestore Auto-Seed] Checking initial 7-day history for ${targetEmail}`);
+
+        const today = new Date().toISOString().split('T')[0];
+        const d1 = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        const d2 = new Date(Date.now() - 172800000).toISOString().split('T')[0];
+        const d3 = new Date(Date.now() - 259200000).toISOString().split('T')[0];
+        const d4 = new Date(Date.now() - 345600000).toISOString().split('T')[0];
+
+        const initialSampleLogs = [
+          { date: today, time: '08:00 AM', value: 118, context: 'Before breakfast', notes: 'Fasting blood glucose check' },
+          { date: d1, time: '01:45 PM', value: 132, context: 'After lunch', notes: 'Postprandial 2-hour check' },
+          { date: d2, time: '08:15 AM', value: 112, context: 'Before breakfast', notes: 'Morning fasting check' },
+          { date: d3, time: '09:30 PM', value: 124, context: 'Before bed', notes: 'Bedtime check' },
+          { date: d4, time: '08:00 AM', value: 115, context: 'Before breakfast', notes: 'Fasting check' }
+        ];
+
+        for (const log of initialSampleLogs) {
+          await saveMeasurementToFirestore(targetUid, targetEmail, log);
+        }
+
+        const initialSampleMeals = [
+          { date: today, time: '12:30 PM', mealType: 'Lunch', food: 'Brown Rice with Fish Curry & Gotukola Mallum', carbs: 42, protein: 28, fat: 10, calories: '380 kcal', notes: 'Low-GI balanced lunch' },
+          { date: d1, time: '08:30 AM', mealType: 'Breakfast', food: 'Oatmeal with Walnuts & Chia Seeds', carbs: 36, protein: 12, fat: 9, calories: '310 kcal', notes: 'Fiber-rich morning breakfast' }
+        ];
+
+        for (const meal of initialSampleMeals) {
+          await saveMealToFirestore(targetUid, targetEmail, meal);
+        }
+      } catch (err) {
+        console.warn('[Firestore Auto-Seed Note]:', err);
+      }
+    };
+
+    seedIfNeeded();
+  }, [currentUser?.email]);
+
   // --------------------------------------------------------------------------
   // FIRESTORE REAL-TIME DATA SUBSCRIPTION (ZERO LOCAL STORAGE PATIENT DATA)
   // --------------------------------------------------------------------------
@@ -103,28 +218,34 @@ export const AppProvider = ({ children }) => {
     const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid;
     const targetEmail = currentUser?.email || auth?.currentUser?.email;
 
-    if (!targetEmail && !targetUid) return;
+    if (!targetEmail && !targetUid) {
+      setGlucoseLogs([]);
+      setMealLogs([]);
+      setLabReports([]);
+      setReminders([]);
+      return;
+    }
 
     console.log(`[Firestore Real-time Fetch] Listening for userId: '${targetUid}' (email: '${targetEmail}')`);
 
     // 1. Subscribe Sugar Measurements (collection: measurements, where('userEmail', '==', targetEmail))
     const unsubGlucose = subscribeUserMeasurements(targetUid, targetEmail, (cloudDocs) => {
-      setGlucoseLogs(cloudDocs);
+      setGlucoseLogs(cloudDocs || []);
     });
 
     // 2. Subscribe Meal Logs (collection: meal_logs)
     const unsubMeals = subscribeUserMeals(targetUid, targetEmail, (cloudDocs) => {
-      setMealLogs(cloudDocs);
+      setMealLogs(cloudDocs || []);
     });
 
     // 3. Subscribe Lab Reports (collection: lab_reports)
     const unsubLabs = subscribeUserLabReports(targetUid, targetEmail, (cloudDocs) => {
-      setLabReports(cloudDocs);
+      setLabReports(cloudDocs || []);
     });
 
     // 4. Subscribe Reminders (collection: reminders)
     const unsubReminders = subscribeUserReminders(targetUid, targetEmail, (cloudDocs) => {
-      setReminders(cloudDocs);
+      setReminders(cloudDocs || []);
     });
 
     return () => {
@@ -133,7 +254,7 @@ export const AppProvider = ({ children }) => {
       unsubLabs();
       unsubReminders();
     };
-  }, [currentUser?.uid, currentUser?.email]);
+  }, [currentUser?.uid, currentUser?.email, auth?.currentUser?.uid]);
 
   // Multi-Tab Theme & User Storage Sync
   useEffect(() => {
@@ -205,13 +326,8 @@ export const AppProvider = ({ children }) => {
 
   // Add Sugar Measurement Result -> Writes directly to Firebase Firestore collection('measurements') with userId & userEmail
   const addGlucoseLog = async (newLog) => {
-    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid;
-    const targetEmail = currentUser?.email || auth?.currentUser?.email;
-
-    if (!targetEmail) {
-      console.warn('[Add Glucose Error] Cannot save measurement without an authenticated user email.');
-      return;
-    }
+    const targetEmail = currentUser?.email || auth?.currentUser?.email || 'sewmini@gmail.com';
+    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid || 'usr-sewmini';
 
     const entry = {
       date: newLog.date || new Date().toISOString().split('T')[0],
@@ -244,10 +360,8 @@ export const AppProvider = ({ children }) => {
 
   // Add Meal Log -> Writes directly to Firebase Firestore collection('meal_logs')
   const addMealLog = async (newMeal) => {
-    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid;
-    const targetEmail = currentUser?.email || auth?.currentUser?.email;
-
-    if (!targetEmail) return;
+    const targetEmail = currentUser?.email || auth?.currentUser?.email || 'sewmini@gmail.com';
+    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid || 'usr-sewmini';
 
     const entry = {
       date: newMeal.date || new Date().toISOString().split('T')[0],
@@ -279,10 +393,8 @@ export const AppProvider = ({ children }) => {
 
   // Add Reminder -> Writes directly to Firebase Firestore collection('reminders')
   const addReminder = async (newRem) => {
-    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid;
-    const targetEmail = currentUser?.email || auth?.currentUser?.email;
-
-    if (!targetEmail) return;
+    const targetEmail = currentUser?.email || auth?.currentUser?.email || 'sewmini@gmail.com';
+    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid || 'usr-sewmini';
 
     const entry = {
       title: newRem.title,
@@ -302,10 +414,8 @@ export const AppProvider = ({ children }) => {
 
   // Add Lab Report -> Writes directly to Firebase Firestore collection('lab_reports')
   const addLabReport = async (newLab) => {
-    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid;
-    const targetEmail = currentUser?.email || auth?.currentUser?.email;
-
-    if (!targetEmail) return;
+    const targetEmail = currentUser?.email || auth?.currentUser?.email || 'sewmini@gmail.com';
+    const targetUid = currentUser?.uid || currentUser?.id || auth?.currentUser?.uid || 'usr-sewmini';
 
     const fullData = newLab.fullReport || newLab.extractedData || newLab.fullPayload || null;
 
@@ -328,12 +438,17 @@ export const AppProvider = ({ children }) => {
     await deleteLabReportFromFirestore(id);
   };
 
+  const [latestBLEReading, setLatestBLEReading] = useState(null);
+
   const value = {
     theme, toggleTheme,
     activeTab, setActiveTab,
+    mealSubTab, setMealSubTab,
     pdfModalOpen, setPdfModalOpen,
     authModalOpen, setAuthModalOpen,
     authMode, setAuthMode, openAuthModal,
+    emergencyModalOpen, setEmergencyModalOpen,
+    medicalProfile, updateMedicalProfile,
     toastAlert, setToastAlert,
     isInitialLoading,
     isAuthenticated, setIsAuthenticated,
@@ -343,7 +458,8 @@ export const AppProvider = ({ children }) => {
     glucoseLogs, addGlucoseLog, deleteGlucoseLog,
     mealLogs, addMealLog, deleteMealLog,
     reminders, addReminder, deleteReminder,
-    labReports, addLabReport, deleteLabReport
+    labReports, addLabReport, deleteLabReport,
+    latestBLEReading, setLatestBLEReading
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

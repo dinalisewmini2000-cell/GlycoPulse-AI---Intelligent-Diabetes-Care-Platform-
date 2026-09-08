@@ -6,14 +6,47 @@ import {
 import { 
   Activity, PlusCircle, FileText, Heart, Scale, ShieldAlert, 
   CheckCircle2, Clock, Stethoscope, TrendingUp, X, Filter, 
-  Calendar, AlertTriangle, Pill, UserCheck
+  Calendar, AlertTriangle, Pill, UserCheck, Sparkles, Printer, Download,
+  Droplet, Footprints, RefreshCw, Zap, Award, BookOpen
 } from 'lucide-react';
+import { 
+  compile7DayPatientData, 
+  generateWeeklyAIAnalyticsReport 
+} from '../../services/weeklyAnalyticsService';
 
 export const PatientHistory = () => {
-  const { currentUser, healthHistoryLogs, addHealthHistoryLog, glucoseLogs } = useApp();
+  const { currentUser, healthHistoryLogs, addHealthHistoryLog, glucoseLogs, mealLogs, labReports, setToastAlert } = useApp();
 
   const [activeCategory, setActiveCategory] = useState('All');
   const [showLogModal, setShowLogModal] = useState(false);
+
+  // Weekly AI Analytics Report State
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [weeklyReport, setWeeklyReport] = useState(null);
+
+  const handleGenerateWeeklyReport = async () => {
+    setIsGeneratingReport(true);
+    try {
+      const compiled = compile7DayPatientData(glucoseLogs, mealLogs, [], labReports);
+      const report = await generateWeeklyAIAnalyticsReport(compiled);
+      setWeeklyReport(report);
+      if (setToastAlert) {
+        setToastAlert({
+          type: 'success',
+          title: 'Weekly AI Analytics Report Generated',
+          message: `7-day comprehensive report generated for clinical review.`
+        });
+      }
+    } catch (err) {
+      console.error('[Weekly Report Error]:', err);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const handleDownloadPDFReport = () => {
+    window.print();
+  };
 
   // New History Entry Modal Form State
   const [category, setCategory] = useState('Blood Pressure');
@@ -36,23 +69,26 @@ export const PatientHistory = () => {
   };
 
   // Automatically integrate all live telemetry logs (CGM, blood glucose, lab OCR) into the history timeline
-  const formattedGlucoseLogs = (glucoseLogs || []).map((g, idx) => ({
-    id: `g-hist-${g.id || idx}`,
-    date: (g.timestamp && !g.timestamp.includes('Just now'))
+  const safeGlucoseLogs = Array.isArray(glucoseLogs) ? glucoseLogs : [];
+  const safeHealthLogs = Array.isArray(healthHistoryLogs) ? healthHistoryLogs : [];
+
+  const formattedGlucoseLogs = safeGlucoseLogs.map((g, idx) => ({
+    id: `g-hist-${g?.id || idx}`,
+    date: (g?.timestamp && typeof g.timestamp === 'string' && !g.timestamp.includes('Just now'))
       ? g.timestamp
-      : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      : (g?.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })) + ' ' + (g?.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
     category: 'Blood Glucose',
-    value: `${g.value} mg/dL`,
-    status: g.value < 70 ? 'Hypoglycemia Alert' : g.value > 180 ? 'Elevated Hyperglycemia' : 'Target Met',
-    notes: `${g.type || 'CGM Telemetry'}${g.notes ? ' — ' + g.notes : ''}`
+    value: `${g?.value || 0} mg/dL`,
+    status: (g?.value < 70) ? 'Hypoglycemia Alert' : (g?.value > 180) ? 'Elevated Hyperglycemia' : 'Target Met',
+    notes: `${g?.type || g?.context || 'CGM Telemetry'}${g?.notes ? ' — ' + g.notes : ''}`
   }));
 
-  const allCombinedLogs = [...healthHistoryLogs, ...formattedGlucoseLogs];
+  const allCombinedLogs = [...safeHealthLogs, ...formattedGlucoseLogs];
 
   // Filter logs by active category
   const filteredLogs = activeCategory === 'All'
     ? allCombinedLogs
-    : allCombinedLogs.filter(item => item.category.toLowerCase().includes(activeCategory.toLowerCase()));
+    : allCombinedLogs.filter(item => item && item.category && item.category.toLowerCase().includes(activeCategory.toLowerCase()));
 
   // Prepare trend chart data from history dynamically
   const chartData = [
@@ -111,6 +147,146 @@ export const PatientHistory = () => {
           </button>
         </div>
       </div>
+
+      {/* WEEKLY AI ANALYTICS REPORT GENERATOR BAR */}
+      <div className="glass-panel" style={{ padding: '1.4rem', background: '#ffffff', borderRadius: '16px', border: '1px solid #bae6fd', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+            <Sparkles size={20} color="#0284c7" />
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              Weekly AI Patient Analytics Report
+            </h3>
+          </div>
+          <p style={{ fontSize: '0.84rem', color: '#64748b', margin: 0 }}>
+            Unified 7-day correlation analysis across Glucose, Diet, Stress, Hydration, and Walking data.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={handleGenerateWeeklyReport}
+            disabled={isGeneratingReport}
+            style={{
+              padding: '0.7rem 1.25rem',
+              fontSize: '0.88rem',
+              fontWeight: 800,
+              background: 'linear-gradient(135deg, #0284c7, #2563eb)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.25)'
+            }}
+          >
+            {isGeneratingReport ? (
+              <>
+                <RefreshCw size={16} className="spin-icon" style={{ animation: 'spin 1s linear infinite' }} />
+                <span>Generating AI Analysis...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={16} />
+                <span>Generate Weekly AI Analytics Report</span>
+              </>
+            )}
+          </button>
+
+          {weeklyReport && (
+            <button
+              type="button"
+              onClick={handleDownloadPDFReport}
+              style={{
+                padding: '0.7rem 1.15rem',
+                fontSize: '0.88rem',
+                fontWeight: 800,
+                background: '#f8fafc',
+                color: '#0369a1',
+                border: '1px solid #bae6fd',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem'
+              }}
+            >
+              <Printer size={16} />
+              <span>Download PDF Report</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* PATIENT SUMMARY CARD (RENDERED WHEN REPORT IS GENERATED) */}
+      {weeklyReport && (
+        <div className="glass-panel" style={{ padding: '1.75rem', background: '#ffffff', borderRadius: '16px', border: '1px solid #86efac', display: 'flex', flexDirection: 'column', gap: '1.4rem', boxShadow: '0 10px 30px -5px rgba(22, 163, 74, 0.12)' }}>
+          
+          {/* Card Top Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
+            <div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                7-DAY CLINICAL AI SUMMARY CARD
+              </span>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', margin: '0.2rem 0 0 0' }}>
+                {patientName}'s Comprehensive Health & Glycemic Analysis
+              </h3>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.65rem' }}>
+              <span style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac', padding: '0.3rem 0.75rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 800 }}>
+                TIR: {weeklyReport.targetInRangePercent}% (Target in Range)
+              </span>
+              <span style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', padding: '0.3rem 0.75rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 800 }}>
+                Avg Sugar: {weeklyReport.averageGlucose} mg/dL
+              </span>
+            </div>
+          </div>
+
+          {/* Section 1: Medical & Lifestyle Summary */}
+          <div>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 0.4rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Stethoscope size={18} />
+              <span>1. Medical & Lifestyle Summary</span>
+            </h4>
+            <p style={{ fontSize: '0.9rem', color: '#334155', lineHeight: 1.55, margin: 0, background: '#f8fafc', padding: '0.9rem 1.1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              {weeklyReport.medicalSummary}
+            </p>
+          </div>
+
+          {/* Section 2: Mind-Body & Glycemic Correlation Analysis */}
+          <div>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 0.4rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Activity size={18} />
+              <span>2. Mind-Body & Glycemic Correlation Analysis</span>
+            </h4>
+            <p style={{ fontSize: '0.9rem', color: '#334155', lineHeight: 1.55, margin: 0, background: '#faf5ff', padding: '0.9rem 1.1rem', borderRadius: '10px', border: '1px solid #e9d5ff' }}>
+              {weeklyReport.mindBodyCorrelation}
+            </p>
+          </div>
+
+          {/* Section 3: 3 Actionable Clinical Recommendations */}
+          <div>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 0.55rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <CheckCircle2 size={18} />
+              <span>3. Actionable Clinical Recommendations</span>
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+              {weeklyReport.actionableRecommendations?.map((rec, rIdx) => (
+                <div key={rIdx} style={{ background: '#f0fdf4', padding: '0.85rem 1rem', borderRadius: '10px', border: '1px solid #bbf7d0', fontSize: '0.88rem', color: '#14532d', display: 'flex', alignItems: 'flex-start', gap: '0.55rem', lineHeight: 1.45 }}>
+                  <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#16a34a', color: '#ffffff', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {rIdx + 1}
+                  </span>
+                  <span>{rec}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      )}
 
       {/* Patient Health Overview & Clinical Profile */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.2rem' }}>

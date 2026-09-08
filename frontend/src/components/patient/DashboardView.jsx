@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PlusCircle, Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
@@ -26,30 +26,30 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
   const displayChartData = chartData.length > 0 ? chartData : [];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '960px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', maxWidth: '1020px' }}>
       
       {/* 1. Header Greeting */}
       <div>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.2rem' }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.25rem', letterSpacing: '-0.025em' }}>
           {greetingTime}, {userName}
         </h1>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+        <p style={{ fontSize: '0.92rem', color: '#64748b', margin: 0 }}>
           Here is your persistent glucose & clinical record summary.
         </p>
       </div>
 
       {/* 2. Current Glucose Summary Card */}
       {latestLog ? (
-        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
+        <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #f1f5f9', padding: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.05)' }}>
           <div>
-            <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.35rem' }}>
+            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>
               Latest Glucose Reading ({latestLog.date || 'Today'})
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.4rem' }}>
-              <span style={{ fontSize: '2.75rem', fontWeight: 800, lineHeight: 1, color: details?.isWithinRange ? 'var(--primary-color)' : '#dc2626' }}>
+              <span style={{ fontSize: '2.85rem', fontWeight: 900, lineHeight: 1, color: details?.isWithinRange ? '#0284c7' : '#dc2626' }}>
                 {latestLog.value}
               </span>
-              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#64748b' }}>
                 mg/dL
               </span>
             </div>
@@ -58,33 +58,111 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
               <span className={`badge ${details?.isWithinRange ? 'badge-success' : 'badge-warning'}`}>
                 {details?.status || 'Logged'}
               </span>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              <span style={{ fontSize: '0.84rem', color: '#64748b', fontWeight: 500 }}>
                 Context: {latestLog.context || 'General'} ({details?.rangeLabel || ''})
               </span>
             </div>
 
-            <div style={{ marginTop: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              {trendInfo?.direction === 'up' && <TrendingUp size={15} color="#dc2626" />}
-              {trendInfo?.direction === 'down' && <TrendingDown size={15} color="#16a34a" />}
-              {trendInfo?.direction === 'stable' && <Minus size={15} color="var(--text-muted)" />}
+            <div style={{ marginTop: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.84rem', color: '#64748b', fontWeight: 600 }}>
+              {trendInfo?.direction === 'up' && <TrendingUp size={16} color="#dc2626" />}
+              {trendInfo?.direction === 'down' && <TrendingDown size={16} color="#16a34a" />}
+              {trendInfo?.direction === 'stable' && <Minus size={16} color="#64748b" />}
               <span>{trendInfo?.text || 'No trend data'}</span>
             </div>
           </div>
 
           <button 
             onClick={onOpenAddGlucose}
-            className="btn-primary" 
-            style={{ padding: '0.7rem 1.25rem', fontSize: '0.9rem' }}
+            style={{
+              padding: '0.75rem 1.4rem',
+              fontSize: '0.88rem',
+              fontWeight: 800,
+              borderRadius: '30px',
+              background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
+              color: '#ffffff',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 8px 20px rgba(2, 132, 199, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 14px rgba(2, 132, 199, 0.3)';
+            }}
           >
-            <PlusCircle size={17} />
+            <PlusCircle size={18} />
             <span>+ Add glucose reading</span>
           </button>
         </div>
       ) : (
-        <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>No previous glucose records available for this account.</p>
-          <button onClick={onOpenAddGlucose} className="btn-primary">
-            <PlusCircle size={16} />
+        <div style={{
+          padding: '2.5rem 1.5rem',
+          background: '#f8fafc',
+          borderRadius: '16px',
+          border: '1px solid #f1f5f9',
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '0.85rem'
+        }}>
+          <div style={{
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            background: '#e0f2fe',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(2, 132, 199, 0.15)'
+          }}>
+            <Activity size={28} color="#0284c7" />
+          </div>
+          
+          <div>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.25rem 0' }}>
+              No previous glucose records available
+            </h3>
+            <p style={{ fontSize: '0.86rem', color: '#64748b', margin: 0, maxWidth: '420px' }}>
+              Start tracking your blood sugar levels to see real-time clinical trends and AI glycemic insights.
+            </p>
+          </div>
+
+          <button
+            onClick={onOpenAddGlucose}
+            style={{
+              padding: '0.7rem 1.35rem',
+              fontSize: '0.88rem',
+              fontWeight: 800,
+              borderRadius: '30px',
+              background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
+              color: '#ffffff',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              marginTop: '0.25rem'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 8px 20px rgba(2, 132, 199, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 14px rgba(2, 132, 199, 0.3)';
+            }}
+          >
+            <PlusCircle size={18} />
             <span>+ Log First Reading</span>
           </button>
         </div>
@@ -92,22 +170,23 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
 
       {/* 3. Glucose Over Time Chart */}
       {displayChartData.length > 0 && (
-        <div className="glass-panel" style={{ padding: '1.5rem' }}>
+        <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #f1f5f9', padding: '1.75rem', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
             <div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
                 Glucose trend over time
               </h3>
             </div>
             
-            <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--bg-primary)', padding: '0.2rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', gap: '0.25rem', background: '#f1f5f9', padding: '0.25rem', borderRadius: '20px' }}>
               <button 
                 onClick={() => setTimeRange('7')}
                 style={{ 
-                  padding: '0.3rem 0.65rem', borderRadius: '4px', border: 'none',
-                  background: timeRange === '7' ? 'var(--primary-color)' : 'transparent',
-                  color: timeRange === '7' ? '#ffffff' : 'var(--text-muted)',
-                  fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer'
+                  padding: '0.35rem 0.85rem', borderRadius: '16px', border: 'none',
+                  background: timeRange === '7' ? '#0284c7' : 'transparent',
+                  color: timeRange === '7' ? '#ffffff' : '#64748b',
+                  fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
               >
                 7 days
@@ -115,10 +194,11 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
               <button 
                 onClick={() => setTimeRange('30')}
                 style={{ 
-                  padding: '0.3rem 0.65rem', borderRadius: '4px', border: 'none',
-                  background: timeRange === '30' ? 'var(--primary-color)' : 'transparent',
-                  color: timeRange === '30' ? '#ffffff' : 'var(--text-muted)',
-                  fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer'
+                  padding: '0.35rem 0.85rem', borderRadius: '16px', border: 'none',
+                  background: timeRange === '30' ? '#0284c7' : 'transparent',
+                  color: timeRange === '30' ? '#ffffff' : '#64748b',
+                  fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
               >
                 30 days
@@ -131,19 +211,19 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
               <AreaChart data={displayChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="glucoseGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#0284c7" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#0284c7" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="displayTime" stroke="var(--text-dim)" fontSize={12} tickLine={false} />
-                <YAxis domain={[50, 220]} stroke="var(--text-dim)" fontSize={12} tickLine={false} />
+                <XAxis dataKey="displayTime" stroke="#94a3b8" fontSize={12} tickLine={false} />
+                <YAxis domain={[50, 220]} stroke="#94a3b8" fontSize={12} tickLine={false} />
                 <Tooltip 
-                  contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                  contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', color: '#0f172a', fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                   formatter={(val) => [`${val} mg/dL`, 'Glucose']}
                 />
-                <ReferenceLine y={70} stroke="var(--accent-rose)" strokeDasharray="3 3" label={{ value: '70 Low', fill: 'var(--accent-rose)', fontSize: 10 }} />
-                <ReferenceLine y={140} stroke="var(--accent-amber)" strokeDasharray="3 3" label={{ value: '140 Target', fill: 'var(--accent-amber)', fontSize: 10 }} />
-                <Area type="monotone" dataKey="value" stroke="var(--primary-color)" strokeWidth={2.5} fillOpacity={1} fill="url(#glucoseGradient)" />
+                <ReferenceLine y={70} stroke="#ef4444" strokeDasharray="3 3" label={{ value: '70 Low', fill: '#ef4444', fontSize: 10 }} />
+                <ReferenceLine y={140} stroke="#f59e0b" strokeDasharray="3 3" label={{ value: '140 Target', fill: '#f59e0b', fontSize: 10 }} />
+                <Area type="monotone" dataKey="value" stroke="#0284c7" strokeWidth={3} fillOpacity={1} fill="url(#glucoseGradient)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -151,44 +231,46 @@ export const DashboardView = ({ onOpenAddGlucose }) => {
       )}
 
       {/* 4. Recent Readings Table */}
-      <div className="glass-panel" style={{ padding: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>
+      <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #f1f5f9', padding: '1.75rem', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.05)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
             Recent glucose records
           </h3>
-          <button onClick={() => setActiveTab('glucose')} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
+          <button onClick={() => setActiveTab('glucose')} style={{ background: 'none', border: 'none', color: '#0284c7', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
             View all history →
           </button>
         </div>
 
         {safeLogs.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>No previous records available.</p>
+          <div style={{ padding: '1.75rem', background: '#f8fafc', borderRadius: '12px', textAlign: 'center', color: '#64748b', fontSize: '0.86rem' }}>
+            No previous records available for this account. Log your first reading to populate history.
+          </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
               <thead>
-                <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>
-                  <th style={{ padding: '0.65rem 0.5rem', color: 'var(--text-muted)', fontWeight: 600 }}>Date / Time</th>
-                  <th style={{ padding: '0.65rem 0.5rem', color: 'var(--text-muted)', fontWeight: 600 }}>Glucose Value</th>
-                  <th style={{ padding: '0.65rem 0.5rem', color: 'var(--text-muted)', fontWeight: 600 }}>Context</th>
-                  <th style={{ padding: '0.65rem 0.5rem', color: 'var(--text-muted)', fontWeight: 600 }}>Target Range</th>
+                <tr style={{ textAlign: 'left', borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ padding: '0.75rem 0.5rem', color: '#64748b', fontWeight: 700 }}>Date / Time</th>
+                  <th style={{ padding: '0.75rem 0.5rem', color: '#64748b', fontWeight: 700 }}>Glucose Value</th>
+                  <th style={{ padding: '0.75rem 0.5rem', color: '#64748b', fontWeight: 700 }}>Context</th>
+                  <th style={{ padding: '0.75rem 0.5rem', color: '#64748b', fontWeight: 700 }}>Target Range</th>
                 </tr>
               </thead>
               <tbody>
                 {safeLogs.slice(0, 5).map((log, i) => {
                   const itemCtx = getGlucoseContextDetails(log.value, log.context);
                   return (
-                    <tr key={log.id || i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                      <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)' }}>
+                    <tr key={log.id || i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '0.8rem 0.5rem', color: '#64748b', fontWeight: 600 }}>
                         {log.date || 'Today'} ({log.time || '--:--'})
                       </td>
-                      <td style={{ padding: '0.75rem 0.5rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                      <td style={{ padding: '0.8rem 0.5rem', fontWeight: 800, color: '#0f172a' }}>
                         {log.value} mg/dL
                       </td>
-                      <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-main)' }}>
+                      <td style={{ padding: '0.8rem 0.5rem', color: '#0f172a', fontWeight: 600 }}>
                         {log.context || 'General'}
                       </td>
-                      <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                      <td style={{ padding: '0.8rem 0.5rem', fontSize: '0.82rem', color: '#64748b', fontWeight: 500 }}>
                         {itemCtx?.rangeLabel || ''}
                       </td>
                     </tr>
