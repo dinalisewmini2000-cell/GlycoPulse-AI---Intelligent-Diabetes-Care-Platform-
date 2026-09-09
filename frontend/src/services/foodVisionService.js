@@ -15,7 +15,9 @@ const STRICT_NON_FOOD_KEYWORDS = [
   'person', 'face', 'hand', 'finger', 'arm', 'body', 'skin', 'cloth', 'clothing', 'shirt',
   'wall', 'floor', 'furniture', 'desk', 'room', 'background', 'napkin', 'paper', 'screenshot',
   'document', 'text', 'ui', 'shadow', 'selfie', 'head', 'eye', 'glasses', 'hair', 'phone',
-  'laptop', 'computer', 'screen', 'keyboard', 'mouse', 'shoe', 'car', 'vehicle', 'cat', 'dog'
+  'laptop', 'computer', 'screen', 'keyboard', 'mouse', 'shoe', 'car', 'vehicle', 'cat', 'dog',
+  'no food', 'no food detected', 'non-food', 'non food', 'not food', 'no recognizable food',
+  'no food item', 'no edible food', 'no food present', 'no food items', 'unclear image', 'human'
 ];
 
 export function sanitizeFoodName(rawName) {
@@ -36,7 +38,7 @@ export function isEdibleFood(itemName) {
   const lower = itemName.toLowerCase().trim();
 
   for (const keyword of STRICT_NON_FOOD_KEYWORDS) {
-    if (lower === keyword) {
+    if (lower === keyword || lower.includes(keyword)) {
       return false;
     }
   }
@@ -106,102 +108,79 @@ export function parseVisionAPIResponse(responseText) {
     return normalizeParsedJSON(directJSON);
   }
 
-  // Fallback line-by-line extraction
-  const lines = cleanedText.split('\n').filter(l => l.trim().length > 0);
-  const extractedFoods = [];
-
-  for (const line of lines) {
-    const cleanLine = line.replace(/^[\*\-\d\.\,\s]+/, '').replace(/[\:\(\)\-\d\.\,]+/g, ' ').trim();
-    if (cleanLine.length > 2 && cleanLine.length < 50 && isEdibleFood(cleanLine)) {
-      extractedFoods.push({
-        food: sanitizeFoodName(cleanLine),
-        name: sanitizeFoodName(cleanLine),
-        weight: 120,
-        estimatedGrams: 120,
-        grams: 120,
-        calories: 150,
-        confidence: normalizeConfidence(80)
-      });
-    }
-  }
-
-  if (extractedFoods.length > 0) {
-    const mainDishName = extractedFoods.map(f => f.food).join(', ');
-    return {
-      isFood: true,
-      dishName: mainDishName,
-      foodName: mainDishName,
-      confidence: normalizeConfidence(80),
-      detectedItems: extractedFoods,
-      nutritionTotals: null
-    };
-  }
-
   return null;
 }
 
 function normalizeParsedJSON(parsed) {
-  const isFoodFlag = parsed.is_food !== undefined ? parsed.is_food : (parsed.isFood !== undefined ? parsed.isFood : true);
+  const isFoodFlag = parsed.isFood !== undefined ? Boolean(parsed.isFood) : (parsed.is_food !== undefined ? Boolean(parsed.is_food) : true);
+  const dishName = parsed.foodName || parsed.dishName || parsed.dish || parsed.mealName || parsed.title || parsed.name || 'Recorded Food Dish';
+  const dishLower = (dishName || '').toLowerCase().trim();
 
-  if (isFoodFlag === false || parsed.isNonFoodObject) {
-    return { isFood: false, isNonFoodObject: true, reason: parsed.reason || 'Non-food object' };
+  if (
+    isFoodFlag === false ||
+    parsed.isNonFoodObject ||
+    !isEdibleFood(dishName) ||
+    dishLower.includes('no food') ||
+    dishLower.includes('non-food') ||
+    dishLower.includes('not food') ||
+    dishLower.includes('no recognizable food') ||
+    dishLower.includes('person') ||
+    dishLower.includes('selfie') ||
+    dishLower.includes('human')
+  ) {
+    return getNonFoodErrorResult();
   }
 
-  const items = parsed.items || parsed.detectedItems || parsed.foods || parsed.components || parsed.ingredients || parsed.dishes || [];
-  const dishName = parsed.dishName || parsed.foodName || parsed.dish || parsed.mealName || parsed.title || parsed.name || 'Recorded Food Dish';
-  
-  const rawConfidence = parsed.confidence !== undefined ? parsed.confidence : 88;
-  const confidence = normalizeConfidence(rawConfidence, 88);
+  const confidence = normalizeConfidence(parsed.confidence, 92);
+  const calories = Number(parsed.calories) || 0;
+  const carbs = Number(parsed.carbs) || 0;
+  const protein = Number(parsed.protein) || 0;
+  const fat = Number(parsed.fat) || 0;
 
-  let mappedItems = [];
-  if (Array.isArray(items) && items.length > 0) {
-    mappedItems = items.map(i => {
-      const rawName = typeof i === 'string' ? i : (i.name || i.food || i.item || i.ingredient);
-      const cleanName = sanitizeFoodName(rawName);
-
-      const itemWeight = typeof i === 'object' ? Number(i.weight ?? i.estimatedGrams ?? i.grams ?? i.portion_estimate_grams ?? i.weightGrams) : NaN;
-      const dynamicWeight = (!isNaN(itemWeight) && itemWeight > 0) ? itemWeight : 120;
-
-      const itemCalories = typeof i === 'object' ? Number(i.calories ?? i.cal ?? i.kcal) : NaN;
-      const dynamicCalories = (!isNaN(itemCalories) && itemCalories >= 0) ? itemCalories : Math.round((dynamicWeight / 100) * 150);
-
-      const itemConfidence = typeof i === 'object' && i.confidence !== undefined ? i.confidence : confidence;
-
-      return {
-        name: cleanName,
-        food: cleanName,
-        weight: dynamicWeight,
-        estimatedGrams: dynamicWeight,
-        grams: dynamicWeight,
-        calories: dynamicCalories,
-        confidence: normalizeConfidence(itemConfidence, confidence)
-      };
-    }).filter(item => item.name && isEdibleFood(item.name));
-  }
-
-  if (mappedItems.length === 0 && dishName && isEdibleFood(dishName)) {
-    mappedItems = [{
-      name: sanitizeFoodName(dishName),
-      food: sanitizeFoodName(dishName),
-      weight: 150,
-      estimatedGrams: 150,
-      grams: 150,
-      calories: 225,
-      confidence: confidence
-    }];
-  }
-
-  const nutritionTotals = parsed.totals || parsed.nutritionTotals || null;
+  const mappedItems = parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0
+    ? parsed.items.map(i => ({
+        name: sanitizeFoodName(i.name || i.food || dishName),
+        food: sanitizeFoodName(i.name || i.food || dishName),
+        weight: Number(i.weight || i.grams) || 150,
+        estimatedGrams: Number(i.weight || i.grams) || 150,
+        grams: Number(i.weight || i.grams) || 150,
+        calories: Number(i.calories) || Math.round(calories / (parsed.items.length || 1)),
+        carbs: Number(i.carbs) || Math.round(carbs / (parsed.items.length || 1)),
+        protein: Number(i.protein) || Math.round(protein / (parsed.items.length || 1)),
+        fat: Number(i.fat) || Math.round(fat / (parsed.items.length || 1)),
+        confidence: confidence
+      }))
+    : [{
+        name: sanitizeFoodName(dishName),
+        food: sanitizeFoodName(dishName),
+        weight: 150,
+        estimatedGrams: 150,
+        grams: 150,
+        calories: calories,
+        carbs: carbs,
+        protein: protein,
+        fat: fat,
+        confidence: confidence
+      }];
 
   return {
     isFood: true,
     dishName: dishName,
     foodName: dishName,
+    calories: calories,
+    carbs: carbs,
+    protein: protein,
+    fat: fat,
     confidence: confidence,
-    complete_image_visible: parsed.complete_image_visible !== false,
-    possibleAlternatives: parsed.possibleAlternatives || [],
     detectedItems: mappedItems,
-    nutritionTotals: nutritionTotals
+    nutritionTotals: {
+      calories: calories,
+      carbs: carbs,
+      protein: protein,
+      fat: fat,
+      fiber: Math.round(carbs * 0.1),
+      sugar: Math.round(carbs * 0.2)
+    }
   };
 }
 
@@ -262,45 +241,55 @@ export async function callGeminiSDKFoodVisionAPI(imageSource, apiKey) {
     const key = apiKey || import.meta.env.VITE_GEMINI_API_KEY;
     if (!key) {
       console.error('[Gemini SDK Error]: VITE_GEMINI_API_KEY is missing');
-      return null;
+      return { isApiError: true, errorMsg: 'API Key missing' };
     }
 
-    const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
-
     const { base64, mimeType } = await toBase64Data(imageSource);
-    if (!base64) return null;
+    if (!base64) return { isApiError: true, errorMsg: 'Failed to process image payload' };
 
-    const prompt = `Analyze this food image. Identify the main dish and itemized food items with realistic weights (in grams) and calculated calories for EACH detected ingredient/item. Return ONLY a valid JSON object matching this schema without markdown code blocks:
+    const genAI = new GoogleGenerativeAI(key);
+
+    const prompt = `Analyze the image. If there is NO food or drink in the image (e.g., it's a person, selfie, or random object), return strictly { "isFood": false } and nothing else.
+
+If there IS real, edible human food or drink in the image, return ONLY raw JSON without markdown formatting (no \`\`\`json code blocks) using this EXACT schema:
 {
-  "dishName": "string",
-  "confidence": 92 (an integer percentage from 0 to 100, never a decimal),
-  "items": [
-    { "name": "string", "weight": number, "calories": number }
-  ],
-  "totals": {
-    "calories": number,
-    "carbs": number,
-    "protein": number,
-    "fat": number,
-    "fiber": number,
-    "sugar": number
-  }
+  "isFood": true,
+  "foodName": "Name of the dish",
+  "calories": 450,
+  "carbs": 55,
+  "protein": 22,
+  "fat": 14,
+  "confidence": 92
 }`;
 
-    const result = await model.generateContent([
-      prompt,
-      { inlineData: { data: base64, mimeType: mimeType } }
-    ]);
+    const modelsToTry = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
 
-    const responseText = result.response.text();
-    console.log('[Gemini Food Vision Success Response]:', responseText);
+    let lastErrorMsg = null;
 
-    return parseVisionAPIResponse(responseText);
+    for (const modelName of modelsToTry) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent([
+          prompt,
+          { inlineData: { data: base64, mimeType: mimeType } }
+        ]);
+
+        const responseText = result.response.text();
+        console.log(`[Gemini SDK Food Vision (${modelName}) Success Response]:`, responseText);
+
+        const parsed = parseVisionAPIResponse(responseText);
+        if (parsed) return parsed;
+      } catch (modelErr) {
+        console.warn(`[Gemini SDK Model ${modelName} failed]:`, modelErr?.message);
+        lastErrorMsg = modelErr?.message;
+      }
+    }
+
+    return { isApiError: true, errorMsg: lastErrorMsg || 'Model connection failed' };
 
   } catch (err) {
-    console.error('[Gemini SDK Food Vision API Failure Reason]:', err?.message || err, err);
-    return null;
+    console.error('[Gemini SDK Food Vision API Failure Reason]:', err?.message || err);
+    return { isApiError: true, errorMsg: err?.message || 'SDK Exception' };
   }
 }
 
@@ -329,29 +318,21 @@ export async function callGrokFoodVisionAPI(imageSource, grokApiKey) {
       ctx.drawImage(img, 0, 0, w, h);
       dataUrl = canvas.toDataURL('image/jpeg', 0.85);
     } catch (e) {
-      return null;
+      return { isApiError: true, errorMsg: 'Failed canvas encoding' };
     }
   }
 
-  const prompt = `You are a Strict Clinical Diabetes Nutrition Vision AI.
-Analyze the provided image and identify the visible food.
+  const prompt = `Analyze the image. If there is NO food or drink in the image (e.g., it's a person, selfie, or random object), return strictly { "isFood": false } and nothing else.
 
-INSTRUCTIONS:
-1. NON-FOOD CHECK: If the photo shows a person, selfie, face, hand, phone, laptop, shoe, car, document, or non-edible object, return:
-   {"is_food": false, "reason": "Non-food object detected"}
-
-2. FOOD RECOGNITION:
-   Identify specific foods present.
-
-Respond ONLY in valid JSON format matching this schema:
+If there IS real, edible human food or drink in the image, return ONLY raw JSON without markdown formatting (no \`\`\`json code blocks) using this EXACT schema:
 {
-  "is_food": true,
-  "foodName": "Overall Meal Name",
-  "confidence": 92,
-  "detectedItems": [
-    { "food": "White Rice", "estimatedGrams": 180, "confidence": 95 },
-    { "food": "Chicken Curry", "estimatedGrams": 120, "confidence": 90 }
-  ]
+  "isFood": true,
+  "foodName": "Name of the dish",
+  "calories": 450,
+  "carbs": 55,
+  "protein": 22,
+  "fat": 14,
+  "confidence": 92
 }`;
 
   const models = ['grok-2-vision-1212', 'grok-vision-beta', 'grok-2-vision'];
@@ -391,147 +372,68 @@ Respond ONLY in valid JSON format matching this schema:
     } catch (err) { }
   }
 
-  return null;
+  return { isApiError: true, errorMsg: 'Grok Vision API unavailable' };
 }
 
 /**
- * Client-Side Vision Classifier
+ * Client-Side Vision Classifier Fallback - STRICT NON-FOOD CHECK (ZERO FAKE MOCK DATA)
  */
 export function analyzeFoodImageCanvasFallback(canvas, width, height) {
   if (!canvas) {
-    return {
-      isFood: true,
-      foodName: 'Steamed Rice & Curry Plate',
-      confidence: 85,
-      detectedItems: [
-        { food: 'White Steamed Rice', estimatedGrams: 180, confidence: 90 },
-        { food: 'Chicken Curry', estimatedGrams: 120, confidence: 85 },
-        { food: 'Dhal Curry (lentils)', estimatedGrams: 100, confidence: 82 }
-      ]
-    };
+    return getNonFoodErrorResult();
   }
 
-  const ctx = canvas.getContext('2d');
-  const imgData = ctx.getImageData(0, 0, width, height);
-  const pixels = imgData.data;
+  try {
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const pixels = imgData.data;
 
-  let greenPixels = 0;
-  let yellowBrownPixels = 0;
-  let redPixels = 0;
-  let whitePixels = 0;
-  let darkPixels = 0;
-  let totalCount = pixels.length / 4;
+    let greenPixels = 0;
+    let yellowBrownPixels = 0;
+    let redPixels = 0;
+    let whitePixels = 0;
+    let darkPixels = 0;
+    let totalCount = pixels.length / 4;
 
-  let rSum = 0, gSum = 0, bSum = 0;
+    let rSum = 0, gSum = 0, bSum = 0;
 
-  for (let i = 0; i < pixels.length; i += 4) {
-    const r = pixels[i];
-    const g = pixels[i + 1];
-    const b = pixels[i + 2];
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i];
+      const g = pixels[i + 1];
+      const b = pixels[i + 2];
 
-    rSum += r;
-    gSum += g;
-    bSum += b;
+      rSum += r;
+      gSum += g;
+      bSum += b;
 
-    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
 
-    if (g > 50 && g > r * 1.02 && g > b * 1.05) {
-      greenPixels++;
+      if (g > 50 && g > r * 1.02 && g > b * 1.05) greenPixels++;
+      else if ((r > 100 && g > 70 && b < r * 0.88) || (r > 140 && g > 95 && b < 130)) yellowBrownPixels++;
+      else if (r > 120 && r > g * 1.15 && r > b * 1.15) redPixels++;
+      else if (r > 165 && g > 165 && b > 165) whitePixels++;
+      else if (lum < 40) darkPixels++;
     }
-    else if ((r > 100 && g > 70 && b < r * 0.88) || (r > 140 && g > 95 && b < 130)) {
-      yellowBrownPixels++;
+
+    const greenRatio = greenPixels / totalCount;
+    const yellowBrownRatio = yellowBrownPixels / totalCount;
+    const redRatio = redPixels / totalCount;
+    const whiteRatio = whitePixels / totalCount;
+    const darkRatio = darkPixels / totalCount;
+
+    const avgR = rSum / totalCount;
+    const avgG = gSum / totalCount;
+    const avgB = bSum / totalCount;
+    const isPureSelfieSkin = (avgR > 150 && avgG > 105 && avgB > 85 && avgR > avgG && avgG > avgB && greenRatio < 0.01 && whiteRatio < 0.02 && redRatio < 0.01 && darkRatio < 0.05);
+
+    if (isPureSelfieSkin || (greenRatio < 0.01 && yellowBrownRatio < 0.02 && redRatio < 0.01 && whiteRatio < 0.01)) {
+      return getNonFoodErrorResult();
     }
-    else if (r > 120 && r > g * 1.15 && r > b * 1.15) {
-      redPixels++;
-    }
-    else if (r > 165 && g > 165 && b > 165) {
-      whitePixels++;
-    }
-    else if (lum < 40) {
-      darkPixels++;
-    }
+  } catch (e) {
+    return getNonFoodErrorResult();
   }
 
-  const greenRatio = greenPixels / totalCount;
-  const yellowBrownRatio = yellowBrownPixels / totalCount;
-  const redRatio = redPixels / totalCount;
-  const whiteRatio = whitePixels / totalCount;
-  const darkRatio = darkPixels / totalCount;
-
-  const avgR = rSum / totalCount;
-  const avgG = gSum / totalCount;
-  const avgB = bSum / totalCount;
-  const isPureSelfieSkin = (avgR > 150 && avgG > 105 && avgB > 85 && avgR > avgG && avgG > avgB && greenRatio < 0.01 && whiteRatio < 0.02 && redRatio < 0.01 && darkRatio < 0.05);
-
-  if (isPureSelfieSkin) {
-    return {
-      isFood: false,
-      isNonFoodObject: true,
-      errorType: 'NON_FOOD',
-      foodName: 'No Food Detected',
-      statusText: 'No food detected in this photo.',
-      subText: 'The uploaded photo appears to show a person or selfie. Please upload a clear photo of your food plate.',
-      recommendation: 'Please upload a photograph of your meal plate or food dish.'
-    };
-  }
-
-  if (greenRatio < 0.01 && yellowBrownRatio < 0.02 && redRatio < 0.01 && whiteRatio < 0.01 && darkRatio > 0.95) {
-    return {
-      isFood: false,
-      isNonFoodObject: true,
-      errorType: 'NON_FOOD',
-      foodName: 'No Food Detected',
-      statusText: 'No recognizable food was detected in this photo.',
-      subText: 'We couldn\'t identify any edible food items in this photo.',
-      recommendation: 'Please upload a clear photograph of your food dish or meal plate.'
-    };
-  }
-
-  let foodName = 'Recorded Meal Plate';
-  let detectedItems = [];
-
-  if (greenRatio > 0.08) {
-    foodName = 'Fresh Green Salad & Vegetables';
-    detectedItems = [
-      { food: 'Mixed Salad Greens', estimatedGrams: 140, confidence: 94 },
-      { food: 'Cherry Tomatoes', estimatedGrams: 45, confidence: 90 },
-      { food: 'Cucumber Slices', estimatedGrams: 50, confidence: 88 }
-    ];
-  } else if (whiteRatio > 0.15 || (whiteRatio > 0.08 && yellowBrownRatio > 0.10)) {
-    foodName = 'Steamed Rice & Curry Plate';
-    detectedItems = [
-      { food: 'White Steamed Rice', estimatedGrams: 180, confidence: 95 },
-      { food: 'Chicken Curry', estimatedGrams: 120, confidence: 92 },
-      { food: 'Dhal Curry (lentils)', estimatedGrams: 100, confidence: 88 }
-    ];
-  } else if (yellowBrownRatio > 0.10) {
-    foodName = 'Roasted Protein & Curry Dish';
-    detectedItems = [
-      { food: 'Chicken Curry', estimatedGrams: 150, confidence: 92 },
-      { food: 'Potato Curry', estimatedGrams: 110, confidence: 88 },
-      { food: 'Roti', estimatedGrams: 80, confidence: 85 }
-    ];
-  } else if (redRatio > 0.08) {
-    foodName = 'Fresh Fruit & Berry Platter';
-    detectedItems = [
-      { food: 'Strawberries & Berries', estimatedGrams: 120, confidence: 92 },
-      { food: 'Sliced Kiwi & Orange', estimatedGrams: 100, confidence: 88 }
-    ];
-  } else {
-    foodName = 'Healthy Nutritional Dish';
-    detectedItems = [
-      { food: 'White Rice', estimatedGrams: 160, confidence: 90 },
-      { food: 'Chicken Curry', estimatedGrams: 120, confidence: 88 },
-      { food: 'Vegetable Curry', estimatedGrams: 90, confidence: 85 }
-    ];
-  }
-
-  return {
-    isFood: true,
-    foodName: foodName,
-    confidence: 92,
-    detectedItems: detectedItems
-  };
+  return getNonFoodErrorResult();
 }
 
 export async function analyzeFoodImage(imageSource, sampleType) {
@@ -540,40 +442,37 @@ export async function analyzeFoodImage(imageSource, sampleType) {
   try {
     let aiResult = null;
 
-    // Handle Preset Sample Scans (from FoodNutrition buttons if no image provided)
+    // Handle Preset Sample Scans (from FoodNutrition quick preset buttons if explicitly requested)
     if (!imageSource && sampleType) {
-      if (sampleType === 'salad') {
+      if (sampleType === 'salad' || sampleType === 'Chicken Salad') {
         aiResult = {
           isFood: true,
-          foodName: 'Fresh Mediterranean Salad',
+          foodName: 'Fresh Chicken Salad',
+          calories: 320, carbs: 12, protein: 28, fat: 14,
           confidence: 95,
           detectedItems: [
-            { food: 'Mixed Salad Greens', estimatedGrams: 140, confidence: 95 },
-            { food: 'Grilled Chicken Breast', estimatedGrams: 120, confidence: 92 },
-            { food: 'Cherry Tomatoes', estimatedGrams: 50, confidence: 90 }
+            { food: 'Mixed Salad Greens', grams: 140, calories: 45, carbs: 6, protein: 2, fat: 1, confidence: 95 },
+            { food: 'Grilled Chicken Breast', grams: 120, calories: 195, carbs: 0, protein: 24, fat: 4, confidence: 92 }
           ]
         };
-      } else if (sampleType === 'rice') {
+      } else if (sampleType === 'pizza' || sampleType === 'Pizza') {
         aiResult = {
           isFood: true,
-          foodName: 'Sri Lankan Rice & Curry Plate',
-          confidence: 94,
+          foodName: 'Vegetable Pizza Slice',
+          calories: 285, carbs: 36, protein: 12, fat: 11,
+          confidence: 92,
           detectedItems: [
-            { food: 'Red Rice', estimatedGrams: 180, confidence: 95 },
-            { food: 'Fish Curry', estimatedGrams: 120, confidence: 92 },
-            { food: 'Dhal Curry (lentils)', estimatedGrams: 100, confidence: 90 },
-            { food: 'Gotukola Sambol', estimatedGrams: 50, confidence: 88 }
+            { food: 'Vegetable Pizza Slice', grams: 120, calories: 285, carbs: 36, protein: 12, fat: 11, confidence: 92 }
           ]
         };
-      } else if (sampleType === 'fruit') {
+      } else if (sampleType === 'oatmeal' || sampleType === 'Oatmeal') {
         aiResult = {
           isFood: true,
-          foodName: 'Fresh Mixed Fruit Platter',
+          foodName: 'Oatmeal with Almonds & Berries',
+          calories: 240, carbs: 38, protein: 8, fat: 7,
           confidence: 96,
           detectedItems: [
-            { food: 'Strawberries & Berries', estimatedGrams: 100, confidence: 95 },
-            { food: 'Papaya', estimatedGrams: 120, confidence: 92 },
-            { food: 'Sliced Kiwi & Orange', estimatedGrams: 80, confidence: 90 }
+            { food: 'Oatmeal with Berries', grams: 180, calories: 240, carbs: 38, protein: 8, fat: 7, confidence: 96 }
           ]
         };
       }
@@ -584,76 +483,54 @@ export async function analyzeFoodImage(imageSource, sampleType) {
       const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY;
       if (geminiApiKey) {
         aiResult = await callGeminiSDKFoodVisionAPI(imageSource, geminiApiKey);
-      } else {
-        console.warn('[Gemini Vision API Warning]: VITE_GEMINI_API_KEY is not defined in environment.');
       }
     }
 
     // 2. SECONDARY ENGINE: xAI Grok Vision API
-    if (!aiResult && imageSource) {
+    if ((!aiResult || aiResult.isApiError) && imageSource) {
       const grokKey = import.meta.env.VITE_GROK_API_KEY || import.meta.env.VITE_VISION_API_KEY;
       if (grokKey) {
-        aiResult = await callGrokFoodVisionAPI(imageSource, grokKey);
+        const grokRes = await callGrokFoodVisionAPI(imageSource, grokKey);
+        if (grokRes && !grokRes.isApiError) {
+          aiResult = grokRes;
+        }
       }
     }
 
-    // 3. FALLBACK ENGINE: Intelligent Client-Side Classifier (Triggered only if APIs fail or are unavailable)
-    if (!aiResult && imageSource) {
-      console.warn('[Food Vision Pipeline]: AI Vision API calls were unavailable or returned null. Triggering client-side fallback engine.');
-      try {
-        const img = await loadImage(imageSource);
-        const canvas = document.createElement('canvas');
-        const width = img.naturalWidth || img.width || 400;
-        const height = img.naturalHeight || img.height || 400;
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        aiResult = analyzeFoodImageCanvasFallback(canvas, width, height);
-      } catch (e) {
-        console.error('[Client-Side Fallback Classifier Error]:', e);
-        aiResult = analyzeFoodImageCanvasFallback(null, 400, 400);
-      }
+    // Differentiate between API Connection Error vs. Actual "Not Food" Classification
+    if (aiResult?.isApiError) {
+      return getApiErrorResult(aiResult.errorMsg);
     }
 
-    if (!aiResult) {
-      aiResult = analyzeFoodImageCanvasFallback(null, 400, 400);
-    }
-
-    if (aiResult.isFood === false || aiResult.isNonFoodObject || aiResult.errorType === 'NON_FOOD') {
-      return {
-        ...getNonFoodErrorResult(),
-        statusText: aiResult.statusText || 'No food detected in this photo.',
-        subText: aiResult.subText || 'The uploaded image appears to show a person, selfie, face, or non-food object.',
-        uploadId: uploadId
-      };
+    if (!aiResult || aiResult.isFood === false) {
+      return getNonFoodErrorResult();
     }
 
     const rawItems = aiResult.detectedItems || [];
     let sanitizedItems = filterFoodItems(rawItems);
 
-    if (sanitizedItems.length === 0 && (aiResult.dishName || aiResult.foodName) && isEdibleFood(aiResult.dishName || aiResult.foodName)) {
-      const fallbackName = sanitizeFoodName(aiResult.dishName || aiResult.foodName);
+    if (sanitizedItems.length === 0 && aiResult.foodName && isEdibleFood(aiResult.foodName)) {
+      const fallbackName = sanitizeFoodName(aiResult.foodName);
       sanitizedItems = [{
         food: fallbackName,
         name: fallbackName,
         grams: 150,
         weight: 150,
-        calories: 225,
-        confidence: normalizeConfidence(aiResult.confidence, 85)
+        calories: Number(aiResult.calories) || 225,
+        carbs: Number(aiResult.carbs) || 30,
+        protein: Number(aiResult.protein) || 15,
+        fat: Number(aiResult.fat) || 8,
+        confidence: normalizeConfidence(aiResult.confidence, 90)
       }];
     }
 
     if (sanitizedItems.length === 0) {
-      return {
-        ...getNonFoodErrorResult(),
-        uploadId: uploadId
-      };
+      return getNonFoodErrorResult();
     }
 
     const processedItems = sanitizedItems.map(item => {
       const name = item.food || item.name;
-      const grams = Number(item.weight || item.grams || item.estimatedGrams) || 120;
+      const grams = Number(item.weight || item.grams || item.estimatedGrams) || 150;
       const nut = calculateItemNutrition(name, grams);
       const calories = (typeof item.calories === 'number' && !isNaN(item.calories) && item.calories > 0) ? item.calories : nut.calories;
       return {
@@ -663,31 +540,32 @@ export async function analyzeFoodImage(imageSource, sampleType) {
         weight: grams,
         portion: `${grams} g`,
         calories: calories,
-        carbs: nut.carbs,
-        protein: nut.protein,
-        fat: nut.fat,
-        confidence: normalizeConfidence(item.confidence || aiResult.confidence, 88)
+        carbs: typeof item.carbs === 'number' ? item.carbs : nut.carbs,
+        protein: typeof item.protein === 'number' ? item.protein : nut.protein,
+        fat: typeof item.fat === 'number' ? item.fat : nut.fat,
+        confidence: normalizeConfidence(item.confidence || aiResult.confidence, 90)
       };
     });
 
     const totals = calculateMealTotals(processedItems);
 
     const nutritionTotals = aiResult.nutritionTotals || {
-      calories: totals.calories,
-      carbs: totals.carbs,
-      protein: totals.protein,
-      fat: totals.fat,
+      calories: Number(aiResult.calories) || totals.calories,
+      carbs: Number(aiResult.carbs) || totals.carbs,
+      protein: Number(aiResult.protein) || totals.protein,
+      fat: Number(aiResult.fat) || totals.fat,
       fiber: totals.fiber,
       sugar: totals.sugar
     };
 
-    const normConfidence = normalizeConfidence(aiResult.confidence, 88);
+    const normConfidence = normalizeConfidence(aiResult.confidence, 90);
 
     return {
       isFood: true,
+      isApiError: false,
       uploadId: uploadId,
-      dishName: aiResult.dishName || aiResult.foodName || processedItems.map(i => i.food).join(', '),
-      foodName: aiResult.dishName || aiResult.foodName || processedItems.map(i => i.food).join(', '),
+      dishName: aiResult.foodName || aiResult.dishName || processedItems.map(i => i.food).join(', '),
+      foodName: aiResult.foodName || aiResult.dishName || processedItems.map(i => i.food).join(', '),
       detectedItems: processedItems,
       nutritionTotals: nutritionTotals,
       calories: Number(nutritionTotals.calories) || totals.calories,
@@ -704,7 +582,7 @@ export async function analyzeFoodImage(imageSource, sampleType) {
 
   } catch (err) {
     console.error('[Food Service Exception]:', err);
-    return getNonFoodErrorResult();
+    return getApiErrorResult(err?.message);
   }
 }
 
@@ -731,13 +609,28 @@ function getConfidenceLabel(confidence) {
   return { label: 'Uncertain - Please Confirm Food', color: '#991b1b', bg: '#fef2f2', border: '#fecaca' };
 }
 
+export function getApiErrorResult(detailMsg) {
+  return {
+    isFood: false,
+    isApiError: true,
+    errorType: 'API_ERROR',
+    error: 'API_ERROR',
+    foodName: 'AI Service Connection Error',
+    statusText: 'AI Service Connection Error. Please try again.',
+    subText: detailMsg ? `Connection detail: ${detailMsg}` : 'Could not connect to AI Vision Service. Please check your network connection or API key.',
+    recommendation: 'Please verify your internet connection or try again in a few moments.'
+  };
+}
+
 export function getNonFoodErrorResult() {
   return {
     isFood: false,
-    errorType: 'NON_FOOD',
+    isApiError: false,
+    errorType: 'NO_FOOD_DETECTED',
+    error: 'NO_FOOD_DETECTED',
     foodName: 'No Food Detected',
-    statusText: 'No food detected in this photo.',
-    subText: 'The uploaded image appears to show a person, selfie, face, or non-food object. Please upload a clear photo of your food dish or meal plate.',
-    recommendation: 'Please upload a clear photograph of your food dish or meal plate.'
+    statusText: 'No food detected! Please upload a clear picture of a meal.',
+    subText: 'The photo appears to show a person, selfie, face, or non-food object.',
+    recommendation: 'Please upload a clear photograph of a real meal or food item.'
   };
 }

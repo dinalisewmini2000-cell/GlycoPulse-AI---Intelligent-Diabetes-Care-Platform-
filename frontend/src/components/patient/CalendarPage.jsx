@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Trash2, Filter } from 'lucide-react';
+import { PatientHistory } from './PatientHistory';
 
 export const CalendarPage = () => {
   const { glucoseLogs, deleteGlucoseLog } = useApp();
@@ -31,19 +32,10 @@ export const CalendarPage = () => {
   const uniqueDates = Array.from(new Set(glucoseLogs.map(log => log.date)));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '960px', fontFamily: 'Inter, system-ui, sans-serif' }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.2rem', letterSpacing: '-0.02em' }}>
-            Sugar Measurement History
-          </h1>
-          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-            Review a comprehensive history of your blood glucose measurement results by date.
-          </p>
-        </div>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', maxWidth: '1020px', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      
+      {/* Patient History & Weekly AI Analytics Report Generator */}
+      <PatientHistory />
 
       {/* FILTER & HISTORY SECTION */}
       <div className="glass-panel" style={{ padding: '1.5rem', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>

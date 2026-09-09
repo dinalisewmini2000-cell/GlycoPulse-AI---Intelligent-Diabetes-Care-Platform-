@@ -143,7 +143,7 @@ Return ONLY a valid JSON object matching this schema:
     const genAI = new GoogleGenerativeAI(apiKey);
     const validMime = mimeType === 'application/pdf' ? 'application/pdf' : (mimeType.includes('png') ? 'image/png' : 'image/jpeg');
 
-    const modelsToTry = ["gemini-3.6-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+    const modelsToTry = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
 
     for (const modelName of modelsToTry) {
       try {

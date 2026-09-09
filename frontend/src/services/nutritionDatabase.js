@@ -51,7 +51,13 @@ export const NUTRITION_DATABASE = {
   'papaya': { calories: 43, carbs: 10.8, protein: 0.5, fat: 0.3, fiber: 1.7, sugar: 7.8, sodium: 8, defaultGrams: 150, category: 'Fruits' },
   'pineapple': { calories: 50, carbs: 13.1, protein: 0.5, fat: 0.1, fiber: 1.4, sugar: 9.9, sodium: 1, defaultGrams: 120, category: 'Fruits' },
 
-  // GLOBAL & FAST FOODS
+  // GLOBAL, PASTA & FAST FOODS
+  'chicken lasagna': { calories: 152, carbs: 14.8, protein: 11.5, fat: 5.8, fiber: 1.2, sugar: 2.4, sodium: 380, defaultGrams: 250, category: 'Pasta & Baked' },
+  'lasagna': { calories: 145, carbs: 15.0, protein: 10.2, fat: 5.5, fiber: 1.1, sugar: 2.2, sodium: 360, defaultGrams: 250, category: 'Pasta & Baked' },
+  'baked pasta': { calories: 140, carbs: 18.2, protein: 8.5, fat: 4.8, fiber: 1.4, sugar: 1.8, sodium: 340, defaultGrams: 220, category: 'Pasta & Baked' },
+  'pasta': { calories: 131, carbs: 25.0, protein: 5.0, fat: 1.1, fiber: 1.8, sugar: 0.6, sodium: 1, defaultGrams: 200, category: 'Pasta & Baked' },
+  'spaghetti': { calories: 158, carbs: 30.8, protein: 5.8, fat: 0.9, fiber: 1.8, sugar: 0.6, sodium: 1, defaultGrams: 200, category: 'Pasta & Baked' },
+  'macaroni & cheese': { calories: 164, carbs: 19.5, protein: 6.8, fat: 7.1, fiber: 0.9, sugar: 1.5, sodium: 430, defaultGrams: 200, category: 'Pasta & Baked' },
   'beef burger': { calories: 254, carbs: 24.0, protein: 13.5, fat: 12.0, fiber: 1.2, sugar: 4.2, sodium: 480, defaultGrams: 180, category: 'Fast Food' },
   'french fries': { calories: 312, carbs: 41.0, protein: 3.4, fat: 15.0, fiber: 3.8, sugar: 0.3, sodium: 210, defaultGrams: 100, category: 'Fast Food' },
   'soft drink / beverage': { calories: 42, carbs: 10.6, protein: 0.0, fat: 0.0, fiber: 0.0, sugar: 10.6, sodium: 10, defaultGrams: 250, category: 'Fast Food' },
@@ -81,6 +87,8 @@ export function findNutritionDatabaseEntry(foodName) {
   }
 
   // 3. Fallback generic profile
+  if (lower.includes('lasagna') || lower.includes('lasagne')) return { name: 'chicken lasagna', data: NUTRITION_DATABASE['chicken lasagna'] };
+  if (lower.includes('pasta') || lower.includes('spaghetti') || lower.includes('macaroni')) return { name: 'pasta', data: NUTRITION_DATABASE['pasta'] };
   if (lower.includes('rice')) return { name: 'white rice', data: NUTRITION_DATABASE['white rice'] };
   if (lower.includes('curry')) return { name: 'chicken curry', data: NUTRITION_DATABASE['chicken curry'] };
   if (lower.includes('fruit') || lower.includes('berry')) return { name: 'fresh mixed fruit platter', data: NUTRITION_DATABASE['fresh mixed fruit platter'] };

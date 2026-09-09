@@ -228,6 +228,22 @@ body {
   display: inline-block;
 }
 
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+.pulse-sos-btn {
+  animation: pulse-red 1.8s infinite;
+}
+
 .spin-slow {
   animation: spin 8s linear infinite;
 }
@@ -281,4 +297,32 @@ th {
   letter-spacing: 0.5px;
   color: var(--text-muted);
   background: var(--bg-hover);
+}
+
+/* Printable Medical ID Card CSS */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-medical-card-container, 
+  .printable-medical-card-container * {
+    visibility: visible;
+  }
+  .printable-medical-card-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+  }
+  .emergency-modal-backdrop {
+    background: transparent !important;
+    position: static !important;
+  }
+  .emergency-modal-content {
+    border: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+  }
 }

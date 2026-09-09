@@ -143,18 +143,16 @@ export async function logoutWithFirebase() {
  */
 export async function saveMeasurementToFirestore(userId, userEmail, logEntry) {
   if (!db) return null;
-  const cleanEmail = (userEmail || '').toLowerCase().trim();
-  const uid = userId || auth?.currentUser?.uid || 'usr-' + btoa(cleanEmail).replace(/=/g, '');
+  const cleanEmail = (auth?.currentUser?.email || userEmail || '').toLowerCase().trim();
+  const uid = auth?.currentUser?.uid || userId || (cleanEmail ? 'usr-' + btoa(cleanEmail).replace(/=/g, '') : 'guest-user');
 
   const payload = {
     ...logEntry,
-    userId: uid,
-    uid: uid,
+    userId: auth?.currentUser?.uid || userId || uid,
+    uid: auth?.currentUser?.uid || userId || uid,
     userEmail: cleanEmail,
     createdAt: serverTimestamp()
   };
-
-  console.log(`[Firestore Save] Writing measurement for userId: ${uid} (email: ${cleanEmail})`, payload);
 
   try {
     const docRef = await addDoc(collection(db, 'measurements'), payload);
@@ -167,18 +165,18 @@ export async function saveMeasurementToFirestore(userId, userEmail, logEntry) {
 }
 
 /**
- * Fetch & Real-time Listen to Sugar Measurements from Firestore query by userEmail & userId:
- * Matches all logs created under the exact same email address across any browser or device!
+ * Fetch & Real-time Listen to Sugar Measurements from Firestore query by userId & userEmail
  */
 export function subscribeUserMeasurements(userId, userEmail, callback) {
-  if (!db) return () => {};
+  if (!db) { callback([]); return () => {}; }
 
-  const cleanEmail = (userEmail || '').toLowerCase().trim();
-  const targetUid = userId || auth?.currentUser?.uid;
+  const cleanEmail = (auth?.currentUser?.email || userEmail || '').toLowerCase().trim();
+  const targetUid = auth?.currentUser?.uid || userId;
 
-  if (!cleanEmail && !targetUid) return () => {};
-
-  console.log(`[Firestore Live Listener] Querying measurements for email: '${cleanEmail}' | UID: '${targetUid}'`);
+  if (!cleanEmail && !targetUid) {
+    callback([]);
+    return () => {};
+  }
 
   try {
     const q = cleanEmail
@@ -188,13 +186,13 @@ export function subscribeUserMeasurements(userId, userEmail, callback) {
     return onSnapshot(q, (snapshot) => {
       let docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       docs.sort((a, b) => new Date(b.date + ' ' + (b.time || '')) - new Date(a.date + ' ' + (a.time || '')));
-      console.log(`[Firestore Realtime Snapshot] Delivered ${docs.length} measurements for ${cleanEmail}`);
       callback(docs);
     }, (error) => {
       console.warn('[Firestore Measurements Subscription Error]:', error.message);
+      callback([]);
     });
   } catch (err) {
-    console.warn('[Firestore Measurements Sync Failed]:', err.message);
+    callback([]);
     return () => {};
   }
 }
@@ -204,7 +202,6 @@ export async function deleteMeasurementFromFirestore(docId) {
   try {
     await deleteDoc(doc(db, 'measurements', docId));
     try { await deleteDoc(doc(db, 'glucose_logs', docId)); } catch(e){}
-    console.log(`[Firestore Deleted] Measurement ID: ${docId}`);
   } catch (err) {
     console.warn('[Firestore Delete Error]:', err.message);
   }
@@ -214,10 +211,14 @@ export async function deleteMeasurementFromFirestore(docId) {
  * Meal Logs Firestore Sync
  */
 export function subscribeUserMeals(userId, userEmail, callback) {
-  if (!db) return () => {};
-  const cleanEmail = (userEmail || '').toLowerCase().trim();
-  const targetUid = userId || auth?.currentUser?.uid;
-  if (!cleanEmail && !targetUid) return () => {};
+  if (!db) { callback([]); return () => {}; }
+  const cleanEmail = (auth?.currentUser?.email || userEmail || '').toLowerCase().trim();
+  const targetUid = auth?.currentUser?.uid || userId;
+
+  if (!cleanEmail && !targetUid) {
+    callback([]);
+    return () => {};
+  }
 
   try {
     const q = cleanEmail
@@ -228,21 +229,25 @@ export function subscribeUserMeals(userId, userEmail, callback) {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       docs.sort((a, b) => new Date(b.date + ' ' + (b.time || '')) - new Date(a.date + ' ' + (a.time || '')));
       callback(docs);
-    }, (err) => console.warn('[Meals Sync Error]:', err.message));
+    }, (err) => {
+      console.warn('[Meals Sync Error]:', err.message);
+      callback([]);
+    });
   } catch (err) {
+    callback([]);
     return () => {};
   }
 }
 
 export async function saveMealToFirestore(userId, userEmail, mealEntry) {
   if (!db) return null;
-  const cleanEmail = (userEmail || '').toLowerCase().trim();
-  const uid = userId || auth?.currentUser?.uid || 'usr-' + btoa(cleanEmail).replace(/=/g, '');
+  const cleanEmail = (auth?.currentUser?.email || userEmail || '').toLowerCase().trim();
+  const uid = auth?.currentUser?.uid || userId || (cleanEmail ? 'usr-' + btoa(cleanEmail).replace(/=/g, '') : 'guest-user');
   try {
     const docRef = await addDoc(collection(db, 'meal_logs'), {
       ...mealEntry,
-      userId: uid,
-      uid: uid,
+      userId: auth?.currentUser?.uid || userId || uid,
+      uid: auth?.currentUser?.uid || userId || uid,
       userEmail: cleanEmail,
       createdAt: serverTimestamp()
     });
@@ -261,10 +266,14 @@ export async function deleteMealFromFirestore(docId) {
  * Lab Reports Firestore Sync
  */
 export function subscribeUserLabReports(userId, userEmail, callback) {
-  if (!db) return () => {};
-  const cleanEmail = (userEmail || '').toLowerCase().trim();
-  const targetUid = userId || auth?.currentUser?.uid;
-  if (!cleanEmail && !targetUid) return () => {};
+  if (!db) { callback([]); return () => {}; }
+  const cleanEmail = (auth?.currentUser?.email || userEmail || '').toLowerCase().trim();
+  const targetUid = auth?.currentUser?.uid || userId;
+
+  if (!cleanEmail && !targetUid) {
+    callback([]);
+    return () => {};
+  }
 
   try {
     const q = cleanEmail
@@ -275,21 +284,25 @@ export function subscribeUserLabReports(userId, userEmail, callback) {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       docs.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
       callback(docs);
-    }, (err) => console.warn('[Lab Sync Error]:', err.message));
+    }, (err) => {
+      console.warn('[Lab Sync Error]:', err.message);
+      callback([]);
+    });
   } catch (err) {
+    callback([]);
     return () => {};
   }
 }
 
 export async function saveLabReportToFirestore(userId, userEmail, labEntry) {
   if (!db) return null;
-  const cleanEmail = (userEmail || '').toLowerCase().trim();
-  const uid = userId || auth?.currentUser?.uid || 'usr-' + btoa(cleanEmail).replace(/=/g, '');
+  const cleanEmail = (auth?.currentUser?.email || userEmail || '').toLowerCase().trim();
+  const uid = auth?.currentUser?.uid || userId || (cleanEmail ? 'usr-' + btoa(cleanEmail).replace(/=/g, '') : 'guest-user');
   try {
     const docRef = await addDoc(collection(db, 'lab_reports'), {
       ...labEntry,
-      userId: uid,
-      uid: uid,
+      userId: auth?.currentUser?.uid || userId || uid,
+      uid: auth?.currentUser?.uid || userId || uid,
       userEmail: cleanEmail,
       createdAt: serverTimestamp()
     });
@@ -308,10 +321,14 @@ export async function deleteLabReportFromFirestore(docId) {
  * Reminders Firestore Sync
  */
 export function subscribeUserReminders(userId, userEmail, callback) {
-  if (!db) return () => {};
-  const cleanEmail = (userEmail || '').toLowerCase().trim();
-  const targetUid = userId || auth?.currentUser?.uid;
-  if (!cleanEmail && !targetUid) return () => {};
+  if (!db) { callback([]); return () => {}; }
+  const cleanEmail = (auth?.currentUser?.email || userEmail || '').toLowerCase().trim();
+  const targetUid = auth?.currentUser?.uid || userId;
+
+  if (!cleanEmail && !targetUid) {
+    callback([]);
+    return () => {};
+  }
 
   try {
     const q = cleanEmail
@@ -322,21 +339,25 @@ export function subscribeUserReminders(userId, userEmail, callback) {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       docs.sort((a, b) => new Date(b.date + ' ' + (b.time || '')) - new Date(a.date + ' ' + (a.time || '')));
       callback(docs);
-    }, (err) => console.warn('[Reminders Sync Error]:', err.message));
+    }, (err) => {
+      console.warn('[Reminders Sync Error]:', err.message);
+      callback([]);
+    });
   } catch (err) {
+    callback([]);
     return () => {};
   }
 }
 
 export async function saveReminderToFirestore(userId, userEmail, reminderEntry) {
   if (!db) return null;
-  const cleanEmail = (userEmail || '').toLowerCase().trim();
-  const uid = userId || auth?.currentUser?.uid || 'usr-' + btoa(cleanEmail).replace(/=/g, '');
+  const cleanEmail = (auth?.currentUser?.email || userEmail || '').toLowerCase().trim();
+  const uid = auth?.currentUser?.uid || userId || (cleanEmail ? 'usr-' + btoa(cleanEmail).replace(/=/g, '') : 'guest-user');
   try {
     const docRef = await addDoc(collection(db, 'reminders'), {
       ...reminderEntry,
-      userId: uid,
-      uid: uid,
+      userId: auth?.currentUser?.uid || userId || uid,
+      uid: auth?.currentUser?.uid || userId || uid,
       userEmail: cleanEmail,
       createdAt: serverTimestamp()
     });
@@ -350,3 +371,168 @@ export async function deleteReminderFromFirestore(docId) {
   if (!db || !docId) return;
   try { await deleteDoc(doc(db, 'reminders', docId)); } catch (e) {}
 }
+
+/**
+ * Community Posts Firestore Sync
+ */
+export function subscribeCommunityPosts(callback) {
+  if (!db) { callback([]); return () => {}; }
+  try {
+    const q = query(collection(db, 'community_posts'));
+    return onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      docs.sort((a, b) => new Date(b.createdAt || b.timestamp || Date.now()) - new Date(a.createdAt || a.timestamp || Date.now()));
+      callback(docs);
+    }, (err) => {
+      console.warn('[Community Posts Sync Error]:', err.message);
+      callback([]);
+    });
+  } catch (err) {
+    callback([]);
+    return () => {};
+  }
+}
+
+export async function saveCommunityPostToFirestore(postData) {
+  if (!db) return null;
+  const cleanEmail = (auth?.currentUser?.email || postData.userEmail || '').toLowerCase().trim();
+  const uid = auth?.currentUser?.uid || postData.userId || (cleanEmail ? 'usr-' + btoa(cleanEmail).replace(/=/g, '') : 'guest-user');
+  try {
+    const docRef = await addDoc(collection(db, 'community_posts'), {
+      ...postData,
+      userId: auth?.currentUser?.uid || postData.userId || uid,
+      authorId: auth?.currentUser?.uid || postData.userId || uid,
+      userEmail: cleanEmail,
+      likesCount: postData.likesCount || 0,
+      likedBy: postData.likedBy || [],
+      comments: postData.comments || [],
+      createdAt: serverTimestamp()
+    });
+    return docRef.id;
+  } catch (err) {
+    console.warn('[Save Community Post Error]:', err);
+    return null;
+  }
+}
+
+export async function updateCommunityPostInFirestore(docId, updatedFields) {
+  if (!db || !docId) return;
+  try {
+    await setDoc(doc(db, 'community_posts', docId), updatedFields, { merge: true });
+  } catch (err) {
+    console.warn('[Update Community Post Error]:', err);
+  }
+}
+
+/**
+ * Mental Health Logs Firestore Sync
+ */
+export function subscribeUserMentalHealthLogs(userId, userEmail, callback) {
+  if (!db) { callback([]); return () => {}; }
+  const cleanEmail = (auth?.currentUser?.email || userEmail || '').toLowerCase().trim();
+  const targetUid = auth?.currentUser?.uid || userId;
+
+  if (!cleanEmail && !targetUid) {
+    callback([]);
+    return () => {};
+  }
+
+  try {
+    const q = cleanEmail
+      ? query(collection(db, 'mental_health_logs'), where('userEmail', '==', cleanEmail))
+      : query(collection(db, 'mental_health_logs'), where('userId', '==', targetUid));
+
+    return onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      docs.sort((a, b) => new Date(b.date + ' ' + (b.time || '')) - new Date(a.date + ' ' + (a.time || '')));
+      callback(docs);
+    }, (err) => {
+      console.warn('[Mental Health Sync Error]:', err.message);
+      callback([]);
+    });
+  } catch (err) {
+    callback([]);
+    return () => {};
+  }
+}
+
+export async function saveMentalHealthLogToFirestore(userId, userEmail, logEntry) {
+  if (!db) return null;
+  const cleanEmail = (auth?.currentUser?.email || userEmail || '').toLowerCase().trim();
+  const uid = auth?.currentUser?.uid || userId || (cleanEmail ? 'usr-' + btoa(cleanEmail).replace(/=/g, '') : 'guest-user');
+  try {
+    const docRef = await addDoc(collection(db, 'mental_health_logs'), {
+      ...logEntry,
+      userId: auth?.currentUser?.uid || userId || uid,
+      uid: auth?.currentUser?.uid || userId || uid,
+      userEmail: cleanEmail,
+      createdAt: serverTimestamp()
+    });
+    return docRef.id;
+  } catch (err) {
+    console.warn('[Save Mental Health Log Error]:', err);
+    return null;
+  }
+}
+
+/**
+ * Medications & Prescriptions Firestore Sync
+ */
+export function subscribeUserMedications(userId, userEmail, callback) {
+  if (!db) { callback([]); return () => {}; }
+  const cleanEmail = (auth?.currentUser?.email || userEmail || '').toLowerCase().trim();
+  const targetUid = auth?.currentUser?.uid || userId;
+
+  if (!cleanEmail && !targetUid) {
+    callback([]);
+    return () => {};
+  }
+
+  try {
+    const q = cleanEmail
+      ? query(collection(db, 'medications'), where('userEmail', '==', cleanEmail))
+      : query(collection(db, 'medications'), where('userId', '==', targetUid));
+
+    return onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      callback(docs);
+    }, (err) => {
+      console.warn('[Medications Sync Error]:', err.message);
+      callback([]);
+    });
+  } catch (err) {
+    callback([]);
+    return () => {};
+  }
+}
+
+export async function saveMedicationToFirestore(userId, userEmail, medData) {
+  if (!db) return null;
+  const cleanEmail = (auth?.currentUser?.email || userEmail || '').toLowerCase().trim();
+  const uid = auth?.currentUser?.uid || userId || (cleanEmail ? 'usr-' + btoa(cleanEmail).replace(/=/g, '') : 'guest-user');
+  try {
+    const docRef = await addDoc(collection(db, 'medications'), {
+      ...medData,
+      userId: auth?.currentUser?.uid || userId || uid,
+      uid: auth?.currentUser?.uid || userId || uid,
+      userEmail: cleanEmail,
+      createdAt: serverTimestamp()
+    });
+    return docRef.id;
+  } catch (err) {
+    console.warn('[Save Medication Error]:', err);
+    return null;
+  }
+}
+
+export async function updateMedicationStockInFirestore(docId, updatedFields) {
+  if (!db || !docId) return;
+  try {
+    await setDoc(doc(db, 'medications', docId), updatedFields, { merge: true });
+  } catch (err) {
+    console.warn('[Update Medication Stock Error]:', err);
+  }
+}
+
+
+

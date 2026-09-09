@@ -407,31 +407,37 @@ Return JSON format:
   "recommendation": string
 }`;
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          { text: prompt },
-          { inline_data: { mime_type: "image/jpeg", data: base64Data } }
-        ]
-      }]
-    })
-  });
+  const modelsToTry = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+  for (const model of modelsToTry) {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+            ]
+          }]
+        })
+      });
 
-  if (!response.ok) return null;
-  const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) return null;
-
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return null;
-
-  const parsed = JSON.parse(jsonMatch[0]);
-  return {
-    ...parsed,
-    statusText: getScreeningTitle(parsed.screeningResult || 'UNABLE TO RELIABLY ASSESS'),
-    disclaimer: getSafetyDisclaimer()
-  };
+      if (!response.ok) continue;
+      const data = await response.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return {
+            ...parsed,
+            statusText: getScreeningTitle(parsed.screeningResult || 'UNABLE TO RELIABLY ASSESS'),
+            disclaimer: getSafetyDisclaimer()
+          };
+        }
+      }
+    } catch (e) {}
+  }
+  return null;
 }
